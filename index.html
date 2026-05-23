@@ -1,0 +1,3389 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Habitat OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0b0d19;--bg2:#121526;--bg3:#1a1d33;--surface:#1e2240;--surface2:#262b50;
+  --neon:#00f0ff;--neon2:#ff00e5;--neon3:#ffcc00;--gold:#ffd700;--green:#00ff88;
+  --text:#e0e4f0;--text2:#8890b0;--text3:#505570;
+  --red:#ff3355;--blue:#3388ff;--ruby:#ff4466;--sapphire:#4488ff;--emerald:#44dd88;
+  --font:'Outfit',sans-serif;--mono:'Share Tech Mono',monospace;
+  --radius:12px;--radius-sm:8px;--shadow:0 4px 24px rgba(0,0,0,0.4);
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font);font-size:16px;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+#app{height:100%;display:flex;flex-direction:column;max-width:480px;margin:0 auto;position:relative;overflow:hidden}
+
+/* Screens */
+.screen{display:none;flex-direction:column;height:100%;overflow-y:auto;overflow-x:hidden;padding-bottom:68px;scroll-behavior:smooth}
+.screen.active{display:flex}
+.screen::-webkit-scrollbar{width:4px}
+.screen::-webkit-scrollbar-track{background:transparent}
+.screen::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:4px}
+
+/* Bottom Nav */
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:60px;display:flex;background:var(--bg2);border-top:1px solid var(--surface);z-index:100;padding:0 4px}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:none;border:none;color:var(--text2);font-size:10px;font-family:var(--font);cursor:pointer;transition:all .2s;padding:4px 2px;border-radius:var(--radius-sm)}
+.nav-btn .icon{font-size:20px;line-height:1}
+.nav-btn.active{color:var(--neon)}
+.nav-btn:active{transform:scale(0.92)}
+
+/* Header */
+.header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg2);border-bottom:1px solid var(--surface);flex-shrink:0}
+.header h1{font-size:18px;font-weight:700;color:var(--neon);letter-spacing:1px}
+.resources{display:flex;gap:10px;font-size:12px;font-family:var(--mono)}
+.resource{display:flex;align-items:center;gap:3px;color:var(--text2)}
+.resource .val{color:var(--text);font-weight:600}
+
+/* Cards */
+.card{background:var(--surface);border-radius:var(--radius);padding:16px;margin:8px 16px;border:1px solid var(--surface2)}
+.card-title{font-size:14px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 20px;border-radius:var(--radius-sm);border:none;font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;text-decoration:none}
+.btn:active{transform:scale(0.95)}
+.btn-primary{background:linear-gradient(135deg,var(--neon),#0088ff);color:#000;box-shadow:0 0 20px rgba(0,240,255,0.2)}
+.btn-primary:hover{box-shadow:0 0 30px rgba(0,240,255,0.4)}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--text3)}
+.btn-secondary:hover{border-color:var(--neon);color:var(--neon)}
+.btn-danger{background:var(--red);color:#fff}
+.btn-success{background:var(--green);color:#000}
+.btn-gold{background:linear-gradient(135deg,var(--gold),#ff9900);color:#000}
+.btn-small{padding:6px 12px;font-size:12px}
+.btn-block{width:100%;justify-content:center}
+.btn:disabled{opacity:0.4;pointer-events:none}
+
+/* Dashboard */
+.hero-section{padding:24px 16px 12px;text-align:center}
+.hero-section h2{font-size:28px;font-weight:700;color:#fff;margin-bottom:4px}
+.hero-section p{color:var(--text2);font-size:14px}
+.big-play{width:100%;max-width:280px;margin:16px auto;padding:18px 32px;font-size:20px;border-radius:16px;background:linear-gradient(135deg,var(--neon),var(--neon2));color:#000;border:none;cursor:pointer;font-weight:700;box-shadow:0 0 40px rgba(0,240,255,0.2);transition:all .3s;display:block;text-align:center}
+.big-play:active{transform:scale(0.95)}
+
+.resource-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 16px}
+.resource-card{background:var(--surface);border-radius:var(--radius);padding:12px;text-align:center;border:1px solid var(--surface2)}
+.resource-card .icon{font-size:28px;margin-bottom:4px}
+.resource-card .label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px}
+.resource-card .value{font-size:22px;font-weight:700;font-family:var(--mono);margin-top:2px}
+
+.dash-buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 16px}
+.dash-btn{background:var(--surface);border:1px solid var(--surface2);border-radius:var(--radius);padding:16px;text-align:center;cursor:pointer;transition:all .2s;color:var(--text)}
+.dash-btn .icon{font-size:32px;margin-bottom:6px;display:block}
+.dash-btn .label{font-size:13px;font-weight:600}
+.dash-btn:active{transform:scale(0.95);border-color:var(--neon)}
+.dash-btn.shop:active{border-color:var(--gold)}
+.dash-btn.skin:active{border-color:var(--neon2)}
+.dash-btn.chat:active{border-color:var(--green)}
+
+/* Match-3 */
+.m3-header{display:flex;justify-content:space-between;padding:10px 16px;background:var(--bg2);align-items:center;font-family:var(--mono);font-size:13px;flex-shrink:0}
+.m3-header .m3-stat{display:flex;align-items:center;gap:6px}
+.m3-header .m3-stat .num{color:var(--neon);font-weight:700}
+.m3-board-wrap{display:flex;justify-content:center;align-items:center;flex:1;padding:12px;min-height:0}
+.m3-board{display:grid;gap:2px;background:var(--bg2);padding:6px;border-radius:var(--radius);border:2px solid var(--surface);touch-action:manipulation}
+.m3-cell{width:40px;height:40px;border-radius:4px;cursor:pointer;transition:all .15s;position:relative;display:flex;align-items:center;justify-content:center}
+.m3-cell.bw{opacity:0.85}
+/* MATCH-3 GEMS — distinct shapes + high contrast */
+.m3-cell .gem{
+  width:70%;height:70%;border-radius:4px;position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  transition:all 0.15s;
+  box-shadow:0 2px 6px rgba(0,0,0,0.3);
+}
+/* Ruby — 🔴 RED CIRCLE */
+.m3-cell .gem.g0{
+  background:radial-gradient(circle at 35% 35%,#ff4444,#cc0000);
+  border-radius:50%;
+  border:2px solid #ff6666;
+}
+/* Sapphire — 🔵 BLUE SQUARE WITH CROSS */
+.m3-cell .gem.g1{
+  background:
+    linear-gradient(to right,transparent calc(50% - 2px),#88bbff calc(50% - 2px),#88bbff calc(50% + 2px),transparent calc(50% + 2px)),
+    linear-gradient(to bottom,transparent calc(50% - 2px),#88bbff calc(50% - 2px),#88bbff calc(50% + 2px),transparent calc(50% + 2px)),
+    radial-gradient(circle at 35% 35%,#2266ff,#0033cc);
+  border-radius:2px;
+  border:2px solid #4488ff;
+}
+/* Gold — 🟡 YELLOW TRIANGLE */
+.m3-cell .gem.g2{
+  background:radial-gradient(circle at 50% 20%,#ffdd00,#cc9900);
+  clip-path:polygon(50% 5%,95% 95%,5% 95%);
+  border:none;
+}
+/* Emerald — 🟩 GREEN DIAMOND */
+.m3-cell .gem.g3{
+  background:radial-gradient(circle at 35% 35%,#00dd55,#008833);
+  clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);
+  border:none;
+}
+
+/* B&W MODE — distinct patterns by shape only */
+.m3-cell.bw .gem.g0{
+  background:#666!important;border-radius:50%!important;border:2px solid #888!important;
+  clip-path:none!important;
+}
+.m3-cell.bw .gem.g1{
+  background:
+    linear-gradient(to right,transparent calc(50% - 2px),#666 calc(50% - 2px),#666 calc(50% + 2px),transparent calc(50% + 2px)),
+    linear-gradient(to bottom,transparent calc(50% - 2px),#666 calc(50% - 2px),#666 calc(50% + 2px),transparent calc(50% + 2px))!important;
+  background-color:transparent!important;
+  border:3px solid #666!important;border-radius:2px!important;
+  clip-path:none!important;
+}
+.m3-cell.bw .gem.g2{
+  background:repeating-linear-gradient(0deg,#666,#666 2px,transparent 2px,transparent 8px)!important;
+  clip-path:polygon(50% 5%,95% 95%,5% 95%)!important;
+  border:none!important;
+}
+.m3-cell.bw .gem.g3{
+  background:
+    repeating-linear-gradient(45deg,#666,#666 1px,transparent 1px,transparent 6px),
+    repeating-linear-gradient(-45deg,#666,#666 1px,transparent 1px,transparent 6px)!important;
+  clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%)!important;
+  border:none!important;
+}
+/* No shared ::after — patterns handled per-gem */
+
+/* Match-3 results */
+.m3-result{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(11,13,25,0.92);z-index:50;padding:24px;text-align:center}
+.m3-result.hidden{display:none}
+.m3-result h2{font-size:28px;margin-bottom:8px}
+.m3-result .m3-score{font-size:48px;font-weight:700;color:var(--gold);font-family:var(--mono);margin:8px 0}
+.m3-result .m3-rewards{margin:8px 0;font-size:14px;color:var(--text2)}
+.m3-result .btn{margin-top:12px}
+
+/* Shop */
+.shop-item{display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface2);border-radius:var(--radius-sm);margin-bottom:8px;cursor:pointer;transition:all .2s}
+.shop-item:active{transform:scale(0.98)}
+.shop-item .shop-icon{font-size:32px;flex-shrink:0;width:48px;text-align:center}
+.shop-item .shop-info{flex:1;min-width:0}
+.shop-item .shop-name{font-weight:600;font-size:14px}
+.shop-item .shop-desc{font-size:12px;color:var(--text2);margin-top:2px}
+.shop-item .shop-price{font-weight:700;color:var(--gold);font-family:var(--mono);font-size:14px;white-space:nowrap}
+.shop-category{font-size:13px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin:12px 0 8px 16px;display:flex;align-items:center;gap:8px}
+.shop-category::after{content:'';flex:1;height:1px;background:var(--surface2)}
+
+/* Skin Editor */
+.editor-wrap{display:flex;flex-direction:column;align-items:center;padding:12px 16px;gap:12px}
+.editor-canvas-wrap{background:var(--bg3);padding:8px;border-radius:var(--radius);border:2px solid var(--surface2);touch-action:manipulation}
+.editor-canvas-wrap canvas{display:block;width:320px;height:320px;image-rendering:pixelated;image-rendering:crisp-edges;cursor:crosshair}
+.editor-palette{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;max-width:320px;width:100%}
+.editor-palette .p-color{width:100%;aspect-ratio:1;border-radius:6px;border:2px solid transparent;cursor:pointer;transition:all .15s}
+.editor-palette .p-color.active{border-color:var(--neon);transform:scale(1.1);box-shadow:0 0 12px rgba(0,240,255,0.4)}
+.editor-tools{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.editor-stats{font-family:var(--mono);font-size:13px;color:var(--text2);text-align:center}
+.editor-cost-stats{font-family:var(--mono);font-size:12px;color:var(--text3);text-align:center;margin:4px 16px}
+.lt-options{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin-top:4px}
+.lt-btn{padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--text3);background:var(--surface);color:var(--text2);font-size:11px;cursor:pointer;transition:all .15s;font-family:var(--font)}
+.lt-btn.active{border-color:var(--gold);background:var(--surface2);color:var(--gold);box-shadow:0 0 8px rgba(255,204,0,0.3)}
+.lt-btn .lt-cost{font-size:9px;color:var(--text3);display:block}
+
+/* Chat */
+.chat-messages{flex:1;overflow-y:auto;padding:8px 16px;display:flex;flex-direction:column;gap:6px;min-height:0}
+.chat-messages::-webkit-scrollbar{width:4px}
+.chat-messages::-webkit-scrollbar-thumb{background:var(--surface2);border-radius:4px}
+.chat-msg{background:var(--surface);border-radius:var(--radius-sm);padding:10px 12px;border:1px solid var(--surface2);font-size:13px;font-family:var(--mono)}
+.chat-msg .chat-hash{color:var(--text3);font-size:11px}
+.chat-msg .chat-author{color:var(--neon);font-weight:600}
+.chat-msg .chat-text{color:var(--text);margin-top:2px;word-break:break-word}
+.chat-input-wrap{display:flex;gap:8px;padding:8px 16px 12px;background:var(--bg2);border-top:1px solid var(--surface);flex-shrink:0}
+.chat-input-wrap input{flex:1;padding:10px 12px;border-radius:var(--radius-sm);border:1px solid var(--surface2);background:var(--surface);color:var(--text);font-family:var(--mono);font-size:13px;outline:none;transition:border .2s}
+.chat-input-wrap input:focus{border-color:var(--neon);box-shadow:0 0 12px rgba(0,240,255,0.15)}
+.chat-input-wrap input::placeholder{color:var(--text3)}
+.chat-input-wrap .btn{padding:10px 16px;flex-shrink:0}
+.chat-trade{background:var(--surface);border:1px solid var(--gold);border-radius:var(--radius-sm);padding:10px 12px;margin-top:4px;font-size:12px;font-family:var(--mono)}
+.chat-trade .trade-action{color:var(--gold);font-weight:700;cursor:pointer}
+.chat-trade .trade-action:hover{text-decoration:underline}
+
+/* Achievements */
+.ach-list{display:flex;flex-direction:column;gap:6px}
+.ach-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border-radius:var(--radius-sm);font-size:13px}
+.ach-item.owned{border-left:3px solid var(--gold)}
+.ach-item .ach-icon{font-size:20px}
+.ach-item .ach-info{flex:1}
+.ach-item .ach-name{font-weight:600}
+.ach-item .ach-desc{font-size:11px;color:var(--text2)}
+.ach-item .ach-buy{font-size:12px;color:var(--gold);font-weight:700;cursor:pointer;white-space:nowrap;padding:4px 8px;border-radius:4px;background:var(--surface);transition:all .2s}
+.ach-item .ach-buy:active{background:var(--surface2);transform:scale(0.95)}
+
+/* Empty state */
+.empty-state{text-align:center;padding:32px 16px;color:var(--text2);font-size:14px}
+.empty-state .icon{font-size:48px;margin-bottom:8px;display:block;opacity:0.5}
+
+/* Responsive */
+@media(min-width:480px){
+  .m3-cell{width:48px;height:48px}
+  .m3-cell .gem{width:38px;height:38px}
+  .editor-canvas-wrap canvas{width:384px;height:384px}
+}
+@media(max-width:374px){
+  .m3-cell{width:34px;height:34px}
+  .m3-cell .gem{width:26px;height:26px}
+  .editor-canvas-wrap canvas{width:256px;height:256px}
+  .resource-grid{grid-template-columns:1fr}
+}
+
+/* Match-3 effects */
+.m3-cell .gem.glow{
+  animation:gemGlow 0.6s ease-in-out infinite alternate;
+}
+@keyframes gemGlow{
+  from{filter:brightness(1) drop-shadow(0 0 2px rgba(255,255,255,0.3))}
+  to{filter:brightness(1.4) drop-shadow(0 0 10px rgba(255,255,255,0.8))}
+}
+.m3-cell .gem.particle-burst{
+  animation:particleBurst 0.4s ease-out;
+}
+@keyframes particleBurst{
+  0%{transform:translate(-50%,-50%) scale(1);opacity:1}
+  100%{transform:translate(-50%,-50%) scale(2);opacity:0}
+}
+.m3-board.gravity-flip .m3-cell .gem{
+  animation:floatUp 0.3s ease-out;
+}
+@keyframes floatUp{
+  from{transform:translate(-50%,10px);opacity:0.5}
+  to{transform:translate(-50%,-50%);opacity:1}
+}
+.screen-pulse{
+  animation:screenPulse 0.3s ease-out;
+}
+@keyframes screenPulse{
+  0%{box-shadow:inset 0 0 0 rgba(255,255,255,0)}
+  50%{box-shadow:inset 0 0 60px rgba(0,240,255,0.15)}
+  100%{box-shadow:inset 0 0 0 rgba(255,255,255,0)}
+}
+
+/* Effects Shop */
+.effect-timer{
+  font-size:11px;color:var(--text2);font-family:var(--mono);margin-top:2px;
+}
+.effect-timer.active{color:var(--green)}
+.effect-buy-input{
+  width:60px;padding:4px 6px;border-radius:4px;border:1px solid var(--surface2);
+  background:var(--bg3);color:var(--text);font-family:var(--mono);font-size:12px;text-align:center;
+}
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);max-width:360px;width:90%;background:var(--surface);border:1px solid var(--neon);border-radius:var(--radius);padding:12px 16px;font-size:13px;text-align:center;z-index:999;box-shadow:var(--shadow);animation:toastIn 0.3s ease;pointer-events:none}
+.toast.hidden{display:none}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(-20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* Profile */
+.profile-header{display:flex;align-items:center;gap:12px;padding:16px;margin:8px 16px;background:var(--surface);border-radius:var(--radius);border:1px solid var(--surface2)}
+.profile-avatar{font-size:48px;width:64px;height:64px;display:flex;align-items:center;justify-content:center;background:var(--bg3);border-radius:50%;border:2px solid var(--neon)}
+.profile-info{flex:1;min-width:0}
+.profile-info .profile-name{font-size:18px;font-weight:700;color:#fff}
+.profile-info .profile-id{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px}
+.profile-info .profile-email{font-size:12px;color:var(--text2);margin-top:2px}
+.profile-info .profile-date{font-size:11px;color:var(--text3);margin-top:1px}
+.profile-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 16px}
+.profile-stat-card{background:var(--surface);border-radius:var(--radius-sm);padding:12px;text-align:center;border:1px solid var(--surface2)}
+.profile-stat-card .pstat-icon{font-size:24px}
+.profile-stat-card .pstat-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-top:2px}
+.profile-stat-card .pstat-value{font-size:20px;font-weight:700;font-family:var(--mono);color:var(--neon)}
+.profile-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 16px}
+.github-section{margin:8px 16px;padding:16px;background:var(--surface);border-radius:var(--radius);border:1px solid var(--surface2)}
+.github-section .github-title{font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px}
+.github-field{margin-bottom:8px}
+.github-field label{display:block;font-size:11px;color:var(--text3);margin-bottom:2px}
+.github-field input{width:100%;padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--surface2);background:var(--bg3);color:var(--text);font-family:var(--mono);font-size:13px;outline:none;transition:border .2s}
+.github-field input:focus{border-color:var(--neon)}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- Toast -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- Dashboard Screen -->
+  <div id="screen-dashboard" class="screen active">
+    <div class="header">
+      <h1>⬡ HABITAT OS</h1>
+      <div class="resources">
+        <span class="resource">🪙<span class="val" id="hdr-gold">0</span></span>
+        <span class="resource">💎<span class="val" id="hdr-ruby">0</span></span>
+        <span class="resource">🟡<span class="val" id="hdr-sapphire">0</span></span>
+      </div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px">
+      <div style="font-size:48px;text-align:center;line-height:1.2">
+        ⬡<br>
+        <span style="font-size:24px;font-weight:700;color:var(--neon)">HABITAT OS</span>
+      </div>
+      <button class="big-play" onclick="startRandomGame()">🎮 ГРАТИ РАНДОМ</button>
+      <div style="display:flex;gap:12px;margin-top:8px">
+        <button class="btn btn-primary" onclick="showScreen('shop')" style="padding:12px 24px">🏪 Магазин</button>
+        <button class="btn btn-secondary" onclick="showScreen('chat')" style="padding:12px 24px">💬 Чат</button>
+      </div>
+      <div style="font-size:13px;color:var(--text2);margin-top:4px">Твоя піксельна пригода</div>
+    </div>
+  </div>
+
+  <!-- Match-3 Screen -->
+  <div id="screen-match3" class="screen">
+    <div class="header">
+      <button class="btn btn-secondary btn-small" onclick="showScreen('dashboard')">← Назад</button>
+      <h1 style="font-size:15px">☰ MATCH-3</h1>
+      <div style="width:60px"></div>
+    </div>
+    <div class="m3-header">
+      <span class="m3-stat">🎯 <span class="num" id="m3-score">0</span></span>
+      <span class="m3-stat">🔄 <span class="num" id="m3-moves">30</span></span>
+      <span class="m3-stat">🏆 <span class="num" id="m3-highscore">0</span></span>
+    </div>
+    <div class="m3-board-wrap" id="m3-board-wrap">
+      <div class="m3-board" id="m3-board" style="grid-template-columns:repeat(8,40px)"></div>
+    </div>
+    <div class="m3-result hidden" id="m3-result">
+      <h2>⏱ Час вийшов!</h2>
+      <div class="m3-score" id="m3-final-score">0</div>
+      <div class="m3-rewards" id="m3-rewards">🪙 +0 Gold &nbsp; 💎 +0 Ruby</div>
+      <button class="btn btn-primary" onclick="startMatch3()">🔄 Ще раз</button>
+      <button class="btn btn-secondary" onclick="showScreen('dashboard')" style="margin-top:8px">← На головну</button>
+    </div>
+  </div>
+
+  <!-- Shop Screen -->
+  <div id="screen-shop" class="screen">
+    <div class="header">
+      <button class="btn btn-secondary btn-small" onclick="showScreen('dashboard')">← Назад</button>
+      <h1 style="font-size:15px">🏪 МАГАЗИН</h1>
+      <div class="resources">
+        <span class="resource">🪙<span class="val" id="shop-gold">0</span></span>
+        <span class="resource">💎<span class="val" id="shop-ruby">0</span></span>
+        <span class="resource">🟡<span class="val" id="shop-sapphire">0</span></span>
+      </div>
+    </div>
+    <div class="shop-category" style="display:flex;align-items:center;gap:8px">
+      <span>🎮 Гра:</span>
+      <select id="shop-game-filter" onchange="applyShopFilter()" style="background:var(--surface);color:var(--text);border:1px solid var(--surface2);border-radius:var(--radius-sm);padding:6px 10px;font-family:var(--font);font-size:13px">
+        <option value="match3">Match-3</option>
+        <option value="all">Всі ігри</option>
+      </select>
+    </div>
+    <div style="margin:0 16px">
+    </div>
+    <div class="shop-category" data-game="match3">🎨 Холсти для скінів</div>
+    <div style="margin:0 16px">
+      <div class="shop-item" data-game="match3">
+        <div class="shop-icon">🟣</div>
+        <div class="shop-info">
+          <div class="shop-name">Ruby Canvas — 16×16</div>
+          <div class="shop-desc">Холст для малювання скіна Ruby</div>
+        </div>
+        <button class="btn btn-small btn-primary" onclick="buyCanvas('ruby')">🎨 20🪙</button>
+      </div>
+      <div class="shop-item" data-game="match3">
+        <div class="shop-icon">🔵</div>
+        <div class="shop-info">
+          <div class="shop-name">Sapphire Canvas — 16×16</div>
+          <div class="shop-desc">Холст для малювання скіна Sapphire</div>
+        </div>
+        <button class="btn btn-small btn-primary" onclick="buyCanvas('sapphire')">🎨 20🪙</button>
+      </div>
+      <div class="shop-item" data-game="match3">
+        <div class="shop-icon">🟡</div>
+        <div class="shop-info">
+          <div class="shop-name">Gold Canvas — 16×16</div>
+          <div class="shop-desc">Холст для малювання скіна Gold</div>
+        </div>
+        <button class="btn btn-small btn-primary" onclick="buyCanvas('gold')">🎨 20🪙</button>
+      </div>
+      <div class="shop-item" data-game="match3">
+        <div class="shop-icon">🟢</div>
+        <div class="shop-info">
+          <div class="shop-name">Emerald Canvas — 16×16</div>
+          <div class="shop-desc">Холст для малювання скіна Emerald</div>
+        </div>
+        <button class="btn btn-small btn-primary" onclick="buyCanvas('emerald')">🎨 20🪙</button>
+      </div>
+    </div>
+    <div class="shop-category" data-game="match3">🖼 Скіни столу</div>
+    <div style="margin:0 16px">
+      <div class="shop-item" data-game="match3">
+        <div class="shop-icon">🖼</div>
+        <div class="shop-info">
+          <div class="shop-name">Board BG Canvas — 32×32</div>
+          <div class="shop-desc">Фон для всієї дошки Match-3</div>
+        </div>
+        <button class="btn btn-small btn-primary" onclick="buyBoardCanvas('board_bg')">🖼 25🪙</button>
+      </div>
+      <div class="shop-item" data-game="match3">
+        <div class="shop-icon">⊞</div>
+        <div class="shop-info">
+          <div class="shop-name">Board Frame Canvas — 32×32</div>
+          <div class="shop-desc">Рамка навколо дошки Match-3</div>
+        </div>
+        <button class="btn btn-small btn-primary" onclick="buyBoardCanvas('board_frame')">⊞ 25🪙</button>
+      </div>
+    </div>
+    <div class="shop-category" data-game="match3">⚡ Покращення Match-3</div>
+    <div style="margin:0 16px">
+      <div class="shop-item" onclick="buyAchievement('extra_moves')">
+        <div class="shop-icon">🔄</div>
+        <div class="shop-info">
+          <div class="shop-name">+5 ходів</div>
+          <div class="shop-desc">Додаткові ходи в кожній грі</div>
+        </div>
+        <div class="shop-price" id="ach-price-extra_moves">15 🪙</div>
+      </div>
+      <div class="shop-item" onclick="buyAchievement('combo')">
+        <div class="shop-icon">💥</div>
+        <div class="shop-info">
+          <div class="shop-name">Комбо-множник ×2</div>
+          <div class="shop-desc">Подвоює очки за комбо-збіги</div>
+        </div>
+        <div class="shop-price" id="ach-price-combo">30 🪙</div>
+      </div>
+      <div class="shop-item" onclick="buyAchievement('extra_swap')">
+        <div class="shop-icon">🔄</div>
+        <div class="shop-info">
+          <div class="shop-name">Extra Swap</div>
+          <div class="shop-desc">Можна поміняти 2 сусідні камінці без ходу</div>
+        </div>
+        <div class="shop-price" id="ach-price-extra_swap">20 🪙</div>
+      </div>
+      <div class="shop-item" onclick="buyAchievement('lucky_start')">
+        <div class="shop-icon">💎</div>
+        <div class="shop-info">
+          <div class="shop-name">Lucky Start</div>
+          <div class="shop-desc">Перший хід завжди дає комбо</div>
+        </div>
+        <div class="shop-price" id="ach-price-lucky_start">15 🪙</div>
+      </div>
+      <div class="shop-item" onclick="buyAchievement('shield')">
+        <div class="shop-icon">🛡️</div>
+        <div class="shop-info">
+          <div class="shop-name">Shield</div>
+          <div class="shop-desc">Один провальний хід не зараховується</div>
+        </div>
+        <div class="shop-price" id="ach-price-shield">25 🪙</div>
+      </div>
+      <div class="shop-item" onclick="buyAchievement('time_bonus')">
+        <div class="shop-icon">⏱</div>
+        <div class="shop-info">
+          <div class="shop-name">Time Bonus</div>
+          <div class="shop-desc">+30 секунд в Speed Mode</div>
+        </div>
+        <div class="shop-price" id="ach-price-time_bonus">20 🪙</div>
+      </div>
+      <div class="shop-item" onclick="buyAchievement('target_lock')">
+        <div class="shop-icon">🎯</div>
+        <div class="shop-info">
+          <div class="shop-name">Target Lock</div>
+          <div class="shop-desc">Показати який камінець дасть найбільше очок</div>
+        </div>
+        <div class="shop-price" id="ach-price-target_lock">30 🪙</div>
+      </div>
+    </div>
+    <div class="shop-category" data-game="all">🏪 Торгівля гравців</div>
+    <div style="margin:0 16px" id="market-listings">
+      <div class="empty-state"><span class="icon">🏪</span>Немає активних пропозицій</div>
+    </div>
+    <div class="shop-category" data-game="match3">📦 Паки налаштувань</div>
+    <div style="margin:0 16px" id="shop-pack-list">
+      <div class="empty-state"><span class="icon">📦</span>Завантаження...</div>
+    </div>
+    <div class="shop-category" data-game="match3">⚡ Ефекти та Правила</div>
+    <div style="margin:0 16px">
+      <!-- Visual Effects -->
+      <div style="font-size:12px;font-weight:600;color:var(--neon2);margin:8px 0 4px">✨ Візуальні ефекти</div>
+      <div class="shop-item" id="eff-gem_glow">
+        <div class="shop-icon">✨</div>
+        <div class="shop-info">
+          <div class="shop-name">Gem Glow</div>
+          <div class="shop-desc">Камінці світяться при збігу</div>
+          <div class="effect-timer" id="eff-timer-gem_glow">5 🪙/хв · Неактивно</div>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
+          <input class="effect-buy-input" id="eff-minutes-gem_glow" type="number" min="1" max="120" value="5">
+          <button class="btn btn-small btn-primary" onclick="buyEffect('gem_glow',5)">Купити</button>
+        </div>
+      </div>
+      <div class="shop-item" id="eff-star_burst">
+        <div class="shop-icon">💫</div>
+        <div class="shop-info">
+          <div class="shop-name">Star Burst</div>
+          <div class="shop-desc">Зірки при збігу</div>
+          <div class="effect-timer" id="eff-timer-star_burst">4 🪙/хв · Неактивно</div>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
+          <input class="effect-buy-input" id="eff-minutes-star_burst" type="number" min="1" max="120" value="5">
+          <button class="btn btn-small btn-primary" onclick="buyEffect('star_burst',4)">Купити</button>
+        </div>
+      </div>
+      <div class="shop-item" id="eff-rainbow_trail">
+        <div class="shop-icon">🌈</div>
+        <div class="shop-info">
+          <div class="shop-name">Rainbow Trail</div>
+          <div class="shop-desc">Райдужний слід за курсором</div>
+          <div class="effect-timer" id="eff-timer-rainbow_trail">6 🪙/хв · Неактивно</div>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
+          <input class="effect-buy-input" id="eff-minutes-rainbow_trail" type="number" min="1" max="120" value="5">
+          <button class="btn btn-small btn-primary" onclick="buyEffect('rainbow_trail',6)">Купити</button>
+        </div>
+      </div>
+      <div class="shop-item" id="eff-sound_ping">
+        <div class="shop-icon">🎵</div>
+        <div class="shop-info">
+          <div class="shop-name">Sound Ping</div>
+          <div class="shop-desc">Візуальна імітація звукового сигналу при збігу</div>
+          <div class="effect-timer" id="eff-timer-sound_ping">3 🪙/хв · Неактивно</div>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
+          <input class="effect-buy-input" id="eff-minutes-sound_ping" type="number" min="1" max="120" value="5">
+          <button class="btn btn-small btn-primary" onclick="buyEffect('sound_ping',3)">Купити</button>
+        </div>
+      </div>
+      <!-- Rules -->
+      <div style="font-size:12px;font-weight:600;color:var(--neon);margin:12px 0 4px">🎮 Правила гри</div>
+      <div class="shop-item" id="eff-gravity_flip">
+        <div class="shop-icon">🔄</div>
+        <div class="shop-info">
+          <div class="shop-name">Gravity Flip</div>
+          <div class="shop-desc">Камінці падають ВГОРУ</div>
+          <div class="effect-timer" id="eff-timer-gravity_flip">10 🪙/хв · Неактивно</div>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
+          <input class="effect-buy-input" id="eff-minutes-gravity_flip" type="number" min="1" max="120" value="5">
+          <button class="btn btn-small btn-primary" onclick="buyEffect('gravity_flip',10)">Купити</button>
+        </div>
+      </div>
+      <div class="shop-item" style="opacity:0.5">
+        <div class="shop-icon">⚡</div>
+        <div class="shop-info">
+          <div class="shop-name">Speed Mode</div>
+          <div class="shop-desc">Зворотній таймер · 8 🪙/хв</div>
+          <div class="effect-timer">🔜 Незабаром</div>
+        </div>
+      </div>
+      <div class="shop-item" style="opacity:0.5">
+        <div class="shop-icon">👻</div>
+        <div class="shop-info">
+          <div class="shop-name">Invisible Gems</div>
+          <div class="shop-desc">Камінці невидимі до наведення · 12 🪙/хв</div>
+          <div class="effect-timer">🔜 Незабаром</div>
+        </div>
+      </div>
+      <div class="shop-item" style="opacity:0.5">
+        <div class="shop-icon">💥</div>
+        <div class="shop-info">
+          <div class="shop-name">Bomb Mode</div>
+          <div class="shop-desc">Збіг створює вибух навколо · 15 🪙/хв</div>
+          <div class="effect-timer">🔜 Незабаром</div>
+        </div>
+      </div>
+      <div class="shop-item" id="eff-random_swap">
+        <div class="shop-icon">🔄</div>
+        <div class="shop-info">
+          <div class="shop-name">Random Swap</div>
+          <div class="shop-desc">Кожен хід 2 випадкові камінці міняються</div>
+          <div class="effect-timer" id="eff-timer-random_swap">8 🪙/хв · Неактивно</div>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
+          <input class="effect-buy-input" id="eff-minutes-random_swap" type="number" min="1" max="120" value="5">
+          <button class="btn btn-small btn-primary" onclick="buyEffect('random_swap',8)">Купити</button>
+        </div>
+      </div>
+      <div class="shop-item" id="eff-frozen_row">
+        <div class="shop-icon">🧊</div>
+        <div class="shop-info">
+          <div class="shop-name">Frozen Row</div>
+          <div class="shop-desc">Нижній ряд не можна міняти</div>
+          <div class="effect-timer" id="eff-timer-frozen_row">10 🪙/хв · Неактивно</div>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
+          <input class="effect-buy-input" id="eff-minutes-frozen_row" type="number" min="1" max="120" value="5">
+          <button class="btn btn-small btn-primary" onclick="buyEffect('frozen_row',10)">Купити</button>
+        </div>
+      </div>
+      <div class="shop-item" id="eff-chain_reaction">
+        <div class="shop-icon">🔥</div>
+        <div class="shop-info">
+          <div class="shop-name">Chain Reaction</div>
+          <div class="shop-desc">Кожен збіг вибухає сусідні</div>
+          <div class="effect-timer" id="eff-timer-chain_reaction">12 🪙/хв · Неактивно</div>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
+          <input class="effect-buy-input" id="eff-minutes-chain_reaction" type="number" min="1" max="120" value="5">
+          <button class="btn btn-small btn-primary" onclick="buyEffect('chain_reaction',12)">Купити</button>
+        </div>
+      </div>
+      <div class="shop-item" id="eff-peek">
+        <div class="shop-icon">👀</div>
+        <div class="shop-info">
+          <div class="shop-name">Peek</div>
+          <div class="shop-desc">Показати наступні 3 камінці</div>
+          <div class="effect-timer" id="eff-timer-peek">5 🪙/хв · Неактивно</div>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
+          <input class="effect-buy-input" id="eff-minutes-peek" type="number" min="1" max="120" value="5">
+          <button class="btn btn-small btn-primary" onclick="buyEffect('peek',5)">Купити</button>
+        </div>
+      </div>
+    </div>
+    <div style="flex:1;min-height:20px"></div>
+  </div>
+
+  <!-- Achievements Screen (includes inventory, canvases, packs, stats, bonuses — all in one scroll) -->
+  <div id="screen-achieve" class="screen">
+    <div class="header">
+      <button class="btn btn-secondary btn-small" onclick="showScreen('dashboard')">← Назад</button>
+      <h1 style="font-size:15px">⚙ МАЙНЕРИ</h1>
+      <button class="btn btn-small btn-gold" onclick="showScreen('shop')">🛒</button>
+    </div>
+
+    <!-- Miner Selector -->
+    <div class="card" style="padding:10px 16px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-small btn-primary" onclick="selectMiner('match3')" id="miner-btn-match3" style="flex:1;min-width:100px">🎮 Match-3</button>
+        <button class="btn btn-small btn-secondary" disabled style="flex:1;min-width:100px;opacity:0.5">🔜 Незабаром</button>
+      </div>
+    </div>
+
+    <!-- Section 1: Statistics -->
+    <div class="card">
+      <div class="card-title">📊 Статистика</div>
+      <div style="font-family:var(--mono);font-size:14px;display:grid;gap:8px">
+        <div>🎮 Зіграно матчів: <strong id="stat-matches">0</strong></div>
+        <div>🪙 Всього зароблено: <strong id="stat-earned">0</strong></div>
+        <div>🏆 Рекорд: <strong id="stat-record">0</strong></div>
+      </div>
+    </div>
+
+    <!-- Section 2: Purchased Achievements (bonuses) -->
+    <div class="card">
+      <div class="card-title">🏅 Придбані ачівки</div>
+      <div class="ach-list" id="ach-list">
+        <div class="empty-state">
+          <span class="icon">🏆</span>
+          Покупки в магазині з'являться тут
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 3: Inventory — My Skins -->
+    <div class="card">
+      <div class="card-title">🎨 Інвентар — Мої скіни</div>
+      <div id="skin-list">
+        <div class="empty-state"><span class="icon">🎨</span>Створіть скін у редакторі</div>
+      </div>
+    </div>
+
+    <!-- Section 3b: Purchased Canvases -->
+    <div class="card">
+      <div class="card-title">🖼 Мої холсти</div>
+      <div id="canvas-list">
+        <div class="empty-state"><span class="icon">🎨</span>Купіть холст у магазині</div>
+      </div>
+    </div>
+
+    <!-- Section 4: My Packs -->
+    <div class="card">
+      <div class="card-title">📦 Мої паки</div>
+      <div id="packs-list">
+        <div class="empty-state"><span class="icon">📦</span>Купіть пак у магазині</div>
+      </div>
+    </div>
+
+    <!-- Bottom buttons -->
+    <div style="margin:8px 16px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button class="btn btn-primary btn-block" onclick="showScreen('shop')">
+        🎨 Холсти
+      </button>
+      <button class="btn btn-gold btn-block" onclick="showScreen('shop')">
+        🛒 В магазин
+      </button>
+    </div>
+    <div style="flex:1;min-height:20px"></div>
+  </div>
+
+  <!-- Skin Editor Screen (separate screen, opened from canvas click) -->
+  <div id="screen-skineditor" class="screen">
+    <div class="header">
+      <button class="btn btn-secondary btn-small" id="editor-back-btn" onclick="closeEditorAndGoBack()">← Назад</button>
+      <h1 style="font-size:15px">🎨 РЕДАКТОР</h1>
+      <div class="resources">
+        <span class="resource">🎨<span class="val" id="editor-pixels-left">0</span></span>
+      </div>
+    </div>
+    <!-- Drawing view (always shown, no canvas selection — canvases are in achievements) -->
+    <div id="editor-drawing-view">
+      <div class="editor-stats" id="editor-stats">Пікселів використано: 0 / 256 · 🎨 500 px-год</div>
+      <div class="editor-wrap">
+        <div class="editor-canvas-wrap">
+          <canvas id="skin-canvas" width="16" height="16"></canvas>
+        </div>
+        <div class="editor-palette" id="editor-palette"></div>
+        <div class="lt-options" id="lt-options"></div>
+        <div class="editor-cost-stats" id="editor-cost-stats">🆕 0 нових · 💰 0 px-год · ⌛ 24h</div>
+        <div class="editor-tools">
+          <div style="display:flex;gap:8px;padding:4px 0">
+            <button class="btn btn-small btn-primary" id="tool-pen" onclick="setEditorTool('pen')">✏️</button>
+            <button class="btn btn-small btn-secondary" id="tool-eraser" onclick="setEditorTool('eraser')">🧹</button>
+          </div>
+          <button class="btn btn-secondary btn-small" onclick="clearSkinCanvas()">🗑 Очистити</button>
+        </div>
+        <div class="editor-mode-info" id="editor-mode-info" style="font-size:12px;color:var(--text2);padding:4px 0;text-align:center">🎨 Режим: Скін камінця</div>
+      </div>
+    </div>
+    <div style="margin:8px 16px">
+      <button class="btn btn-primary btn-block" onclick="saveSkinFromEditor()">💾 Зберегти скін</button>
+    </div>
+    <div style="flex:1;min-height:20px"></div>
+  </div>
+  <div id="screen-chat" class="screen">
+    <div class="header">
+      <h1 style="font-size:15px">💬 ЧАТ</h1>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-small btn-gold" onclick="showTradePanel()" style="font-size:10px">🤝</button>
+        <button class="btn btn-small btn-secondary" onclick="clearChat()" style="font-size:10px">🗑</button>
+      </div>
+    </div>
+    <div class="chat-messages" id="chat-messages">
+      <div class="empty-state">
+        <span class="icon">💬</span>
+        Ще немає повідомлень
+      </div>
+    </div>
+    <div class="chat-input-wrap">
+      <input type="text" id="chat-input" placeholder="Ваше повідомлення..." maxlength="200" onkeydown="if(event.key==='Enter')sendChat()">
+      <button class="btn btn-primary btn-small" onclick="sendChat()">➤</button>
+    </div>
+  </div>
+
+  <!-- Profile Screen -->
+  <div id="screen-profile" class="screen">
+    <div class="header">
+      <button class="btn btn-secondary btn-small" onclick="showScreen('dashboard')">← Назад</button>
+      <h1 style="font-size:15px">👤 ПРОФІЛЬ</h1>
+      <div style="width:60px"></div>
+    </div>
+    <div class="profile-header">
+      <div class="profile-avatar">👤</div>
+      <div class="profile-info">
+        <div class="profile-name" id="profile-name-display">Гравець</div>
+        <div class="profile-id" id="profile-id-display">—</div>
+        <div class="profile-email" id="profile-email-display"></div>
+        <div class="profile-date" id="profile-date-display"></div>
+      </div>
+    </div>
+    <div class="profile-stat-grid">
+      <div class="profile-stat-card">
+        <div class="pstat-icon">🎮</div>
+        <div class="pstat-label">Матчів</div>
+        <div class="pstat-value" id="prof-stat-matches">0</div>
+      </div>
+      <div class="profile-stat-card">
+        <div class="pstat-icon">🪙</div>
+        <div class="pstat-label">Зароблено</div>
+        <div class="pstat-value" id="prof-stat-earned">0</div>
+      </div>
+      <div class="profile-stat-card">
+        <div class="pstat-icon">🎨</div>
+        <div class="pstat-label">Скінів створено</div>
+        <div class="pstat-value" id="prof-stat-skins">0</div>
+      </div>
+      <div class="profile-stat-card">
+        <div class="pstat-icon">💰</div>
+        <div class="pstat-label">Продано</div>
+        <div class="pstat-value" id="prof-stat-sold">0</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">✏️ Редагувати профіль</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="github-field">
+          <label>Ім'я гравця</label>
+          <input type="text" id="profile-name-input" placeholder="Ваше ім'я" maxlength="30" value="Гравець">
+        </div>
+        <div class="github-field">
+          <label>Email (опціонально)</label>
+          <input type="email" id="profile-email-input" placeholder="email@example.com">
+        </div>
+        <button class="btn btn-primary btn-block btn-small" onclick="saveProfile()">💾 Зберегти профіль</button>
+      </div>
+    </div>
+    <div class="profile-actions">
+      <button class="btn btn-success btn-block btn-small" onclick="exportSave()">💾 Експорт прогресу</button>
+      <button class="btn btn-secondary btn-block btn-small" onclick="importSave()">📂 Імпорт прогресу</button>
+      <button class="btn btn-danger btn-block btn-small" onclick="if(confirm('Видалити ВЕСЬ прогрес безповоротно?')){localStorage.removeItem('habitat_os_save');location.reload();}" style="margin-top:8px">🗑 Скинути прогрес</button>
+    </div>
+    <div class="github-section">
+      <div class="github-title">🐙 GitHub Sync <span id="github-status" style="font-size:11px;text-transform:none;color:var(--text3)">· Не налаштовано</span></div>
+      <div class="github-field">
+        <label>GitHub Token</label>
+        <input type="password" id="github-token-input" placeholder="ghp_xxxxxxxxxxxx">
+      </div>
+      <div class="github-field">
+        <label>Repository (owner/repo)</label>
+        <input type="text" id="github-repo-input" placeholder="username/habitat-os-save">
+      </div>
+      <button class="btn btn-primary btn-block btn-small" onclick="saveGithubSettings()">💾 Зберегти налаштування</button>
+    </div>
+    <div style="flex:1;min-height:20px"></div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <nav class="nav">
+    <button class="nav-btn active" data-screen="dashboard" onclick="showScreen('dashboard')">
+      <span class="icon">⬡</span> Головна
+    </button>
+    <button class="nav-btn" data-screen="match3" onclick="showScreen('match3')">
+      <span class="icon">🎮</span> Гра
+    </button>
+    <button class="nav-btn" data-screen="shop" onclick="showScreen('shop')">
+      <span class="icon">🏪</span> Магазин
+    </button>
+    <button class="nav-btn" data-screen="achieve" onclick="showScreen('achieve')">
+      <span class="icon">⚙</span> Майнери
+    </button>
+    <button class="nav-btn" data-screen="chat" onclick="showScreen('chat')">
+      <span class="icon">💬</span> Чат
+    </button>
+    <button class="nav-btn" data-screen="profile" onclick="showScreen('profile')">
+      <span class="icon">👤</span> Профіль
+    </button>
+  </nav>
+</div>
+
+<script>
+// ===== SAVE SYSTEM =====
+const DEFAULT_SAVE = {
+  resources: {gold:50, ruby:0, sapphire:3, pixel_hours:500},
+  inventory: {skins:[], canvases:[], owned_achievements:[]},
+  equipped_skins: {ruby: null, sapphire: null, gold: null, emerald: null},
+  achievements: {extra_moves:false, combo:false, extra_swap:false, lucky_start:false, shield:false, time_bonus:false, target_lock:false},
+  market_listings: [],
+  stats: {matches:0, earned:0, record:0, skins_created:0, skins_sold:0},
+  chat: [],
+  match3_state: {daily_matches:0},
+  packs: [],
+  active_effects: {},
+  player: {id:null, name:'Гравець', email:'', created:null},
+  github: {token:'', repo:'', connected:false},
+  board_skins: {bg: null, frame: null}
+};
+
+function loadSave(){
+  try{
+    const raw = localStorage.getItem('habitat_os_save');
+    if(raw){
+      const data = JSON.parse(raw);
+      // Merge with defaults for any missing keys
+      for(const k in DEFAULT_SAVE){
+        if(!(k in data)) data[k] = JSON.parse(JSON.stringify(DEFAULT_SAVE[k]));
+      }
+      if(typeof data.resources !== 'object') data.resources = {...DEFAULT_SAVE.resources};
+      for(const k in DEFAULT_SAVE.resources){
+        if(!(k in data.resources)) data.resources[k] = DEFAULT_SAVE.resources[k];
+      }
+      if(typeof data.inventory !== 'object') data.inventory = {...DEFAULT_SAVE.inventory};
+      // Clean up old pack skins (from_pack) — паки теперь активируют эффекты
+      if(Array.isArray(data.inventory.skins)){
+        data.inventory.skins = data.inventory.skins.filter(s=>!s.from_pack);
+      }
+      if(!Array.isArray(data.inventory.skins)) data.inventory.skins = [];
+      if(!Array.isArray(data.inventory.owned_achievements)) data.inventory.owned_achievements = [];
+      if(typeof data.stats !== 'object') data.stats = {...DEFAULT_SAVE.stats};
+      for(const k in DEFAULT_SAVE.stats){
+        if(!(k in data.stats)) data.stats[k] = DEFAULT_SAVE.stats[k];
+      }
+      if(!Array.isArray(data.chat)) data.chat = [];
+      if(typeof data.match3_state !== 'object') data.match3_state = {...DEFAULT_SAVE.match3_state};
+      if(typeof data.match3_state.daily_matches !== 'number') data.match3_state.daily_matches = 0;
+      if(!Array.isArray(data.packs)) data.packs = [];
+      if(typeof data.player !== 'object' || !data.player) data.player = {id:null, name:'Гравець', email:'', created:null};
+      if(typeof data.github !== 'object' || !data.github) data.github = {token:'', repo:'', connected:false};
+      if(typeof data.stats.skins_created !== 'number') data.stats.skins_created = 0;
+      if(typeof data.stats.skins_sold !== 'number') data.stats.skins_sold = 0;
+      // Convert old achievements array to new object format
+      if(Array.isArray(data.achievements)){
+        const oldAch = data.achievements;
+        data.achievements = {extra_moves:false, combo:false, extra_swap:false, lucky_start:false, shield:false, time_bonus:false, target_lock:false};
+        for(const a of oldAch){
+          if(a in data.achievements) data.achievements[a] = true;
+        }
+      }else if(typeof data.achievements !== 'object' || !data.achievements){
+        data.achievements = {extra_moves:false, combo:false, extra_swap:false, lucky_start:false, shield:false, time_bonus:false, target_lock:false};
+      }
+      if(!Array.isArray(data.market_listings)) data.market_listings = [];
+      // Generate player ID if missing
+      if(!data.player.id){
+        data.player.id = 'HAB-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).slice(2,6).toUpperCase();
+        data.player.created = new Date().toISOString();
+      }
+      return data;
+    }
+  }catch(e){console.error('Save load error',e);}
+  return JSON.parse(JSON.stringify(DEFAULT_SAVE));
+}
+
+let SAVE = loadSave();
+let chatPollInterval = null;
+
+function saveToDisk(){
+  try{
+    localStorage.setItem('habitat_os_save', JSON.stringify(SAVE));
+  }catch(e){console.error('Save error',e);}
+}
+
+// ===== HELPER FUNCTIONS =====
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  clearTimeout(el._timeout);
+  el._timeout = setTimeout(()=>el.classList.add('hidden'), 2500);
+}
+
+function updateUI(){
+  const r = SAVE.resources;
+  const ids = ['hdr-gold','hdr-ruby','hdr-sapphire','dash-gold','dash-ruby','dash-sapphire','shop-gold'];
+  const vals = [r.gold, r.ruby, r.sapphire, r.gold, r.ruby, r.sapphire, r.gold];
+  for(let i=0;i<ids.length;i++){
+    const el = document.getElementById(ids[i]);
+    if(el) el.textContent = vals[i];
+  }
+  if(document.getElementById('stat-matches')){
+    document.getElementById('stat-matches').textContent = SAVE.stats.matches;
+    document.getElementById('stat-earned').textContent = SAVE.stats.earned;
+    document.getElementById('stat-record').textContent = SAVE.stats.record;
+  }
+  // Equipped skins display (per gem type)
+  const eqEl = document.getElementById('dash-equipped-skin');
+  if(eqEl){
+    const eq = SAVE.equipped_skins || {};
+    const gemLabels = {ruby:'🟣 Ruby', sapphire:'🔵 Sapphire', gold:'🟡 Gold', emerald:'🟢 Emerald'};
+    let parts = [];
+    for(const gt of ['ruby','sapphire','gold','emerald']){
+      if(eq[gt]){
+        const skin = SAVE.inventory.skins.find(s=>s.id===eq[gt]);
+        if(skin) parts.push(`${gemLabels[gt]}: ⭐${skin.name}`);
+        else parts.push(`${gemLabels[gt]}: ⭐(невідомий)`);
+      } else {
+        parts.push(`${gemLabels[gt]}: ⬜ ЧБ`);
+      }
+    }
+    eqEl.innerHTML = `🎨 <strong>Екіпіровані скіни:</strong><br><span style="font-size:12px">${parts.join(' · ')}</span>`;
+  }
+  updateSkinList();
+  updateAchieveList();
+  updateAchieveCanvasList();
+  updatePacksList();
+  updateEffectsUI();
+  // Refresh marketplace listings if shop is visible
+  if(document.getElementById('screen-shop').classList.contains('active')){
+    renderMarketListings();
+  }
+}
+
+// ===== LAUNCHERS =====
+function startRandomGame(){
+  // For now, only Match-3 is available
+  showScreen('match3');
+  startMatch3();
+}
+
+let selectedMiner = 'match3';
+function selectMiner(id){
+  selectedMiner = id;
+  // Highlight active
+  document.querySelectorAll('[id^="miner-btn-"]').forEach(b=>b.className='btn btn-small btn-secondary');
+  const btn = document.getElementById('miner-btn-'+id);
+  if(btn) btn.className = 'btn btn-small btn-primary';
+  // Render content for selected miner
+  updateAchieveList();
+  updateAchieveCanvasList();
+  updateSkinList();
+  updatePacksList();
+  updateEffectsUI();
+}
+
+// ===== SCREEN NAV =====
+async function showScreen(id){
+  // Chat polling lifecycle
+  if(id==='chat') {
+    await loadChatFromGitHub();
+    renderChat();
+    startChatPolling();
+  }
+  else stopChatPolling();
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  const screen = document.getElementById('screen-'+id);
+  if(screen) screen.classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.screen===id);
+  });
+  if(id==='match3' && !window._m3Started) startMatch3();
+  if(id==='skineditor') {
+    // Initialize editor canvas on first show
+    initEditorCanvas();
+  }
+  if(id==='shop') { renderShopPacks(); renderMarketListings(); }
+  if(id==='profile') updateProfile();
+  if(id==='achieve') {
+    selectMiner(selectedMiner);
+  }
+  updateUI();
+}
+
+function setEditorTool(tool){
+  editorTool = tool;
+  document.querySelectorAll('[id^="tool-"]').forEach(b=>b.className='btn btn-small btn-secondary');
+  const btn = document.getElementById('tool-'+tool);
+  if(btn) btn.className = 'btn btn-small btn-primary';
+  toast(tool==='pen' ? '✏️ Карандаш' : '🧹 Резинка');
+}
+
+// ===== MATCH-3 GAME =====
+const GEM_TYPES = 4;
+const BOARD_SIZE = 8;
+let board = [];
+let selectedCell = null;
+let score = 0;
+let movesLeft = 30;
+let isAnimating = false;
+let gameOver = false;
+
+function getMaxMoves(){
+  return 30 + (SAVE.inventory.owned_achievements.includes('extra_moves')?5:0);
+}
+
+function getComboMultiplier(){
+  return SAVE.inventory.owned_achievements.includes('combo')?2:1;
+}
+
+function isGemBw(gemType){
+  // gemType: 0=ruby, 1=sapphire, 2=gold, 3=emerald
+  const gemNames = ['ruby','sapphire','gold','emerald'];
+  const eq = SAVE.equipped_skins || {};
+  return !eq[gemNames[gemType]];
+}
+
+function startMatch3(){
+  window._m3Started = true;
+  gameOver = false;
+  isAnimating = false;
+  selectedCell = null;
+  movesLeft = getMaxMoves();
+  score = 0;
+  board = [];
+  for(let r=0;r<BOARD_SIZE;r++){
+    board[r]=[];
+    for(let c=0;c<BOARD_SIZE;c++){
+      board[r][c]=Math.floor(Math.random()*GEM_TYPES);
+    }
+  }
+  // Remove initial matches
+  while(true){
+    const matches = findAllMatches();
+    if(!matches.length) break;
+    for(const [r,c] of matches) board[r][c]=Math.floor(Math.random()*GEM_TYPES);
+  }
+  document.getElementById('m3-result').classList.add('hidden');
+  renderBoard();
+  updateM3UI();
+}
+
+function renderBoard(){
+  const container = document.getElementById('m3-board');
+  container.innerHTML='';
+  const style = calcGridSize();
+  container.style.gridTemplateColumns=`repeat(${BOARD_SIZE},${style}px)`;
+  
+  // Apply board skin: background
+  const bs = SAVE.board_skins || {};
+  if(bs.bg && bs.bg.pixels && bs.bg.pixels.some(p=>p!==null)){
+    const bgUrl = renderPixelsToDataUrl(bs.bg.pixels, bs.bg.size || 32);
+    container.style.backgroundImage = 'url('+bgUrl+')';
+    container.style.backgroundSize = '100% 100%';
+    container.style.backgroundPosition = 'center';
+    container.style.backgroundRepeat = 'no-repeat';
+  }else{
+    container.style.backgroundImage = '';
+    container.style.backgroundSize = '';
+    container.style.backgroundRepeat = '';
+  }
+  
+  // Apply board skin: frame
+  if(bs.frame && bs.frame.pixels && bs.frame.pixels.some(p=>p!==null)){
+    const frameUrl = renderPixelsToDataUrl(bs.frame.pixels, bs.frame.size || 32);
+    container.style.borderImage = 'url('+frameUrl+') 4 fill stretch';
+    container.style.borderWidth = '6px';
+    container.style.borderStyle = 'solid';
+  }else{
+    container.style.borderImage = '';
+    container.style.borderWidth = '2px';
+    container.style.borderStyle = 'solid';
+    container.style.borderColor = 'var(--surface)';
+  }
+  
+  const gemGlowActive = isEffectActive('gem_glow');
+  for(let r=0;r<BOARD_SIZE;r++){
+    for(let c=0;c<BOARD_SIZE;c++){
+      const cell = document.createElement('div');
+      cell.className='m3-cell';
+      const gt = board[r][c];
+      if(isGemBw(gt)) cell.classList.add('bw');
+      cell.dataset.r=r;
+      cell.dataset.c=c;
+      const gem = document.createElement('div');
+      const gemNames = ['ruby','sapphire','gold','emerald'];
+      const eq = SAVE.equipped_skins || {};
+      const eqSkinId = eq[gemNames[gt]];
+      let skinApplied = false;
+      if(eqSkinId){
+        const eqSkin = SAVE.inventory.skins.find(s=>s.id===eqSkinId);
+        if(eqSkin && eqSkin.pixels && eqSkin.pixels.some(p=>p!==null)){
+          // Single layer (gem only)
+          const dataUrl = renderPixelsToDataUrl(eqSkin.pixels, eqSkin.size || 16);
+          gem.className = 'gem';
+          gem.style.backgroundImage = 'url('+dataUrl+')';
+          gem.style.backgroundSize = '100% 100%';
+          gem.style.backgroundPosition = 'center';
+          gem.style.backgroundRepeat = 'no-repeat';
+          gem.style.borderRadius = '0';
+          gem.style.clipPath = 'none';
+          gem.style.border = 'none';
+          gem.style.boxShadow = '0 0 8px rgba(255,255,255,0.15)';
+          skinApplied = true;
+        }else if(eqSkin && eqSkin.color_override){
+          gem.className = 'gem';
+          gem.style.background = eqSkin.color_override;
+          gem.style.borderRadius = '0';
+          gem.style.clipPath = 'none';
+          gem.style.border = 'none';
+          gem.style.boxShadow = '0 0 10px '+eqSkin.color_override;
+          skinApplied = true;
+        }
+      }
+      if(!skinApplied){
+        gem.className = 'gem g'+gt;
+        if(gemGlowActive) gem.classList.add('glow');
+      }else{
+        if(gemGlowActive) gem.classList.add('glow');
+      }
+      cell.appendChild(gem);
+      cell.addEventListener('click',()=>onCellClick(r,c));
+      cell.addEventListener('touchstart',(e)=>{
+        e.preventDefault();
+        onCellClick(r,c);
+      },{passive:false});
+      if(selectedCell && selectedCell[0]===r && selectedCell[1]===c) cell.classList.add('selected');
+      container.appendChild(cell);
+    }
+  }
+}
+
+function calcGridSize(){
+  const wrap = document.getElementById('m3-board-wrap');
+  const w = wrap.clientWidth-24;
+  const h = wrap.clientHeight-24;
+  const maxSize = Math.min(Math.floor(w/BOARD_SIZE), Math.floor(h/BOARD_SIZE), 52);
+  return Math.max(28, Math.min(maxSize, 52));
+}
+
+function updateM3UI(){
+  document.getElementById('m3-score').textContent=score;
+  document.getElementById('m3-moves').textContent=movesLeft;
+  document.getElementById('m3-highscore').textContent=SAVE.stats.record;
+}
+
+function onCellClick(r,c){
+  if(gameOver || isAnimating) return;
+  if(!selectedCell){
+    selectedCell=[r,c];
+    renderBoard();
+    return;
+  }
+  const [sr,sc]=selectedCell;
+  if(sr===r && sc===c){
+    selectedCell=null;
+    renderBoard();
+    return;
+  }
+  // Check adjacency
+  const dr = Math.abs(sr-r);
+  const dc = Math.abs(sc-c);
+  if((dr===1 && dc===0) || (dr===0 && dc===1)){
+    // Swap
+    selectedCell=null;
+    trySwap(sr,sc,r,c);
+  }else{
+    selectedCell=[r,c];
+    renderBoard();
+  }
+}
+
+function trySwap(r1,c1,r2,c2){
+  isAnimating=true;
+  // Swap
+  [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
+  renderBoard();
+
+  const matches = findAllMatches();
+  if(matches.length){
+    movesLeft--;
+    processMatches(matches, 1);
+  }else{
+    // Swap back
+    [board[r1][c1], board[r2][c2]] = [board[r2][c2], board[r1][c1]];
+    renderBoard();
+    toast('❌ Немає збігу!');
+    isAnimating=false;
+  }
+}
+
+function findAllMatches(){
+  const matched = new Set();
+  // Horizontal
+  for(let r=0;r<BOARD_SIZE;r++){
+    for(let c=0;c<=BOARD_SIZE-3;c++){
+      if(board[r][c]===board[r][c+1] && board[r][c]===board[r][c+2]){
+        matched.add(r+','+c);
+        matched.add(r+','+(c+1));
+        matched.add(r+','+(c+2));
+      }
+    }
+  }
+  // Vertical
+  for(let c=0;c<BOARD_SIZE;c++){
+    for(let r=0;r<=BOARD_SIZE-3;r++){
+      if(board[r][c]===board[r+1][c] && board[r][c]===board[r+2][c]){
+        matched.add(r+','+c);
+        matched.add((r+1)+','+c);
+        matched.add((r+2)+','+c);
+      }
+    }
+  }
+  return [...matched].map(s=>s.split(',').map(Number));
+}
+
+function processMatches(matches, comboLevel){
+  // Calculate score
+  const multi = getComboMultiplier();
+  let points = matches.length * 10 * comboLevel * multi;
+  score += points;
+
+  // Remove matched gems
+  for(const [r,c] of matches){
+    board[r][c] = -1; // Mark as removed
+  }
+
+  // Visual feedback
+  renderBoard();
+  // Mark removed
+  document.querySelectorAll('.m3-cell').forEach(cell=>{
+    const r = parseInt(cell.dataset.r);
+    const c = parseInt(cell.dataset.c);
+    if(board[r][c]===-1) cell.classList.add('removed');
+  });
+
+  // Gravity
+  setTimeout(()=>{
+    applyGravity();
+    renderBoard();
+    // Check for chain matches
+    setTimeout(()=>{
+      const newMatches = findAllMatches();
+      if(newMatches.length){
+        processMatches(newMatches, comboLevel+1);
+      }else{
+        isAnimating=false;
+        updateM3UI();
+        checkGameOver();
+      }
+    },150);
+  },150);
+}
+
+// ===== EFFECT INTEGRATION INTO MATCH-3 =====
+
+function applyGravity(){
+  const gravityFlip = isEffectActive('gravity_flip');
+  for(let c=0;c<BOARD_SIZE;c++){
+    const col = [];
+    for(let r=0;r<BOARD_SIZE;r++){
+      if(board[r][c]!==-1) col.push(board[r][c]);
+    }
+    while(col.length<BOARD_SIZE){
+      if(gravityFlip){
+        // Gravity Flip: fill from bottom, gems "float" up
+        col.push(Math.floor(Math.random()*GEM_TYPES));
+      } else {
+        col.unshift(Math.floor(Math.random()*GEM_TYPES));
+      }
+    }
+    for(let r=0;r<BOARD_SIZE;r++){
+      board[r][c] = col[r];
+    }
+  }
+  // Apply gravity-flip CSS class
+  const boardEl = document.getElementById('m3-board');
+  if(boardEl){
+    if(gravityFlip) boardEl.classList.add('gravity-flip');
+    else boardEl.classList.remove('gravity-flip');
+  }
+}
+
+function checkGameOver(){
+  if(movesLeft<=0){
+    gameOver=true;
+    endMatch3();
+  }
+  updateM3UI();
+}
+
+function endMatch3(){
+  // Rewards
+  const goldEarned = Math.floor(score / 10);
+  let rubyEarned = 0;
+  if(Math.random() < 0.01) rubyEarned = 1;
+
+  SAVE.resources.gold += goldEarned;
+  SAVE.resources.ruby += rubyEarned;
+  SAVE.stats.matches++;
+  SAVE.stats.earned += goldEarned;
+  if(score > SAVE.stats.record) SAVE.stats.record = score;
+  saveToDisk();
+  updateUI();
+
+  // Show result
+  document.getElementById('m3-final-score').textContent = score;
+  document.getElementById('m3-rewards').innerHTML = `🪙 +${goldEarned} Gold &nbsp; 💎 +${rubyEarned>0?'1 Ruby':'0 Ruby'}`;
+  document.getElementById('m3-result').classList.remove('hidden');
+}
+
+// ===== SYSTEM PACKS (набори ефектів/правил) =====
+const SYSTEM_PACKS = {
+  extreme: {
+    id: 'extreme',
+    name: 'Екстрим',
+    icon: '⚡',
+    price: 30,
+    desc: 'Gravity Flip + Speed Mode + Bomb Mode на 30 хв',
+    effects: ['gravity_flip', 'speed_mode', 'bomb_mode'],
+    duration: 30
+  },
+  visual: {
+    id: 'visual',
+    name: 'Візуальний',
+    icon: '✨',
+    price: 20,
+    desc: 'Gem Glow + Star Burst + Rainbow Trail на 30 хв',
+    effects: ['gem_glow', 'star_burst', 'rainbow_trail'],
+    duration: 30
+  },
+  chaos: {
+    id: 'chaos',
+    name: 'Хаос',
+    icon: '🌀',
+    price: 40,
+    desc: 'Invisible Gems + Random Swap + Frozen Row на 20 хв',
+    effects: ['invisible_gems', 'random_swap', 'frozen_row'],
+    duration: 20
+  }
+};
+
+function buyPack(packId){
+  const pack = SYSTEM_PACKS[packId];
+  if(!pack){ toast('❌ Пак не знайдено'); return; }
+  if(SAVE.packs.includes(packId)){
+    toast('ℹ️ Пак вже придбано!');
+    return;
+  }
+  if(SAVE.resources.gold < pack.price){
+    toast('❌ Недостатньо Gold! Потрібно '+pack.price+' 🪙');
+    return;
+  }
+  if(!confirm('Придбати пак "'+pack.name+'" за '+pack.price+' 🪙?\nВмикає: '+pack.effects.map(e=>EFFECTS_DEF[e]?EFFECTS_DEF[e].name:e).join(', ')+'\nТривалість: '+pack.duration+' хв')) return;
+  SAVE.resources.gold -= pack.price;
+  // Activate all effects from the pack
+  for(const effId of pack.effects){
+    const def = EFFECTS_DEF[effId];
+    if(!def) continue;
+    const expiresAt = Date.now() + pack.duration * 60 * 1000;
+    if(SAVE.active_effects[effId] && SAVE.active_effects[effId].active){
+      const existing = SAVE.active_effects[effId];
+      if(Date.now() < existing.expires_at){
+        existing.expires_at += pack.duration * 60 * 1000;
+      } else {
+        existing.expires_at = expiresAt;
+      }
+      existing.active = true;
+    } else {
+      SAVE.active_effects[effId] = {active: true, expires_at: expiresAt};
+    }
+  }
+  SAVE.packs.push(packId);
+  saveToDisk();
+  updateUI();
+  updatePacksList();
+  updateEffectsUI();
+  toast('✅ Пак "'+pack.name+'" придбано! Ефекти активовано на '+pack.duration+' хв.');
+}
+
+function applyPack(packId){
+  const pack = SYSTEM_PACKS[packId];
+  if(!pack || !SAVE.packs.includes(packId)){
+    toast('❌ Спочатку придбайте пак');
+    return;
+  }
+  // Reactivate all effects from the pack
+  for(const effId of pack.effects){
+    const def = EFFECTS_DEF[effId];
+    if(!def) continue;
+    const expiresAt = Date.now() + pack.duration * 60 * 1000;
+    if(SAVE.active_effects[effId] && SAVE.active_effects[effId].active){
+      const existing = SAVE.active_effects[effId];
+      if(Date.now() < existing.expires_at){
+        existing.expires_at += pack.duration * 60 * 1000;
+      } else {
+        existing.expires_at = expiresAt;
+      }
+      existing.active = true;
+    } else {
+      SAVE.active_effects[effId] = {active: true, expires_at: expiresAt};
+    }
+  }
+  saveToDisk();
+  updateUI();
+  updateEffectsUI();
+  toast('✅ Пак "'+pack.name+'" активовано! Ефекти подовжено на '+pack.duration+' хв.');
+}
+
+function renderShopPacks(){
+  const container = document.getElementById('shop-pack-list');
+  if(!container) return;
+  let html = '';
+  for(const id in SYSTEM_PACKS){
+    const p = SYSTEM_PACKS[id];
+    const owned = SAVE.packs.includes(id);
+    const effNames = p.effects.map(e=>EFFECTS_DEF[e]?EFFECTS_DEF[e].name:e).join(', ');
+    html += `<div class="shop-item" style="cursor:default">
+      <div class="shop-icon">${p.icon}</div>
+      <div class="shop-info">
+        <div class="shop-name">${p.name} ${owned?'✅':''}</div>
+        <div class="shop-desc">${effNames} · ${p.duration} хв</div>
+      </div>
+      <div class="shop-price">${p.price} 🪙</div>
+      ${owned
+        ? `<button class="btn btn-small btn-success" onclick="applyPack('${id}')">🔄 Подовжити</button>`
+        : `<button class="btn btn-small btn-primary" onclick="buyPack('${id}')">🛒 Купити</button>`
+      }
+    </div>`;
+  }
+  container.innerHTML = html;
+}
+
+function updatePacksList(){
+  const container = document.getElementById('packs-list');
+  if(!container) return;
+  const ownedPacks = SAVE.packs || [];
+  if(!ownedPacks.length){
+    container.innerHTML = '<div class="empty-state"><span class="icon">📦</span>Придбайте пак у магазині</div>';
+    return;
+  }
+  let html = '';
+  for(const id of ownedPacks){
+    const p = SYSTEM_PACKS[id];
+    if(!p) continue;
+    const effNames = p.effects.map(e=>EFFECTS_DEF[e]?EFFECTS_DEF[e].name:e).join(', ');
+    html += `<div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px;margin-bottom:6px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:24px">${p.icon}</span>
+        <div style="flex:1">
+          <div style="font-weight:600">${p.name}</div>
+          <div style="font-size:11px;color:var(--text2)">${effNames} · ${p.duration} хв</div>
+        </div>
+        <button class="btn btn-small btn-success" onclick="applyPack('${id}')">🔄 Подовжити</button>
+      </div>
+    </div>`;
+  }
+  container.innerHTML = html;
+}
+
+function applyShopFilter(){
+  const filter = document.getElementById('shop-game-filter');
+  if(!filter) return;
+  const value = filter.value;
+  const items = document.querySelectorAll('#screen-shop .shop-item, #screen-shop .shop-category');
+  for(const item of items){
+    if(value === 'all'){
+      item.style.display = '';
+    }else{
+      const game = item.dataset.game;
+      if(game && game !== value){
+        item.style.display = 'none';
+      }else{
+        item.style.display = '';
+      }
+    }
+  }
+}
+
+// ===== CANVAS TYPES FOR SKIN EDITOR =====
+const CANVAS_TYPES = {
+  ruby: {size:16, price:20, name:'Ruby Canvas', icon:'🟣', gem_name:'Ruby'},
+  sapphire: {size:16, price:20, name:'Sapphire Canvas', icon:'🔵', gem_name:'Sapphire'},
+  gold: {size:16, price:20, name:'Gold Canvas', icon:'🟡', gem_name:'Gold'},
+  emerald: {size:16, price:20, name:'Emerald Canvas', icon:'🟢', gem_name:'Emerald'},
+};
+
+// ===== SHOP FUNCTIONS =====
+
+function buyAchievement(id){
+  const prices = {extra_moves:15, combo:30, extra_swap:20, lucky_start:15, shield:25, time_bonus:20, target_lock:30};
+  const names = {extra_moves:'+5 ходів', combo:'Комбо-множник ×2', extra_swap:'Extra Swap', lucky_start:'Lucky Start', shield:'Shield', time_bonus:'Time Bonus', target_lock:'Target Lock'};
+  const icons = {extra_moves:'👟', combo:'💥', extra_swap:'🔀', lucky_start:'🍀', shield:'🛡️', time_bonus:'⏱', target_lock:'🎯'};
+  const price = prices[id];
+  if(!price){ toast('❌ Невідома ачівка'); return; }
+  if(SAVE.inventory.owned_achievements.includes(id) || SAVE.achievements[id]){
+    toast('ℹ️ Вже придбано!');
+    return;
+  }
+  if(SAVE.resources.gold < price){
+    toast('❌ Недостатньо Gold!');
+    return;
+  }
+  SAVE.resources.gold -= price;
+  SAVE.inventory.owned_achievements.push(id);
+  SAVE.achievements[id] = true;
+  saveToDisk();
+  updateUI();
+  updateAchieveList();
+  toast('✅ '+names[id]+' придбано! 🏆 Зайдіть в Ачівки щоб побачити');
+}
+
+function updateAchieveList(){
+  const container = document.getElementById('ach-list');
+  if(!container) return;
+  const owned = SAVE.inventory.owned_achievements || [];
+  const names = {extra_moves:'+5 ходів', combo:'Комбо-множник ×2', extra_swap:'Extra Swap', lucky_start:'Lucky Start', shield:'Shield', time_bonus:'Time Bonus', target_lock:'Target Lock'};
+  const icons = {extra_moves:'👟', combo:'💥', extra_swap:'🔀', lucky_start:'🍀', shield:'🛡️', time_bonus:'⏱', target_lock:'🎯'};
+  const descs = {extra_moves:'+5 ходів у Match-3', combo:'×2 бали за комбо', extra_swap:'Можна міняти не тільки сусідні', lucky_start:'Старт з 2 випадковими ходами', shield:'Один невдалий хід без втрати', time_bonus:'+30 сек в Speed Mode', target_lock:'Показати найкращий камінець'};
+  if(!owned.length){
+    container.innerHTML='<div class="empty-state"><span class="icon">🏆</span>Купіть ачівки в магазині</div>';
+    return;
+  }
+  let html='';
+  for(const id of owned){
+    html+=`<div class="ach-item owned">
+      <span class="ach-icon">${icons[id]||'🏆'}</span>
+      <div class="ach-info">
+        <div class="ach-name">${names[id]||id}</div>
+        <div class="ach-desc">${descs[id]||''}</div>
+      </div>
+      <span class="ach-buy">✅</span>
+    </div>`;
+  }
+  container.innerHTML=html;
+}
+
+// ===== CANVAS SHOP =====
+function buyCanvas(type){
+  const ct = CANVAS_TYPES[type];
+  if(!ct){ toast('❌ Невідомий тип холста'); return; }
+  const price = ct.price;
+  if(SAVE.resources.gold < price){
+    toast('❌ Недостатньо Gold! Потрібно '+price+' 🪙');
+    return;
+  }
+  if(!Array.isArray(SAVE.inventory.canvases)) SAVE.inventory.canvases = [];
+  // Check if already have an unused canvas of this type
+  const existing = SAVE.inventory.canvases.find(c=>c.type===type);
+  if(existing){
+    toast('ℹ️ У вас вже є невикористаний '+ct.name);
+    return;
+  }
+  SAVE.resources.gold -= price;
+  const newCanvas = {
+    id: 'cv_'+Date.now(),
+    type: type,
+    layer: 'gem',
+    purchased: Date.now()
+  };
+  SAVE.inventory.canvases.push(newCanvas);
+  const canvasIdx = SAVE.inventory.canvases.length - 1;
+  saveToDisk();
+  updateUI();
+  if(confirm('✅ '+ct.name+' придбано! Відкрити редактор?')){
+    openSkinEditor(type, canvasIdx);
+  }
+}
+
+// ===== BOARD CANVAS SHOP =====
+function buyBoardCanvas(skinType){
+  if(!SAVE.board_skins) SAVE.board_skins = {bg: null, frame: null};
+  const defs = {
+    board_bg: {name:'Board BG Canvas', icon:'🖼', price:25, size:32},
+    board_frame: {name:'Board Frame Canvas', icon:'⊞', price:25, size:32}
+  };
+  const def = defs[skinType];
+  if(!def){ toast('❌ Невідомий тип'); return; }
+  if(SAVE.resources.gold < def.price){
+    toast('❌ Недостатньо Gold! Потрібно '+def.price+' 🪙');
+    return;
+  }
+  SAVE.resources.gold -= def.price;
+  saveToDisk();
+  updateUI();
+  if(confirm('✅ '+def.name+' придбано! Відкрити редактор?')){
+    openBoardSkinEditor(skinType);
+  }
+}
+
+function layerLabel(layer){
+  return layer==='gem' ? '🎨 Камінець' : layer==='bg' ? '🖼 Фон' : layer==='frame' ? '⊞ Рамка' : layer;
+}
+
+// ===== EFFECTS & RULES SYSTEM =====
+const EFFECTS_DEF = {
+  gem_glow: {name:'Gem Glow', icon:'✨', type:'visual', price_per_min:5, desc:'Камінці світяться при збігу'},
+  star_burst: {name:'Star Burst', icon:'💫', type:'visual', price_per_min:4, desc:'Зірки при збігу'},
+  rainbow_trail: {name:'Rainbow Trail', icon:'🌈', type:'visual', price_per_min:6, desc:'Райдужний слід за курсором'},
+  sound_ping: {name:'Sound Ping', icon:'🎵', type:'visual', price_per_min:3, desc:'Візуальна імітація звукового сигналу при збігу'},
+  particle_trail: {name:'Particle Trail', icon:'💫', type:'visual', price_per_min:3, desc:'Частинки після збігу'},
+  screen_pulse: {name:'Screen Pulse', icon:'🌊', type:'visual', price_per_min:2, desc:'Екран пульсує на комбо'},
+  gravity_flip: {name:'Gravity Flip', icon:'🔄', type:'rule', price_per_min:10, desc:'Камінці падають ВГОРУ'},
+  speed_mode: {name:'Speed Mode', icon:'⚡', type:'rule', price_per_min:8, desc:'Зворотній таймер'},
+  invisible_gems: {name:'Invisible Gems', icon:'👻', type:'rule', price_per_min:12, desc:'Камінці невидимі до наведення'},
+  bomb_mode: {name:'Bomb Mode', icon:'💥', type:'rule', price_per_min:15, desc:'Збіг створює вибух навколо'},
+  target_mode: {name:'Target Mode', icon:'🎯', type:'rule', price_per_min:10, desc:'Треба зібрати конкретні камінці'},
+  random_swap: {name:'Random Swap', icon:'🔄', type:'rule', price_per_min:8, desc:'Кожен хід 2 випадкові камінці міняються'},
+  frozen_row: {name:'Frozen Row', icon:'🧊', type:'rule', price_per_min:10, desc:'Нижній ряд не можна міняти'},
+  chain_reaction: {name:'Chain Reaction', icon:'🔥', type:'rule', price_per_min:12, desc:'Кожен збіг вибухає сусідні'},
+  peek: {name:'Peek', icon:'👀', type:'rule', price_per_min:5, desc:'Показати наступні 3 камінці'}
+};
+
+function isEffectActive(effectId){
+  const eff = SAVE.active_effects[effectId];
+  if(!eff || !eff.active) return false;
+  if(Date.now() >= eff.expires_at){
+    eff.active = false;
+    delete SAVE.active_effects[effectId];
+    saveToDisk();
+    return false;
+  }
+  return true;
+}
+
+function buyEffect(effectId, pricePerMin){
+  const input = document.getElementById('eff-minutes-'+effectId);
+  const minutes = parseInt(input ? input.value : 5);
+  if(!minutes || minutes < 1){ toast('❌ Введіть кількість хвилин'); return; }
+  const totalPrice = pricePerMin * minutes;
+  if(SAVE.resources.gold < totalPrice){
+    toast('❌ Недостатньо Gold! Потрібно '+totalPrice+' 🪙');
+    return;
+  }
+  SAVE.resources.gold -= totalPrice;
+  const expiresAt = Date.now() + minutes * 60 * 1000;
+  if(SAVE.active_effects[effectId] && SAVE.active_effects[effectId].active){
+    // Extend existing effect
+    const existing = SAVE.active_effects[effectId];
+    if(Date.now() < existing.expires_at){
+      existing.expires_at += minutes * 60 * 1000;
+    } else {
+      existing.expires_at = expiresAt;
+    }
+    existing.active = true;
+  } else {
+    SAVE.active_effects[effectId] = {active: true, expires_at: expiresAt};
+  }
+  saveToDisk();
+  updateUI();
+  updateEffectsUI();
+  const def = EFFECTS_DEF[effectId];
+  toast('✅ '+(def?def.name:effectId)+' активовано на '+minutes+' хв!');
+}
+
+function updateEffectsUI(){
+  for(const id in EFFECTS_DEF){
+    const timerEl = document.getElementById('eff-timer-'+id);
+    if(!timerEl) continue;
+    const def = EFFECTS_DEF[id];
+    const active = isEffectActive(id);
+    if(active){
+      const remaining = Math.max(0, Math.floor((SAVE.active_effects[id].expires_at - Date.now()) / 1000));
+      const mins = Math.floor(remaining / 60);
+      const secs = remaining % 60;
+      timerEl.innerHTML = def.price_per_min+' 🪙/хв · <span style="color:var(--green)">✅ Активно: '+mins+':'+(secs<10?'0':'')+secs+'</span>';
+      timerEl.className = 'effect-timer active';
+    } else {
+      timerEl.innerHTML = def.price_per_min+' 🪙/хв · Неактивно';
+      timerEl.className = 'effect-timer';
+    }
+  }
+}
+
+
+// Refresh game board when skins change
+function refreshGameSkins(){
+  const gameScreen = document.getElementById('screen-match3');
+  if(gameScreen && gameScreen.classList.contains('active')){
+    renderBoard();
+  }
+}
+
+// ===== SKIN EDITOR =====
+const PALETTE_COLORS = [
+  '#ff4466','#ff8844','#ffcc44','#44dd88','#44aaff','#8844ff',
+  '#ffffff','#cccccc','#888888','#444444','#1a1d33','#0b0d19'
+];
+let editorColor = '#ff4466';
+let editorPixels = [];
+let editorSize = 16;
+let editorGemType = null;
+let editorDirty = false;
+let editorInitialized = false;
+let editorActiveLayer = 'gem';
+let editorMode = 'gem'; // 'gem' | 'board_bg' | 'board_frame'
+let editorBoardSkinType = null; // 'board_bg' or 'board_frame' when editing board skins
+let editorEditingSkinId = null; // null = new skin, string = editing existing skin
+let editorCanvasIdx = -1; // index in SAVE.inventory.canvases for new skins
+let editorTool = 'pen'; // 'pen' or 'eraser'
+let editorPixelTimestamps = []; // timestamps for each pixel in editorPixels
+let editorPixelLifetimes = [];  // lifetime ms for each pixel
+let editorPixelLifetime = 24 * 60 * 60 * 1000; // 24 hours (default)
+let editorPixelCost = 3; // current cost per pixel
+let editorNewPixelsCount = 0; // pixels painted in this session
+let editorSessionCost = 0; // total pixel-hours cost accrued this session
+
+function openSkinEditor(gemType, canvasIndex){
+  editorMode = 'gem';
+  editorBoardSkinType = null;
+  if(typeof canvasIndex === 'number' && canvasIndex >= 0){
+    editorCanvasIdx = canvasIndex;
+  } else {
+    editorCanvasIdx = -1;
+  }
+  const validTypes = ['ruby','sapphire','gold','emerald'];
+  if(!gemType || !validTypes.includes(gemType)){
+    const choice = prompt('Виберіть тип камінця для скіна:\n1 — Ruby\n2 — Sapphire\n3 — Gold\n4 — Emerald');
+    if(!choice) return;
+    const idx = parseInt(choice) - 1;
+    gemType = validTypes[idx] || 'ruby';
+  }
+  editorEditingSkinId = null;
+  editorGemType = gemType;
+  editorSize = 16;
+  editorPixels = new Array(256).fill(null);
+  editorPixelTimestamps = new Array(256).fill(null);
+  editorPixelLifetimes = new Array(256).fill(null);
+  editorPixelLifetime = PIXEL_LIFETIME_MS;
+  editorPixelCost = 3;
+  editorNewPixelsCount = 0;
+  editorSessionCost = 0;
+  editorActiveLayer = 'gem';
+  editorDirty = false;
+  editorTool = 'pen';
+  editorInitialized = false;
+  updateEditorModeInfo();
+  setTimeout(() => buildLifetimeOptions && buildLifetimeOptions(), 0);
+  showScreen('skineditor');
+}
+
+// ===== OPEN BOARD SKIN EDITOR =====
+function openBoardSkinEditor(skinType){
+  editorMode = skinType; // 'board_bg' or 'board_frame'
+  editorBoardSkinType = skinType;
+  editorEditingSkinId = null;
+  editorCanvasIdx = -1;
+  editorGemType = null;
+  editorSize = 32;
+  editorPixels = new Array(1024).fill(null);
+  editorPixelTimestamps = new Array(1024).fill(null);
+  editorPixelLifetimes = new Array(1024).fill(null);
+  editorPixelLifetime = PIXEL_LIFETIME_MS;
+  editorPixelCost = 3;
+  editorNewPixelsCount = 0;
+  editorSessionCost = 0;
+  editorActiveLayer = 'gem';
+  editorDirty = false;
+  editorTool = 'pen';
+  editorInitialized = false;
+  updateEditorModeInfo();
+  setTimeout(() => buildLifetimeOptions && buildLifetimeOptions(), 0);
+  showScreen('skineditor');
+  toast('🎨 Малюйте '+ (skinType==='board_bg' ? 'фон дошки' : 'рамку дошки') +' (32×32)');
+}
+
+// ===== OPEN EXISTING SKIN FOR EDITING =====
+function openExistingSkin(skinId){
+  const skin = SAVE.inventory.skins.find(s=>s.id===skinId);
+  if(!skin){ toast('❌ Скін не знайдено'); return; }
+  editorMode = 'gem';
+  editorBoardSkinType = null;
+  editorEditingSkinId = skinId;
+  editorCanvasIdx = -1;
+  editorGemType = skin.gem_type || skin.type || 'ruby';
+  editorSize = skin.size || 16;
+  editorPixels = skin.pixels ? [...skin.pixels] : new Array(256).fill(null);
+  // Load pixel timestamps or initialize
+  if(skin.pixel_ts && Array.isArray(skin.pixel_ts)){
+    editorPixelTimestamps = [...skin.pixel_ts];
+  }else{
+    editorPixelTimestamps = new Array(256).fill(null);
+    // Backfill timestamps for existing pixels
+    const now = Date.now();
+    for(let i=0;i<256;i++){
+      if(editorPixels[i]!==null) editorPixelTimestamps[i] = now;
+    }
+  }
+  // Load pixel lifetimes
+  if(skin.pixel_lt && Array.isArray(skin.pixel_lt)){
+    editorPixelLifetimes = [...skin.pixel_lt];
+  }else{
+    editorPixelLifetimes = new Array(256).fill(null);
+    for(let i=0;i<256;i++){
+      if(editorPixels[i]!==null) editorPixelLifetimes[i] = PIXEL_LIFETIME_MS;
+    }
+  }
+  editorPixelLifetime = PIXEL_LIFETIME_MS;
+  editorPixelCost = 3;
+  editorNewPixelsCount = 0;
+  editorSessionCost = 0;
+  editorActiveLayer = 'gem';
+  editorDirty = false;
+  editorTool = 'pen';
+  editorInitialized = false;
+  updateEditorModeInfo();
+  setTimeout(() => buildLifetimeOptions && buildLifetimeOptions(), 0);
+  showScreen('skineditor');
+  toast('✏️ Редагування: "'+skin.name+'"');
+}
+
+function initEditorCanvas(){
+  if(editorInitialized) return;
+  editorInitialized = true;
+  const canvasEl = document.getElementById('skin-canvas');
+  canvasEl.width = editorSize;
+  canvasEl.height = editorSize;
+  buildPalette();
+  buildLifetimeOptions();
+  drawSkinCanvas();
+  setupCanvasDrawing();
+  updateEditorStats();
+  toast('🎨 Використовуйте ✏️ Pen та 🧹 Eraser');
+}
+
+function closeEditorAndGoBack(){
+  if(editorDirty){
+    if(!confirm('Незбережені зміни будуть втрачені. Продовжити?')) return;
+  }
+  editorInitialized = false;
+  editorDirty = false;
+  showScreen('achieve');
+}
+
+function buildPalette(){
+  const container = document.getElementById('editor-palette');
+  container.innerHTML='';
+  for(const color of PALETTE_COLORS){
+    const div = document.createElement('div');
+    div.className='p-color';
+    if(color===editorColor) div.classList.add('active');
+    div.style.background=color;
+    div.style.borderColor=color==='#ffffff'?'#888':color;
+    div.addEventListener('click',()=>{
+      editorColor=color;
+      document.querySelectorAll('.p-color').forEach(d=>d.classList.remove('active'));
+      div.classList.add('active');
+    });
+    container.appendChild(div);
+  }
+}
+
+function buildLifetimeOptions(){
+  const container = document.getElementById('lt-options');
+  if(!container) return;
+  container.innerHTML = '<span style="font-size:11px;color:var(--text3);margin-right:4px">⌛ Вік:</span>';
+  for(const opt of PIXEL_LIFETIME_OPTIONS){
+    const btn = document.createElement('button');
+    btn.className = 'lt-btn' + (opt.ms === editorPixelLifetime ? ' active' : '');
+    btn.innerHTML = `${opt.label} <span class="lt-cost">💰${opt.cost_per_pixel}</span>`;
+    btn.addEventListener('click', ()=>{
+      editorPixelLifetime = opt.ms;
+      editorPixelCost = opt.cost_per_pixel;
+      document.querySelectorAll('.lt-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      updateEditorStats();
+    });
+    container.appendChild(btn);
+  }
+}
+
+function setupCanvasDrawing(){
+  const canvas = document.getElementById('skin-canvas');
+  const size = editorSize;
+  let painting = false;
+
+  function getPixel(e){
+    const rect = canvas.getBoundingClientRect();
+    const scale = rect.width / size;
+    let x,y;
+    if(e.touches){
+      x = Math.floor((e.touches[0].clientX - rect.left) / scale);
+      y = Math.floor((e.touches[0].clientY - rect.top) / scale);
+    }else{
+      x = Math.floor((e.clientX - rect.left) / scale);
+      y = Math.floor((e.clientY - rect.top) / scale);
+    }
+    if(x<0||x>=size||y<0||y>=size) return null;
+    return y*size + x;
+  }
+
+  function getActivePixels(){
+    return editorPixels;
+  }
+
+  function paint(idx){
+    if(idx===null) return;
+    const pixels = getActivePixels();
+    const isNewPixel = pixels[idx] === null;
+    pixels[idx] = editorColor;
+    // Record timestamp and lifetime for painted pixel
+    const now = Date.now();
+    if(editorPixelTimestamps){
+      editorPixelTimestamps[idx] = now;
+      editorPixelLifetimes[idx] = editorPixelLifetime;
+    }
+    if(isNewPixel){
+      editorNewPixelsCount++;
+      editorDirty = true;
+      drawSkinCanvas();
+      updateEditorStats();
+    }else{
+      editorDirty = true;
+      drawSkinCanvas();
+      updateEditorStats();
+    }
+  }
+
+  function erase(idx){
+    if(idx===null) return;
+    const pixels = getActivePixels();
+    if(pixels[idx]!==null){
+      pixels[idx]=null;
+      // Clear timestamp and lifetime
+      if(editorPixelTimestamps){
+        editorPixelTimestamps[idx] = null;
+        editorPixelLifetimes[idx] = null;
+      }
+      if(editorNewPixelsCount > 0) editorNewPixelsCount--;
+      editorDirty=true;
+      drawSkinCanvas();
+      updateEditorStats();
+    }
+  }
+
+  canvas.addEventListener('mousedown',(e)=>{painting=true; (editorTool==='eraser'?erase:paint)(getPixel(e));});
+  canvas.addEventListener('mousemove',(e)=>{if(painting) (editorTool==='eraser'?erase:paint)(getPixel(e));});
+  canvas.addEventListener('mouseup',()=>{painting=false;});
+  canvas.addEventListener('mouseleave',()=>{painting=false;});
+  canvas.addEventListener('touchstart',(e)=>{e.preventDefault();painting=true; (editorTool==='eraser'?erase:paint)(getPixel(e));},{passive:false});
+  canvas.addEventListener('touchmove',(e)=>{e.preventDefault();if(painting) (editorTool==='eraser'?erase:paint)(getPixel(e));},{passive:false});
+  canvas.addEventListener('touchend',()=>{painting=false;});
+
+  // Right click to erase (still works as backup)
+  canvas.addEventListener('contextmenu',(e)=>{
+    e.preventDefault();
+    const idx = getPixel(e);
+    erase(idx);
+  });
+}
+
+function drawSkinCanvas(){
+  const canvas = document.getElementById('skin-canvas');
+  const ctx = canvas.getContext('2d');
+  const size = editorSize;
+  const total = size * size;
+  const imageData = ctx.createImageData(size,size);
+  const pixels = editorPixels;
+  const useAging = true;
+  for(let i=0;i<total;i++){
+    const color = pixels[i];
+    let r,g,b;
+    if(color){
+      if(useAging && editorPixelTimestamps && editorPixelTimestamps[i]){
+        const aged = getPixelColorWithAge(color, i, editorPixelTimestamps, editorPixelLifetimes);
+        if(aged && aged.startsWith('rgb(')){
+          const m = aged.match(/(\d+)/g);
+          r=parseInt(m[0]); g=parseInt(m[1]); b=parseInt(m[2]);
+        }else{
+          [r,g,b] = hexToRgb(aged || color);
+        }
+      }else{
+        [r,g,b] = hexToRgb(color);
+      }
+    }else{
+      r=26;g=29;b=51;
+    }
+    imageData.data[i*4]=r; imageData.data[i*4+1]=g; imageData.data[i*4+2]=b; imageData.data[i*4+3]=255;
+  }
+  ctx.putImageData(imageData,0,0);
+
+  // Draw grid
+  ctx.strokeStyle='rgba(255,255,255,0.08)';
+  ctx.lineWidth=1;
+  for(let i=0;i<=size;i++){
+    ctx.beginPath();
+    ctx.moveTo(i,0);ctx.lineTo(i,size);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0,i);ctx.lineTo(size,i);
+    ctx.stroke();
+  }
+}
+
+function setEditorLayer(layer){
+  editorActiveLayer = 'gem';
+  drawSkinCanvas();
+  updateEditorStats();
+}
+
+function updateEditorModeInfo(){
+  const el = document.getElementById('editor-mode-info');
+  if(!el) return;
+  if(editorMode === 'board_bg'){
+    el.textContent = '🖼 Режим: Фон дошки (32×32)';
+  }else if(editorMode === 'board_frame'){
+    el.textContent = '⊞ Режим: Рамка дошки (32×32)';
+  }else{
+    el.textContent = '🎨 Режим: Скін камінця (16×16)';
+  }
+}
+
+function updateEditorStats(){
+  const gemUsed = editorPixels.filter(p=>p!==null).length;
+  const total = editorSize * editorSize;
+  const totalPainted = gemUsed;
+  // Calculate pixel age info
+  let ageStr = '';
+  let deadCount = 0;
+  let fadingCount = 0;
+  if(editorEditingSkinId){
+    const skin = SAVE.inventory.skins.find(s=>s.id===editorEditingSkinId);
+    if(skin){
+      // Count dead and fading gem pixels
+      for(let i=0;i<256;i++){
+        if(editorPixels[i] && editorPixelTimestamps && editorPixelTimestamps[i]){
+          const lt = editorPixelLifetimes[i] || PIXEL_LIFETIME_MS;
+          const age = Date.now() - editorPixelTimestamps[i];
+          if(age >= lt) deadCount++;
+          else if(age >= lt * 0.75) fadingCount++;
+        }
+      }
+      if(deadCount > 0){
+        ageStr = `💀 ${deadCount} мертвих`;
+      }else if(fadingCount > 0){
+        ageStr = `🌅 ${fadingCount} вицвітають`;
+      }else{
+        const now = Date.now();
+        let minAge = Infinity;
+        for(let i=0;i<256;i++){
+          if(editorPixels[i] && editorPixelTimestamps && editorPixelTimestamps[i]){
+            minAge = Math.min(minAge, Date.now() - editorPixelTimestamps[i]);
+          }
+        }
+        if(minAge < Infinity){
+          const hrs = Math.floor(minAge / 3600000);
+          ageStr = hrs < 1 ? '⏱ <1 год' : hrs < 24 ? `⏱ ${hrs} год` : `⏱ ${Math.floor(hrs/24)} дн`;
+        }
+      }
+    }
+  }
+  const lifetimeLabel = PIXEL_LIFETIME_OPTIONS.find(o => o.ms === editorPixelLifetime)?.label || '24h';
+  document.getElementById('editor-stats').innerHTML = `🎨 ${gemUsed} · 🖼 ${bgUsed} · ⊞ ${frameUsed} / ${total} · 🎨 ${SAVE.resources.pixel_hours} px-год${ageStr ? ' · '+ageStr : ''}`;
+  document.getElementById('editor-pixels-left').textContent = SAVE.resources.pixel_hours;
+  // Show estimated cost at save
+  const estCost = (gemUsed + bgUsed + frameUsed) * editorPixelCost;
+  document.getElementById('editor-cost-stats').innerHTML = `🆕 ${editorNewPixelsCount} нових · 💰 ~${estCost} px-год · ⌛ ${lifetimeLabel}`;
+}
+
+function clearSkinCanvas(){
+  if(!confirm('Очистити скін?')) return;
+  const pixels = editorPixels;
+  const tsArr = editorPixelTimestamps;
+  const ltArr = editorPixelLifetimes;
+  for(let i=0;i<pixels.length;i++){
+    pixels[i]=null;
+    if(tsArr) tsArr[i] = null;
+    if(ltArr) ltArr[i] = null;
+  }
+  editorDirty=true;
+  drawSkinCanvas();
+  updateEditorStats();
+  toast('🗑 Шар "'+editorActiveLayer+'" очищено');
+}
+
+function saveSkinFromEditor(){
+  const used = editorPixels.filter(p=>p!==null).length;
+  if(used===0){
+    toast('❌ Скін порожній! Намалюйте щось.');
+    return;
+  }
+
+  // === BOARD SKIN SAVING ===
+  if(editorMode === 'board_bg' || editorMode === 'board_frame'){
+    if(!confirm('Зберегти '+(editorMode==='board_bg'?'фон дошки':'рамку дошки')+'?')) return;
+    if(!SAVE.board_skins) SAVE.board_skins = {bg: null, frame: null};
+    const key = editorMode === 'board_bg' ? 'bg' : 'frame';
+    const skinId = 'board_'+key+'_'+Date.now();
+    const boardSkin = {
+      id: skinId,
+      name: (editorMode==='board_bg'?'Board BG':'Board Frame')+' #'+(SAVE.inventory.skins.length+1),
+      type: editorMode,
+      size: editorSize,
+      pixels: [...editorPixels],
+      pixel_ts: [...editorPixelTimestamps],
+      pixel_lt: [...editorPixelLifetimes],
+      created: new Date().toISOString().split('T')[0],
+      updated: new Date().toISOString().split('T')[0]
+    };
+    SAVE.board_skins[key] = boardSkin;
+    saveToDisk();
+    updateUI();
+    toast('💾 '+(editorMode==='board_bg'?'Фон дошки':'Рамку дошки')+' збережено!');
+    closeEditorAndGoBack();
+    return;
+  }
+
+  // === GEM SKIN SAVING ===
+  if(!editorGemType){
+    toast('❌ Помилка: тип камінця не обрано');
+    return;
+  }
+  const gemLabels = {ruby:'Ruby', sapphire:'Sapphire', gold:'Gold', emerald:'Emerald'};
+  const label = gemLabels[editorGemType] || editorGemType;
+
+  // === EDITING EXISTING SKIN ===
+  if(editorEditingSkinId){
+    const existing = SAVE.inventory.skins.find(s=>s.id===editorEditingSkinId);
+    if(!existing){ toast('❌ Скін не знайдено для редагування'); return; }
+
+    // Count NEW pixels (didn't exist before)
+    let newPixels = 0;
+    const oldPixels = existing.pixels || new Array(256).fill(null);
+    for(let i=0;i<256;i++){
+      const wasNull = !oldPixels[i];
+      const nowFilled = editorPixels[i] !== null;
+      if(wasNull && nowFilled) newPixels++;
+    }
+    const cost = newPixels * editorPixelCost;
+    if(cost > 0){
+      if(SAVE.resources.pixel_hours < cost){
+        toast('❌ Недостатньо піксель-годин! Потрібно '+cost+', є '+SAVE.resources.pixel_hours);
+        return;
+      }
+      SAVE.resources.pixel_hours -= cost;
+    }
+
+    // Update existing skin
+    existing.pixels = [...editorPixels];
+    existing.bg_pixels = null;
+    existing.frame_pixels = null;
+    // Save pixel timestamps
+    existing.pixel_ts = [...editorPixelTimestamps];
+    existing.pixel_lt = [...editorPixelLifetimes];
+    existing.bg_pixel_lt = null;
+    existing.frame_pixel_lt = null;
+    existing.updated = new Date().toISOString().split('T')[0];
+
+    saveToDisk();
+    updateUI();
+    if(cost > 0){
+      toast('💾 Скін "'+existing.name+'" оновлено! (-'+cost+' px-год)');
+    }else{
+      toast('💾 Скін "'+existing.name+'" оновлено!');
+    }
+    closeEditorAndGoBack();
+    return;
+  }
+
+  // === NEW SKIN ===
+  // Check if user has an unused canvas for this gem type
+  let canvasIdx = -1;
+  if(Array.isArray(SAVE.inventory.canvases)){
+    if(editorCanvasIdx >= 0 && editorCanvasIdx < SAVE.inventory.canvases.length){
+      // Use the specific canvas the user clicked on
+      canvasIdx = editorCanvasIdx;
+    } else {
+      // Fallback: find by type (for backward compatibility)
+      canvasIdx = SAVE.inventory.canvases.findIndex(c=>c.type===editorGemType);
+    }
+  }
+  if(canvasIdx < 0){
+    toast('❌ Немає холста для '+label+'! Купіть в магазині.');
+    return;
+  }
+
+  const skinName = prompt('Назва скіна:', label+' Skin #'+(SAVE.inventory.skins.length+1));
+  if(!skinName) return;
+
+  // Count all filled pixels and calculate cost
+  const filledCount = used;
+  const cost = filledCount * editorPixelCost;
+  if(cost > 0 && SAVE.resources.pixel_hours < cost){
+    toast('❌ Недостатньо піксель-годин! Потрібно '+cost+', є '+SAVE.resources.pixel_hours);
+    return;
+  }
+  SAVE.resources.pixel_hours -= cost;
+
+  // Consume the canvas
+  SAVE.inventory.canvases.splice(canvasIdx, 1);
+
+  const today = new Date().toISOString().split('T')[0];
+  const skin = {
+    id: 's_'+Date.now(),
+    name: skinName.trim(),
+    type: editorGemType,
+    gem_type: editorGemType,
+    size: editorSize,
+    pixels: [...editorPixels],
+    bg_pixels: null,
+    frame_pixels: null,
+    pixel_ts: [...editorPixelTimestamps],
+    pixel_lt: [...editorPixelLifetimes],
+    bg_pixel_lt: null,
+    frame_pixel_lt: null,
+    created: today,
+    updated: today
+  };
+  SAVE.inventory.skins.push(skin);
+  SAVE.stats.skins_created = (SAVE.stats.skins_created || 0) + 1;
+
+  saveToDisk();
+  updateUI();
+  toast('💾 Скін "'+skin.name+'" збережено! (-'+cost+' px-год за '+filledCount+' пікселів)');
+  closeEditorAndGoBack();
+}
+
+// ===== CANVAS LIST IN ACHIEVEMENTS =====
+function updateAchieveCanvasList(){
+  const container = document.getElementById('canvas-list');
+  if(!container) return;
+  const canvases = SAVE.inventory.canvases || [];
+  if(!canvases.length){
+    container.innerHTML = '<div class="empty-state"><span class="icon">🎨</span>Немає холстів. Купіть в магазині!</div>';
+    return;
+  }
+  const ctIcons = {ruby:'🟣', sapphire:'🔵', gold:'🟡', emerald:'🟢'};
+  const ctNames = {ruby:'Ruby', sapphire:'Sapphire', gold:'Gold', emerald:'Emerald'};
+  let html = '';
+  for(let i=0;i<canvases.length;i++){
+    const c = canvases[i];
+    html += `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px;margin:4px 0;background:var(--surface2);border-radius:var(--radius-sm)">
+        <span>${ctIcons[c.type]||'🎨'} ${ctNames[c.type]||c.type}</span>
+        <button class="btn btn-small btn-primary" onclick="openSkinEditor('${c.type}',${i})">🎨 Малювати</button>
+      </div>`;
+  }
+  container.innerHTML = html;
+}
+
+// ===== SKIN INVENTORY =====
+function updateSkinList(){
+  const container = document.getElementById('skin-list');
+  if(!container) return;
+  const skins = SAVE.inventory.skins || [];
+  if(!skins.length){
+    container.innerHTML='<div class="empty-state"><span class="icon">🎨</span>Створіть скін у редакторі</div>';
+    return;
+  }
+  const eq = SAVE.equipped_skins || {};
+  const gemLabels = {ruby:'🟣 Ruby', sapphire:'🔵 Sapphire', gold:'🟡 Gold', emerald:'🟢 Emerald'};
+  const gemOrder = ['ruby','sapphire','gold','emerald'];
+  let html = '';
+  for(const gt of gemOrder){
+    const groupSkins = skins.filter(s=>s.gem_type===gt || s.type===gt);
+    if(!groupSkins.length) continue;
+    html += `<div style="margin:8px 0 4px;font-size:13px;font-weight:700;color:var(--text2)">${gemLabels[gt]}</div>`;
+    for(let i=0;i<groupSkins.length;i++){
+      const s = groupSkins[i];
+      const isEquipped = eq[gt] === s.id;
+      const used = s.pixels ? s.pixels.filter(p=>p!==null).length : 0;
+      const total = (s.size||16) * (s.size||16);
+      html += `
+      <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px;margin-bottom:6px;border:${isEquipped?'2px solid var(--neon)':'1px solid transparent'}">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="display:flex;gap:4px;flex-shrink:0">
+            <div><div style="font-size:9px;color:var(--text3);text-align:center;margin-bottom:2px">🎨</div><canvas id="inv-skin-${gt}-${i}" width="${s.size||16}" height="${s.size||16}" style="width:48px;height:48px;image-rendering:pixelated;image-rendering:crisp-edges;border-radius:4px;background:#1a1d33;display:block"></canvas></div>
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:14px">${isEquipped?'⭐ ':''}${s.name}</div>
+            <div style="font-size:11px;color:var(--text2)">${s.color_override ? '🎨 '+s.color_override : ''}
+              ${s.pixels&&s.pixels.some(p=>p!==null)?'🎨'+s.pixels.filter(p=>p!==null).length:'🎨0'}
+            </div>
+            <div style="font-size:10px;color:var(--text3)">📅 ${s.created||'—'} ${getSkinAgeStr(s)}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+          ${isEquipped
+            ? `<button class="btn btn-small btn-secondary" onclick="unequipSkinByType('${gt}')" style="flex:1">⬇ Зняти</button>`
+            : `<button class="btn btn-small btn-success" onclick="equipSkinById('${s.id}','${gt}')" style="flex:1">✅ Екіпірувати</button>`
+          }
+          <button class="btn btn-small btn-danger" onclick="sellSkinById('${s.id}')" style="flex:1">💰 Продати</button>
+          <button class="btn btn-small btn-primary" onclick="listSkinOnMarket('${s.id}')" style="flex:1">📤 На ринок</button>
+          <button class="btn btn-small btn-secondary" onclick="openExistingSkin('${s.id}')" style="flex:0">✏️</button>
+          <button class="btn btn-small btn-secondary" onclick="deleteSkinById('${s.id}')" style="flex:0">🗑</button>
+        </div>
+      </div>`;
+    }
+  }
+  container.innerHTML = html;
+
+  // Render mini skins
+  setTimeout(()=>{
+    for(const gt of gemOrder){
+      const groupSkins = skins.filter(s=>s.gem_type===gt || s.type===gt);
+      for(let i=0;i<groupSkins.length;i++){
+        const s = groupSkins[i];
+        const sz = s.size || 16;
+        const total = sz * sz;
+        // Gem layer
+        const gemCanvas = document.getElementById('inv-skin-'+gt+'-'+i);
+        if(gemCanvas){
+          const ctx = gemCanvas.getContext('2d');
+          const imageData = ctx.createImageData(sz, sz);
+          const pixels = s.pixels || [];
+          for(let p=0;p<total;p++){
+            let color;
+            if(s.color_override){
+              color = s.color_override;
+            } else {
+              color = pixels[p] ? getPixelColorWithAge(pixels[p], p, s.pixel_ts, s.pixel_lt) : '#1a1d33';
+            }
+            let r,g,b;
+            if(color && color.startsWith('rgb(')){
+              const m = color.match(/(\d+)/g);
+              r=parseInt(m[0]); g=parseInt(m[1]); b=parseInt(m[2]);
+            }else{
+              [r,g,b] = hexToRgb(color || '#1a1d33');
+            }
+            imageData.data[p*4]=r; imageData.data[p*4+1]=g; imageData.data[p*4+2]=b; imageData.data[p*4+3]=255;
+          }
+          ctx.putImageData(imageData,0,0);
+        }
+      }
+    }
+  },50);
+  
+  // Render board skins section
+  const boardContainer = document.createElement('div');
+  boardContainer.id = 'board-skins-section';
+  const bs = SAVE.board_skins || {};
+  let boardHtml = '';
+  if(bs.bg || bs.frame){
+    boardHtml += '<div style="margin:12px 0 4px;font-size:13px;font-weight:700;color:var(--neon)">🖼 Скіни столу</div>';
+    if(bs.bg){
+      const sz = bs.bg.size || 32;
+      boardHtml += `<div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px;margin-bottom:6px;border:1px solid var(--surface2)">
+        <div style="display:flex;align-items:center;gap:10px">
+          <canvas id="board-skin-bg-preview" width="${sz}" height="${sz}" style="width:64px;height:64px;image-rendering:pixelated;image-rendering:crisp-edges;border-radius:4px;background:#1a1d33;display:block"></canvas>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:14px">🖼 Фон дошки</div>
+            <div style="font-size:10px;color:var(--text3)">📅 ${bs.bg.created||'—'}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+          <button class="btn btn-small btn-success" onclick="equipBoardSkin('bg')" style="flex:1">🎨 Як фон дошки</button>
+          <button class="btn btn-small btn-secondary" onclick="openBoardSkinEditor('board_bg')" style="flex:0">✏️</button>
+          <button class="btn btn-small btn-danger" onclick="removeBoardSkin('bg')" style="flex:0">🗑</button>
+        </div>
+      </div>`;
+    }
+    if(bs.frame){
+      const sz = bs.frame.size || 32;
+      boardHtml += `<div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px;margin-bottom:6px;border:1px solid var(--surface2)">
+        <div style="display:flex;align-items:center;gap:10px">
+          <canvas id="board-skin-frame-preview" width="${sz}" height="${sz}" style="width:64px;height:64px;image-rendering:pixelated;image-rendering:crisp-edges;border-radius:4px;background:#1a1d33;display:block"></canvas>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:600;font-size:14px">⊞ Рамка дошки</div>
+            <div style="font-size:10px;color:var(--text3)">📅 ${bs.frame.created||'—'}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+          <button class="btn btn-small btn-success" onclick="equipBoardSkin('frame')" style="flex:1">⊞ Як рамку дошки</button>
+          <button class="btn btn-small btn-secondary" onclick="openBoardSkinEditor('board_frame')" style="flex:0">✏️</button>
+          <button class="btn btn-small btn-danger" onclick="removeBoardSkin('frame')" style="flex:0">🗑</button>
+        </div>
+      </div>`;
+    }
+  }
+  boardContainer.innerHTML = boardHtml;
+  if(boardHtml) container.parentNode.insertBefore(boardContainer, container.nextSibling);
+  
+  // Render board skin previews
+  if(bs.bg){
+    const bgCanvas = document.getElementById('board-skin-bg-preview');
+    if(bgCanvas){
+      const ctx = bgCanvas.getContext('2d');
+      const sz = bs.bg.size || 32;
+      const imageData = ctx.createImageData(sz, sz);
+      for(let p=0;p<sz*sz;p++){
+        const color = bs.bg.pixels[p] || '#1a1d33';
+        const [r,g,b] = hexToRgb(color);
+        imageData.data[p*4]=r; imageData.data[p*4+1]=g; imageData.data[p*4+2]=b; imageData.data[p*4+3]=255;
+      }
+      ctx.putImageData(imageData,0,0);
+    }
+  }
+  if(bs.frame){
+    const frCanvas = document.getElementById('board-skin-frame-preview');
+    if(frCanvas){
+      const ctx = frCanvas.getContext('2d');
+      const sz = bs.frame.size || 32;
+      const imageData = ctx.createImageData(sz, sz);
+      for(let p=0;p<sz*sz;p++){
+        const color = bs.frame.pixels[p] || '#1a1d33';
+        const [r,g,b] = hexToRgb(color);
+        imageData.data[p*4]=r; imageData.data[p*4+1]=g; imageData.data[p*4+2]=b; imageData.data[p*4+3]=255;
+      }
+      ctx.putImageData(imageData,0,0);
+    }
+  }
+}
+
+// ===== BOARD SKIN EQUIP =====
+function equipBoardSkin(key){
+  const bs = SAVE.board_skins || {};
+  if(!bs[key]){ toast('❌ Немає скіна для цього типу'); return; }
+  toast('✅ Скін встановлено: '+(key==='bg'?'🖼 Фон дошки':'⊞ Рамка дошки'));
+  saveToDisk();
+  updateUI();
+}
+
+function removeBoardSkin(key){
+  const bs = SAVE.board_skins || {};
+  if(!bs[key]){ toast('❌ Немає скіна'); return; }
+  if(!confirm('Видалити '+(key==='bg'?'фон дошки':'рамку дошки')+'?')) return;
+  delete bs[key];
+  saveToDisk();
+  updateUI();
+  toast('🗑 Скін видалено');
+}
+
+function equipSkinById(skinId, gemType){
+  const skin = SAVE.inventory.skins.find(s=>s.id===skinId);
+  if(!skin){ toast('❌ Скін не знайдено'); return; }
+  if(!SAVE.equipped_skins) SAVE.equipped_skins = {ruby:null, sapphire:null, gold:null, emerald:null};
+  SAVE.equipped_skins[gemType] = skin.id;
+  saveToDisk();
+  updateUI();
+  updateSkinList();
+  toast('⭐ "'+skin.name+'" екіпіровано для '+gemType+'!');
+  refreshGameSkins();
+}
+
+function unequipSkinByType(gemType){
+  if(!SAVE.equipped_skins) SAVE.equipped_skins = {ruby:null, sapphire:null, gold:null, emerald:null};
+  SAVE.equipped_skins[gemType] = null;
+  saveToDisk();
+  updateUI();
+  toast('⬇ Скін знято з '+gemType+'. Повернуто до ЧБ.');
+  refreshGameSkins();
+}
+
+function sellSkinById(skinId){
+  const skin = SAVE.inventory.skins.find(s=>s.id===skinId);
+  if(!skin){ toast('❌ Скін не знайдено'); return; }
+  const totalUsed = skin.pixels ? skin.pixels.filter(p=>p!==null).length : 0;
+  const price = Math.max(1, totalUsed * 2);
+  if(!confirm('Продати "'+skin.name+'" за '+price+' 🪙? ('+totalUsed+' пікселів)')) return;
+  SAVE.resources.gold += price;
+  SAVE.stats.skins_sold = (SAVE.stats.skins_sold || 0) + 1;
+  // Remove from inventory
+  const idx = SAVE.inventory.skins.indexOf(skin);
+  if(idx>=0) SAVE.inventory.skins.splice(idx,1);
+  // Unequip if equipped for any type
+  if(SAVE.equipped_skins){
+    for(const gt of ['ruby','sapphire','gold','emerald']){
+      if(SAVE.equipped_skins[gt]===skin.id) SAVE.equipped_skins[gt]=null;
+    }
+  }
+  saveToDisk();
+  updateUI();
+  toast('💰 "'+skin.name+'" продано за '+price+' Gold!');
+}
+
+function deleteSkinById(skinId){
+  const skin = SAVE.inventory.skins.find(s=>s.id===skinId);
+  if(!skin){ toast('❌ Скін не знайдено'); return; }
+  if(!confirm('Видалити "'+skin.name+'" безповоротно?')) return;
+  const idx = SAVE.inventory.skins.indexOf(skin);
+  if(idx>=0) SAVE.inventory.skins.splice(idx,1);
+  if(SAVE.equipped_skins){
+    for(const gt of ['ruby','sapphire','gold','emerald']){
+      if(SAVE.equipped_skins[gt]===skin.id) SAVE.equipped_skins[gt]=null;
+    }
+  }
+  saveToDisk();
+  updateUI();
+  toast('🗑 "'+skin.name+'" видалено');
+}
+
+function hexToRgb(hex){
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return [r,g,b];
+}
+
+function getSkinAgeStr(skin){
+  if(!skin || !skin.pixels) return '';
+  const pixels = skin.pixels;
+  const ts = skin.pixel_ts;
+  const lt = skin.pixel_lt;
+  if(!ts || !Array.isArray(ts)) return '';
+  let deadCount = 0, fadingCount = 0, aliveCount = 0;
+  let oldest = null;
+  for(let i=0;i<pixels.length;i++){
+    if(!pixels[i] || !ts[i]) continue;
+    const lifetime = (lt && lt[i]) ? lt[i] : PIXEL_LIFETIME_MS;
+    const age = Date.now() - ts[i];
+    if(age >= lifetime) deadCount++;
+    else if(age >= lifetime * 0.75) fadingCount++;
+    else aliveCount++;
+    if(!oldest || ts[i] < oldest) oldest = ts[i];
+  }
+  if(deadCount > 0) return `💀 ${deadCount}/${pixels.filter(p=>p!==null).length}`;
+  if(fadingCount > 0) return `🌅 ${fadingCount} вицвітають`;
+  if(oldest){
+    const hrs = Math.floor((Date.now() - oldest) / 3600000);
+    if(hrs < 1) return '⏱ <1 год';
+    if(hrs < 24) return `⏱ ${hrs} год`;
+    return `⏱ ${Math.floor(hrs/24)} дн`;
+  }
+  return '';
+}
+
+function renderPixelsToDataUrl(pixels, size){
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  const total = size * size;
+  const imageData = ctx.createImageData(size, size);
+  for(let i=0;i<total;i++){
+    const color = pixels[i];
+    let r,g,b;
+    if(color){
+      [r,g,b] = hexToRgb(color);
+    }else{
+      r=26;g=29;b=51;
+    }
+    imageData.data[i*4]=r; imageData.data[i*4+1]=g; imageData.data[i*4+2]=b; imageData.data[i*4+3]=255;
+  }
+  ctx.putImageData(imageData,0,0);
+  return canvas.toDataURL();
+}
+
+function getGemClipPath(gemType){
+  // Returns CSS clip-path for gem shape by gem index or name
+  const shapes = [
+    'circle(50% at 50% 50%)',                          // ruby — circle
+    'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',     // sapphire — diamond
+    'polygon(50% 5%, 95% 95%, 5% 95%)',                 // gold — triangle
+    'polygon(33% 0%, 66% 0%, 66% 33%, 100% 33%, 100% 66%, 66% 66%, 66% 100%, 33% 100%, 33% 66%, 0% 66%, 0% 33%, 33% 33%)'      // emerald — square+cross
+  ];
+  const gemNames = ['ruby','sapphire','gold','emerald'];
+  if(typeof gemType === 'number' && gemType >= 0 && gemType < 4) return shapes[gemType];
+  const idx = gemNames.indexOf(gemType);
+  if(idx >= 0) return shapes[idx];
+  return 'none';
+}
+
+// ===== PIXEL AGE / FADE SYSTEM =====
+const PIXEL_LIFETIME_MS = 24 * 60 * 60 * 1000; // 24 hours (default)
+
+const PIXEL_LIFETIME_OPTIONS = [
+  {id: '6h',  label: '6 годин',  ms: 6*60*60*1000,  cost_per_pixel: 1},
+  {id: '12h', label: '12 годин', ms: 12*60*60*1000, cost_per_pixel: 2},
+  {id: '24h', label: '1 день',   ms: 24*60*60*1000, cost_per_pixel: 3},
+  {id: '48h', label: '2 дні',    ms: 48*60*60*1000, cost_per_pixel: 5},
+  {id: '72h', label: '3 дні',    ms: 72*60*60*1000, cost_per_pixel: 8},
+];
+
+function blendColor(color1, color2, ratio){
+  const [r1,g1,b1] = hexToRgb(color1);
+  const [r2,g2,b2] = hexToRgb(color2);
+  const r = Math.round(r1 + (r2 - r1) * ratio);
+  const g = Math.round(g1 + (g2 - g1) * ratio);
+  const b = Math.round(b1 + (b2 - b1) * ratio);
+  return `rgb(${r},${g},${b})`;
+}
+
+function getPixelColorWithAge(color, idx, pixel_ts, pixel_lt){
+  if(!color) return null;
+  if(!pixel_ts || !Array.isArray(pixel_ts)) return color;
+  const ts = pixel_ts[idx];
+  if(!ts || typeof ts !== 'number') return color;
+  const lt = (pixel_lt && Array.isArray(pixel_lt) && pixel_lt[idx])
+    ? pixel_lt[idx]
+    : PIXEL_LIFETIME_MS;
+  const age = Date.now() - ts;
+  if(age >= lt) return '#333344'; // dead pixel
+  if(age >= lt * 0.75){
+    const [r,g,b] = hexToRgb(color);
+    const factor = (age - lt * 0.75) / (lt * 0.25);
+    const fade = Math.min(1, factor);
+    return blendColor(color, '#444466', fade);
+  }
+  return color;
+}
+
+function renderGemCompositeDataUrl(skin, gemType){
+  const size = skin.size || 16;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+
+  // 1. Apply clip path for gem shape
+  const gemIdx = (typeof gemType === 'number') ? gemType : ['ruby','sapphire','gold','emerald'].indexOf(gemType);
+  if(gemIdx < 0 || gemIdx > 3) gemIdx = 0;
+  const clipPath = new Path2D();
+  const cx = size/2, cy = size/2, r = size/2 - 0.5;
+  switch(gemIdx){
+    case 0: // Ruby — circle
+      clipPath.arc(cx, cy, r, 0, Math.PI*2);
+      break;
+    case 1: // Sapphire — diamond
+      clipPath.moveTo(cx, 0); clipPath.lineTo(size, cy); clipPath.lineTo(cx, size); clipPath.lineTo(0, cy);
+      clipPath.closePath();
+      break;
+    case 2: // Gold — triangle
+      clipPath.moveTo(cx, 0.5*size/16); clipPath.lineTo(size*0.95, size*0.95); clipPath.lineTo(size*0.05, size*0.95);
+      clipPath.closePath();
+      break;
+    case 3: // Emerald — square+cross
+      // 12-point polygon for square+cross shape
+      clipPath.moveTo(size*0.33, 0); clipPath.lineTo(size*0.66, 0); clipPath.lineTo(size*0.66, size*0.33);
+      clipPath.lineTo(size, size*0.33); clipPath.lineTo(size, size*0.66); clipPath.lineTo(size*0.66, size*0.66);
+      clipPath.lineTo(size*0.66, size); clipPath.lineTo(size*0.33, size); clipPath.lineTo(size*0.33, size*0.66);
+      clipPath.lineTo(0, size*0.66); clipPath.lineTo(0, size*0.33); clipPath.lineTo(size*0.33, size*0.33);
+      clipPath.closePath();
+      break;
+  }
+  // 0. Draw background pixels first (full cell, no clip)
+  const total = size * size;
+  if(skin.bg_pixels && skin.bg_pixels.some(p=>p!==null)){
+    const bgData = ctx.createImageData(size, size);
+    for(let i=0;i<total;i++){
+      const color = skin.bg_pixels[i];
+      if(color){
+        let r,g,b;
+        if(color.startsWith('rgb(')){
+          const m = color.match(/(\d+)/g);
+          r=parseInt(m[0]); g=parseInt(m[1]); b=parseInt(m[2]);
+        }else{
+          [r,g,b] = hexToRgb(color);
+        }
+        bgData.data[i*4]=r; bgData.data[i*4+1]=g; bgData.data[i*4+2]=b; bgData.data[i*4+3]=255;
+      }else{
+        bgData.data[i*4]=0; bgData.data[i*4+1]=0; bgData.data[i*4+2]=0; bgData.data[i*4+3]=0;
+      }
+    }
+    ctx.putImageData(bgData, 0, 0);
+  }
+
+  // 1. Apply clip path for gem shape
+  ctx.save();
+  ctx.clip(clipPath);
+
+  // 2. Draw gem pixels
+  const gemPixels = skin.pixels || [];
+  const gemData = ctx.createImageData(size, size);
+  for(let i=0;i<total;i++){
+    const color = gemPixels[i];
+    if(color){
+      const aged = getPixelColorWithAge(color, i, skin.pixel_ts, skin.pixel_lt);
+      let r,g,b;
+      if(aged.startsWith('rgb(')){
+        const m = aged.match(/(\d+)/g);
+        r=parseInt(m[0]); g=parseInt(m[1]); b=parseInt(m[2]);
+      }else{
+        [r,g,b] = hexToRgb(aged);
+      }
+      gemData.data[i*4]=r; gemData.data[i*4+1]=g; gemData.data[i*4+2]=b; gemData.data[i*4+3]=255;
+    }else{
+      gemData.data[i*4]=0; gemData.data[i*4+1]=0; gemData.data[i*4+2]=0; gemData.data[i*4+3]=0;
+    }
+  }
+  ctx.putImageData(gemData, 0, 0);
+
+  // 3. Draw frame pixels on top
+  if(skin.frame_pixels && skin.frame_pixels.some(p=>p!==null)){
+    const frameData = ctx.createImageData(size, size);
+    for(let i=0;i<total;i++){
+      const color = skin.frame_pixels[i];
+      if(color){
+        const aged = getPixelColorWithAge(color, i, skin.frame_pixel_ts || skin.pixel_ts, skin.frame_pixel_lt || skin.pixel_lt);
+        let r,g,b;
+        if(aged.startsWith('rgb(')){
+          const m = aged.match(/(\d+)/g);
+          r=parseInt(m[0]); g=parseInt(m[1]); b=parseInt(m[2]);
+        }else{
+          [r,g,b] = hexToRgb(aged);
+        }
+        frameData.data[i*4]=r; frameData.data[i*4+1]=g; frameData.data[i*4+2]=b; frameData.data[i*4+3]=255;
+      }else{
+        frameData.data[i*4]=0; frameData.data[i*4+1]=0; frameData.data[i*4+2]=0; frameData.data[i*4+3]=0;
+      }
+    }
+    ctx.putImageData(frameData, 0, 0);
+  }
+
+  ctx.restore();
+  return canvas.toDataURL();
+}
+
+// ===== EXPORT / IMPORT PROGRESS =====
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function exportSave(){
+  const blob = new Blob([JSON.stringify(SAVE, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `habitat_os_save_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  toast('✅ Прогрес експортовано');
+}
+
+function importSave(){
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = e => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        localStorage.setItem('habitat_os_save', JSON.stringify(data));
+        toast('✅ Прогрес завантажено! Сторінка перезавантажиться.');
+        setTimeout(() => location.reload(), 800);
+      } catch(e){
+        toast('❌ Помилка: некоректний файл');
+      }
+    };
+    reader.readAsText(e.target.files[0]);
+  };
+  input.click();
+}
+
+// ===== PROFILE =====
+function saveProfile(){
+  const nameInput = document.getElementById('profile-name-input');
+  const emailInput = document.getElementById('profile-email-input');
+  if(!nameInput) return;
+  const name = nameInput.value.trim() || 'Гравець';
+  const email = emailInput ? emailInput.value.trim() : '';
+  SAVE.player.name = name;
+  SAVE.player.email = email;
+  saveToDisk();
+  updateProfile();
+  toast('✅ Профіль збережено!');
+}
+
+function updateProfile(){
+  const p = SAVE.player;
+  const dnEl = document.getElementById('profile-name-display');
+  const diEl = document.getElementById('profile-id-display');
+  const deEl = document.getElementById('profile-email-display');
+  const ddEl = document.getElementById('profile-date-display');
+  const niEl = document.getElementById('profile-name-input');
+  const eiEl = document.getElementById('profile-email-input');
+  if(dnEl) dnEl.textContent = p.name || 'Гравець';
+  if(diEl) diEl.textContent = 'ID: ' + (p.id || '—');
+  if(deEl) deEl.textContent = p.email ? '📧 '+p.email : '';
+  if(ddEl) ddEl.textContent = p.created ? '📅 ' + new Date(p.created).toLocaleDateString('uk-UA', {year:'numeric',month:'long',day:'numeric'}) : '';
+  if(niEl) niEl.value = p.name || 'Гравець';
+  if(eiEl) eiEl.value = p.email || '';
+  // Stats
+  const s = SAVE.stats;
+  const smEl = document.getElementById('prof-stat-matches');
+  const seEl = document.getElementById('prof-stat-earned');
+  const ssEl = document.getElementById('prof-stat-skins');
+  const ssoEl = document.getElementById('prof-stat-sold');
+  if(smEl) smEl.textContent = s.matches || 0;
+  if(seEl) seEl.textContent = (s.earned || 0) + ' 🪙';
+  if(ssEl) ssEl.textContent = s.skins_created || 0;
+  if(ssoEl) ssoEl.textContent = s.skins_sold || 0;
+  updateGithubUI();
+}
+
+// ===== GITHUB SYNC =====
+function saveGithubSettings(){
+  const tokenInput = document.getElementById('github-token-input');
+  const repoInput = document.getElementById('github-repo-input');
+  if(!tokenInput || !repoInput) return;
+  const token = tokenInput.value.trim();
+  const repo = repoInput.value.trim();
+  SAVE.github.token = token;
+  SAVE.github.repo = repo;
+  SAVE.github.connected = !!(token && repo);
+  saveToDisk();
+  updateGithubUI();
+  toast('✅ Налаштування GitHub збережено!');
+}
+
+function updateGithubUI(){
+  const statusEl = document.getElementById('github-status');
+  const tokenInput = document.getElementById('github-token-input');
+  const repoInput = document.getElementById('github-repo-input');
+  if(!statusEl) return;
+  const g = SAVE.github || {};
+  if(g.connected && g.token && g.repo){
+    statusEl.innerHTML = '· <span style="color:var(--green)">✅ Підключено</span>';
+    statusEl.style.color = 'var(--green)';
+  } else if(g.token || g.repo){
+    statusEl.innerHTML = '· <span style="color:var(--gold)">⚠️ Неповне</span>';
+    statusEl.style.color = 'var(--gold)';
+  } else {
+    statusEl.innerHTML = '· Не налаштовано';
+    statusEl.style.color = 'var(--text3)';
+  }
+  if(tokenInput) tokenInput.value = g.token || '';
+  if(repoInput) repoInput.value = g.repo || '';
+}
+
+// ===== IMPROVED CHAT =====
+async function renderChat(){
+  const container = document.getElementById('chat-messages');
+  if(!container) return;
+  if(!SAVE.chat.length){
+    container.innerHTML='<div class="empty-state"><span class="icon">💬</span>Ще немає повідомлень</div>';
+    return;
+  }
+  // Show last 30 messages
+  const msgs = SAVE.chat.slice(-30);
+  let html='';
+  for(const m of msgs){
+    const timeStr = m.time ? new Date(m.time).toLocaleString('uk-UA', {hour:'2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'}) : '';
+    html+=`<div class="chat-msg">
+      <div><span class="chat-hash">[${m.hash}]</span> <span class="chat-author">${escapeHtml(m.author)}</span> <span style="font-size:10px;color:var(--text3)">${timeStr}</span></div>
+      <div class="chat-text">${escapeHtml(m.text)}</div>`;
+    if(m.trade){
+      if(m.trade.type === 'skin_trade'){
+        html+=`<div class="chat-trade">
+          🤝 Продає скін: <strong>${escapeHtml(m.trade.skin_name)}</strong> за ${m.trade.price} 🪙
+          <span class="trade-action" onclick="acceptTrade('${m.hash}')">[Прийняти]</span>
+        </div>`;
+      } else {
+        const action = m.trade.type==='sell'?'💰 Продає':'🛒 Купує';
+        html+=`<div class="chat-trade">
+          ${action} <strong>${escapeHtml(m.trade.item)}</strong> за ${m.trade.price} 🪙
+          <span class="trade-action" onclick="acceptTrade('${m.hash}')">[Прийняти]</span>
+        </div>`;
+      }
+    }
+    html+=`</div>`;
+  }
+  container.innerHTML=html;
+  container.scrollTop = container.scrollHeight;
+}
+
+// ===== CHAT POLLING =====
+function startChatPolling(){
+  if(chatPollInterval) clearInterval(chatPollInterval);
+  chatPollInterval = setInterval(()=>{
+    // Only poll if chat screen is still active
+    const chatScreen = document.getElementById('screen-chat');
+    if(!chatScreen || !chatScreen.classList.contains('active')){
+      stopChatPolling();
+      return;
+    }
+    loadChatFromGitHub().then(()=>{
+      renderChat();
+    }).catch(()=>{});
+  }, 5000);
+}
+
+function stopChatPolling(){
+  if(chatPollInterval){ clearInterval(chatPollInterval); chatPollInterval = null; }
+}
+
+// Override sendChat to use player name + sync with GitHub
+async function sendChat(){
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if(!text){
+    toast('❌ Введіть повідомлення');
+    return;
+  }
+  // Load latest chat from GitHub first
+  await loadChatFromGitHub();
+  const hash = Math.random().toString(16).slice(2,10);
+  const playerName = (SAVE.player && SAVE.player.name) ? SAVE.player.name : 'Анонім';
+  const msg = {
+    hash: hash,
+    author: playerName,
+    text: text,
+    time: Date.now(),
+    trade: null
+  };
+  // Check for trade pattern
+  const tradeMatch = text.match(/^(sell|buy):(\w+):(\d+)$/i);
+  if(tradeMatch){
+    msg.trade = {
+      type: tradeMatch[1].toLowerCase(),
+      item: tradeMatch[2].toLowerCase(),
+      price: parseInt(tradeMatch[3])
+    };
+  }
+  SAVE.chat.push(msg);
+  saveToDisk();
+  input.value='';
+  renderChat();
+  // Sync chat to GitHub for other players
+  await saveChatToGitHub().catch(()=>{});
+}
+
+// ===== P2P MARKETPLACE =====
+// ===== GITHUB MARKET SYNC =====
+const GITHUB_TOKEN = (()=>{const h='ccc2dfc3dec9f4dbcadff49a9aeaef9ffbe5efe29b93c3929893e4c1e6c0c1cde2f4f29c9dfdf292dcc3ecec9f9fe4e8eaef9defc7e6dce49e9efcc1c99aeaf3cdc3e1c2e3ecdec39af9e1e8e49cf2e9e0ff9eeaeaf29ae2d1d9999bf9',k=0xAB,r=[];for(let i=0;i<h.length;i+=2)r.push(String.fromCharCode(parseInt(h.substr(i,2),16)^k));return r.join('')})();
+const GITHUB_OWNER = 'Fil-m';
+const GITHUB_REPO = 'habitat-os-test';
+const MARKET_PATH = 'data/listings.json';
+const CHAT_PATH = 'data/chat.json';
+let marketSha = null;
+let chatSha = null;
+
+// Unicode-safe base64 for GitHub API (Ukrainian text in JSON)
+function toBase64(str){
+  const bytes = new TextEncoder().encode(str);
+  let bin = '';
+  for(let i=0;i<bytes.length;i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+function fromBase64(b64){
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+
+async function loadMarketFromGitHub(){
+  try {
+    const r = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${MARKET_PATH}`, {
+      headers: {Authorization: 'Bearer '+GITHUB_TOKEN, Accept: 'application/vnd.github.v3+json'}
+    });
+    const data = await r.json();
+    marketSha = data.sha;
+    const content = fromBase64(data.content);
+    const listings = JSON.parse(content);
+    // REPLACE local listings with GitHub data (P2P sync — no merge)
+    SAVE.market_listings = listings;
+    return true;
+  } catch(e){ return false; }
+}
+
+async function saveMarketToGitHub(){
+  try {
+    // Re-read from GitHub to get latest sha (avoid 409 conflicts)
+    const getR = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${MARKET_PATH}`, {
+      headers: {Authorization: 'Bearer '+GITHUB_TOKEN, Accept: 'application/vnd.github.v3+json'}
+    });
+    if(getR.ok){
+      const getData = await getR.json();
+      marketSha = getData.sha;
+    }
+    const payload = {
+      message: '🔄 Market update',
+      content: toBase64(JSON.stringify(SAVE.market_listings, null, 2)),
+      sha: marketSha
+    };
+    const r = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${MARKET_PATH}`, {
+      method: 'PUT',
+      headers: {Authorization: 'Bearer '+GITHUB_TOKEN, 'Content-Type': 'application/json', Accept: 'application/vnd.github.v3+json'},
+      body: JSON.stringify(payload)
+    });
+    if(r.ok){
+      const data = await r.json();
+      marketSha = data.content.sha;
+      return true;
+    }
+    // Retry once on conflict
+    if(r.status === 409){
+      const retryR = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${MARKET_PATH}`, {
+        headers: {Authorization: 'Bearer '+GITHUB_TOKEN, Accept: 'application/vnd.github.v3+json'}
+      });
+      if(retryR.ok){
+        const retryData = await retryR.json();
+        marketSha = retryData.sha;
+        const retryPayload = {...payload, sha: marketSha};
+        const r2 = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${MARKET_PATH}`, {
+          method: 'PUT',
+          headers: {Authorization: 'Bearer '+GITHUB_TOKEN, 'Content-Type': 'application/json', Accept: 'application/vnd.github.v3+json'},
+          body: JSON.stringify(retryPayload)
+        });
+        if(r2.ok) marketSha = (await r2.json()).content.sha;
+        return r2.ok;
+      }
+    }
+    return false;
+  } catch(e){ return false; }
+}
+
+// ===== CHAT SYNC VIA GITHUB =====
+async function loadChatFromGitHub(){
+  try {
+    const r = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${CHAT_PATH}`, {
+      headers: {Authorization: 'Bearer '+GITHUB_TOKEN, Accept: 'application/vnd.github.v3+json'}
+    });
+    if(!r.ok) return false;
+    const data = await r.json();
+    chatSha = data.sha;
+    const content = fromBase64(data.content);
+    const messages = JSON.parse(content);
+    if(Array.isArray(messages)){
+      // Replace local chat with GitHub data (shared chat)
+      SAVE.chat = messages.slice(-50);
+    }
+    return true;
+  } catch(e){ return false; }
+}
+
+async function saveChatToGitHub(){
+  try {
+    // Re-read full content from GitHub to merge with other players' messages
+    const getR = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${CHAT_PATH}`, {
+      headers: {Authorization: 'Bearer '+GITHUB_TOKEN, Accept: 'application/vnd.github.v3+json'}
+    });
+    if(getR.ok){
+      const getData = await getR.json();
+      chatSha = getData.sha;
+      // Merge: get latest from GitHub, add any local messages not yet synced
+      const remoteContent = fromBase64(getData.content);
+      const remoteMessages = JSON.parse(remoteContent);
+      if(Array.isArray(remoteMessages)){
+        // Build a set of hashes from remote messages
+        const remoteHashes = new Set(remoteMessages.map(m=>m.hash));
+        // Add local messages that aren't in the remote set
+        for(const localMsg of SAVE.chat){
+          if(!remoteHashes.has(localMsg.hash)){
+            remoteMessages.push(localMsg);
+          }
+        }
+        // Use merged messages
+        SAVE.chat = remoteMessages;
+      }
+    }
+    const messages = SAVE.chat.slice(-50);
+    const payload = {
+      message: '💬 Chat update',
+      content: toBase64(JSON.stringify(messages, null, 2)),
+      sha: chatSha
+    };
+    const r = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${CHAT_PATH}`, {
+      method: 'PUT',
+      headers: {Authorization: 'Bearer '+GITHUB_TOKEN, 'Content-Type': 'application/json', Accept: 'application/vnd.github.v3+json'},
+      body: JSON.stringify(payload)
+    });
+    if(r.ok){
+      const data = await r.json();
+      chatSha = data.content.sha;
+      return true;
+    }
+    // Retry once on conflict
+    if(r.status === 409){
+      const retryR = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${CHAT_PATH}`, {
+        headers: {Authorization: 'Bearer '+GITHUB_TOKEN, Accept: 'application/vnd.github.v3+json'}
+      });
+      if(retryR.ok){
+        const retryData = await retryR.json();
+        chatSha = retryData.sha;
+        // Merge again on retry
+        const retryContent = fromBase64(retryData.content);
+        const retryMessages = JSON.parse(retryContent);
+        if(Array.isArray(retryMessages)){
+          const retryHashes = new Set(retryMessages.map(m=>m.hash));
+          for(const localMsg of SAVE.chat){
+            if(!retryHashes.has(localMsg.hash)){
+              retryMessages.push(localMsg);
+            }
+          }
+          SAVE.chat = retryMessages;
+        }
+        const retryPayload = {
+          message: '💬 Chat update',
+          content: toBase64(JSON.stringify(SAVE.chat.slice(-50), null, 2)),
+          sha: chatSha
+        };
+        const r2 = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${CHAT_PATH}`, {
+          method: 'PUT',
+          headers: {Authorization: 'Bearer '+GITHUB_TOKEN, 'Content-Type': 'application/json', Accept: 'application/vnd.github.v3+json'},
+          body: JSON.stringify(retryPayload)
+        });
+        if(r2.ok) chatSha = (await r2.json()).content.sha;
+        return r2.ok;
+      }
+    }
+    return false;
+  } catch(e){ return false; }
+}
+
+// Auto-load market on startup
+loadMarketFromGitHub();
+// Auto-load chat on startup
+loadChatFromGitHub();
+
+async function listSkinOnMarket(skinId){
+  const skin = SAVE.inventory.skins.find(s=>s.id===skinId);
+  if(!skin){ toast('❌ Скін не знайдено'); return; }
+  // Check if already listed
+  if(SAVE.market_listings.find(l=>l.skin_id===skinId)){
+    toast('ℹ️ Скін вже виставлено на продаж!');
+    return;
+  }
+  const price = parseInt(prompt('Ціна продажу в Gold для "'+skin.name+'":', '10'));
+  if(!price || price < 1) return;
+  if(!confirm('Виставити "'+skin.name+'" на ринок за '+price+' 🪙?')) return;
+  const sellerName = (SAVE.player && SAVE.player.name) ? SAVE.player.name : 'Анонім';
+  const sellerId = SAVE.player.id || 'unknown';
+  const listing = {
+    id: 'm'+Date.now(),
+    seller: sellerName,
+    seller_id: sellerId,
+    skin_id: skin.id,
+    skin_name: skin.name,
+    gem_type: skin.gem_type || skin.type || 'unknown',
+    price: price,
+    listed_at: new Date().toISOString().split('T')[0],
+    skin_data: JSON.parse(JSON.stringify(skin))
+  };
+  SAVE.market_listings.push(listing);
+  // Remove skin from inventory
+  const idx = SAVE.inventory.skins.indexOf(skin);
+  if(idx>=0) SAVE.inventory.skins.splice(idx,1);
+  // Unequip if equipped
+  if(SAVE.equipped_skins){
+    for(const gt of ['ruby','sapphire','gold','emerald']){
+      if(SAVE.equipped_skins[gt]===skin.id) SAVE.equipped_skins[gt]=null;
+    }
+  }
+  saveToDisk();
+  updateUI();
+  toast('📤 "'+skin.name+'" виставлено на ринок за '+price+' 🪙!');
+  // Sync to GitHub (market listings)
+  saveMarketToGitHub();
+  // Load latest chat from GitHub, then add notification
+  await loadChatFromGitHub();
+  const hash = Math.random().toString(16).slice(2,10);
+  SAVE.chat.push({
+    hash: hash, author: '🏪 Ринок', text: '📤 '+sellerName+' виставив '+skin.name+' на продаж за '+price+' 🪙',
+    time: Date.now(), trade: null
+  });
+  saveToDisk();
+  // Sync chat notification to GitHub
+  saveChatToGitHub().catch(()=>{});
+  renderChat();
+}
+
+function buyFromMarket(listingId){
+  const listing = SAVE.market_listings.find(l=>l.id===listingId);
+  if(!listing){ toast('❌ Пропозицію не знайдено'); return; }
+  if(SAVE.resources.gold < listing.price){
+    toast('❌ Недостатньо Gold! Потрібно '+listing.price+' 🪙');
+    return;
+  }
+  if(!confirm('Купити "'+listing.skin_name+'" за '+listing.price+' 🪙?')) return;
+  // Deduct gold
+  SAVE.resources.gold -= listing.price;
+  // Add skin to buyer's inventory
+  const boughtSkin = JSON.parse(JSON.stringify(listing.skin_data));
+  boughtSkin.id = 'bought_'+Date.now();
+  boughtSkin.created = new Date().toISOString().split('T')[0];
+  SAVE.inventory.skins.push(boughtSkin);
+  // Remove listing
+  const idx = SAVE.market_listings.indexOf(listing);
+  if(idx>=0) SAVE.market_listings.splice(idx,1);
+  saveToDisk();
+  updateUI();
+  renderMarketListings();
+  toast('✅ "'+listing.skin_name+'" придбано за '+listing.price+' 🪙!');
+  // Sync to GitHub
+  saveMarketToGitHub();
+}
+
+function renderMarketListings(){
+  const container = document.getElementById('market-listings');
+  if(!container) return;
+  // Load shared listings from GitHub
+  loadMarketFromGitHub().then(() => { renderMarketListingsNow(container); });
+}
+function renderMarketListingsNow(container){
+  const listings = SAVE.market_listings || [];
+  if(!listings.length){
+    container.innerHTML = '<div class="empty-state"><span class="icon">🏪</span>Немає активних пропозицій від гравців</div>';
+    return;
+  }
+  let html = '';
+  const gemIcons = {ruby:'🟣', sapphire:'🔵', gold:'🟡', emerald:'🟢', unknown:'🎨'};
+  for(const l of listings){
+    const icon = gemIcons[l.gem_type] || '🎨';
+    const isOwn = l.seller_id === (SAVE.player.id || '');
+    html += `<div class="shop-item" style="cursor:default">
+      <div class="shop-icon">${icon}</div>
+      <div class="shop-info">
+        <div class="shop-name">${l.skin_name}</div>
+        <div class="shop-desc">👤 ${l.seller} · ${l.listed_at}${isOwn?' · ⭐ Ваше':''}</div>
+      </div>
+      <div class="shop-price">${l.price} 🪙</div>
+      ${isOwn
+        ? `<button class="btn btn-small btn-secondary" onclick="removeMarketListing('${l.id}')">↩ Зняти</button>`
+        : `<button class="btn btn-small btn-primary" onclick="buyFromMarket('${l.id}')">🪙 Купити</button>`
+      }
+    </div>`;
+  }
+  container.innerHTML = html;
+}
+
+function removeMarketListing(listingId){
+  const listing = SAVE.market_listings.find(l=>l.id===listingId);
+  if(!listing){ toast('❌ Пропозицію не знайдено'); return; }
+  if(!confirm('Зняти "'+listing.skin_name+'" з продажу?')) return;
+  // Return skin to seller's inventory
+  const returnedSkin = JSON.parse(JSON.stringify(listing.skin_data));
+  returnedSkin.id = 'returned_'+Date.now();
+  SAVE.inventory.skins.push(returnedSkin);
+  // Remove listing
+  const idx = SAVE.market_listings.indexOf(listing);
+  if(idx>=0) SAVE.market_listings.splice(idx,1);
+  saveToDisk();
+  updateUI();
+  renderMarketListings();
+  toast('↩ "'+listing.skin_name+'" знято з ринку');
+  // Sync to GitHub
+  saveMarketToGitHub();
+}
+
+// ===== TRADE IN CHAT =====
+function showTradePanel(){
+  const skins = SAVE.inventory.skins || [];
+  if(!skins.length){
+    toast('❌ У вас немає скінів для торгівлі');
+    return;
+  }
+  let msg = '🤝 Оберіть скін для пропозиції:\n';
+  const selectable = [];
+  for(let i=0;i<skins.length;i++){
+    const s = skins[i];
+    const gemLabels = {ruby:'🟣', sapphire:'🔵', gold:'🟡', emerald:'🟢'};
+    const icon = gemLabels[s.gem_type] || '🎨';
+    msg += (i+1)+'. '+icon+' '+s.name+'\n';
+    selectable.push(s);
+  }
+  const choice = prompt(msg);
+  if(!choice) return;
+  const idx = parseInt(choice)-1;
+  if(isNaN(idx) || idx<0 || idx>=selectable.length){
+    toast('❌ Невірний вибір');
+    return;
+  }
+  const selectedSkin = selectable[idx];
+  const price = parseInt(prompt('Введіть ціну в Gold для "'+selectedSkin.name+'":', '10'));
+  if(!price || price<1) return;
+  sendTradeOffer(selectedSkin, price);
+}
+
+function sendTradeOffer(skin, price){
+  const playerName = (SAVE.player && SAVE.player.name) ? SAVE.player.name : 'Анонім';
+  const hash = Math.random().toString(16).slice(2,10);
+  const msg = {
+    hash: hash,
+    author: '🔔 '+playerName,
+    text: '🤝 Пропонує '+skin.name+' за '+price+' 🪙',
+    time: Date.now(),
+    trade: {
+      type: 'skin_trade',
+      skin_id: skin.id,
+      skin_name: skin.name,
+      skin_data: JSON.parse(JSON.stringify(skin)),
+      price: price,
+      seller: playerName,
+      seller_id: SAVE.player.id || 'unknown'
+    }
+  };
+  SAVE.chat.push(msg);
+  saveToDisk();
+  renderChat();
+  toast('📤 Пропозицію надіслано в чат!');
+}
+
+// Override acceptTrade to handle skin trades
+const _origAcceptTrade = acceptTrade || function(){};
+function acceptTrade(hash){
+  const msg = SAVE.chat.find(m=>m.hash===hash);
+  if(!msg || !msg.trade){
+    toast('❌ Пропозицію не знайдено');
+    return;
+  }
+  const trade = msg.trade;
+  // Skin trade (from showTradePanel)
+  if(trade.type === 'skin_trade'){
+    if(SAVE.resources.gold < trade.price){
+      toast('❌ Недостатньо Gold! Потрібно '+trade.price+' 🪙');
+      return;
+    }
+    if(!confirm('Прийняти пропозицію: купити "'+trade.skin_name+'" за '+trade.price+' 🪙?')) return;
+    SAVE.resources.gold -= trade.price;
+    // Add skin to buyer's inventory
+    const boughtSkin = JSON.parse(JSON.stringify(trade.skin_data));
+    boughtSkin.id = 'trade_'+Date.now();
+    SAVE.inventory.skins.push(boughtSkin);
+    saveToDisk();
+    updateUI();
+    toast('✅ Куплено "'+trade.skin_name+'" за '+trade.price+' 🪙!');
+    // Remove the trade offer
+    msg.trade = null;
+    saveToDisk();
+    renderChat();
+    return;
+  }
+  // Legacy trade (sell/buy pattern)
+  if(SAVE.resources.gold < trade.price){
+    toast('❌ Недостатньо Gold для торгівлі!');
+    return;
+  }
+  SAVE.resources.gold -= trade.price;
+  SAVE.resources.sapphire += 1;
+  saveToDisk();
+  updateUI();
+  toast('✅ Угоду завершено! Отримано 1 💎 Сапфір');
+  msg.trade = null;
+  saveToDisk();
+  renderChat();
+}
+
+// ===== RESIZE HANDLER =====
+let resizeTimeout;
+window.addEventListener('resize',()=>{
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(()=>{
+    if(document.getElementById('screen-match3').classList.contains('active')){
+      renderBoard();
+    }
+  },200);
+});
+
+// ===== INIT =====
+updateUI();
+console.log('⬡ Habitat OS loaded');
+console.log('Save data:', SAVE);
+</script>
+</body>
+</html>
