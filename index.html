@@ -1048,10 +1048,10 @@ function renderBoard(){
   
   // Apply board skin: background
   const bs = SAVE.board_skins || {};
-  if(bs.bg && bs.bg.pixels && bs.bg.pixels.some(p=>p!==null)){
+  if(bs.bg && bs.bg.pixels){
     const bgUrl = renderPixelsToDataUrl(bs.bg.pixels, bs.bg.size || 32);
     container.style.backgroundImage = 'url('+bgUrl+')';
-    container.style.backgroundSize = '100% 100%';
+    container.style.backgroundSize = 'cover';
     container.style.backgroundPosition = 'center';
     container.style.backgroundRepeat = 'no-repeat';
   }else{
@@ -2398,6 +2398,9 @@ function updateSkinList(){
     }
   }
   boardContainer.innerHTML = boardHtml;
+  // Remove old board skins section to prevent duplicates
+  const oldBoardSection = container.parentNode.querySelector('#board-skins-section');
+  if(oldBoardSection) oldBoardSection.remove();
   if(boardHtml) container.parentNode.insertBefore(boardContainer, container.nextSibling);
   
   // Render board skin previews
@@ -2734,12 +2737,17 @@ function escapeHtml(str){
 }
 
 function exportSave(){
-  const blob = new Blob([JSON.stringify(SAVE, null, 2)], {type:'application/json'});
+  const json = JSON.stringify(SAVE, null, 2);
+  const blob = new Blob([json], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `habitat_os_save_${new Date().toISOString().slice(0,10)}.json`;
+  a.href = url;
+  a.download = `habitat_os_save_${new Date().toISOString().split('T')[0]}.json`;
+  document.body.appendChild(a);
   a.click();
-  toast('✅ Прогрес експортовано');
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('✅ Прогрес експортовано! Файл: '+a.download);
 }
 
 function importSave(){
@@ -3293,10 +3301,26 @@ function buyFromMarket(listingId){
   if(idx>=0) SAVE.market_listings.splice(idx,1);
   saveToDisk();
   updateUI();
+  // Sync to GitHub FIRST so fresh data is available
+  saveMarketToGitHub();
   renderMarketListings();
   toast('✅ "'+listing.skin_name+'" придбано за '+listing.price+' 🪙!');
-  // Sync to GitHub
-  saveMarketToGitHub();
+}
+
+function formatPixelAgeText(ageStr){
+  if(!ageStr || ageStr === '—' || ageStr === '') return '⏱ —';
+  // Parse age string like "5дн", "12год", "<1год"
+  const num = parseInt(ageStr);
+  if(ageStr.includes('дн')){
+    if(num >= 30) return '💀 мертві ('+ageStr+')';
+    if(num >= 7) return '🌅 вицвітають ('+ageStr+')';
+    return '⏱ '+ageStr;
+  }
+  if(ageStr.includes('год')){
+    if(num >= 48) return '🌅 вицвітають ('+ageStr+')';
+    return '⏱ '+ageStr;
+  }
+  return '⏱ '+ageStr;
 }
 
 function renderMarketListings(){
@@ -3325,7 +3349,7 @@ function renderMarketListingsNow(container){
           <div class="shop-name">${l.skin_name}</div>
           <div class="shop-desc">${skinTypeLabel}</div>
           <div style="font-size:11px;color:var(--text3)">👤 ${l.seller} · ${l.listed_at}${isOwn?' · ⭐ Ваше':''}</div>
-          <div style="font-size:10px;color:var(--text3)">🎨 ${l.filled_pixels||'?'} пікселів · ⏳ ${l.oldest_pixel_age||'—'}</div>
+          <div style="font-size:10px;color:var(--text3)">🎨 ${l.filled_pixels||'?'}/${(l.skin_data?.size||l.skin_data?.pixels?.length?Math.sqrt(l.skin_data.pixels.length):16)**2} пікселів · ${formatPixelAgeText(l.oldest_pixel_age)}</div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
           <canvas id="${previewId}" width="32" height="32" style="width:40px;height:40px;image-rendering:pixelated;image-rendering:crisp-edges;border-radius:4px;background:#1a1d33;display:block"></canvas>
