@@ -3283,7 +3283,7 @@ function buyFromMarket(listingId){
     if(!SAVE.board_skins) SAVE.board_skins = {bg: null, frame: null};
     const boardKey = listing.skin_type === 'board_bg' ? 'bg' : 'frame';
     SAVE.board_skins[boardKey] = boughtSkin;
-    toast('🖼 Скін столу "'+listing.skin_name+'" придбано! З'явиться в інвентарі скінів.');
+    toast('🖼 Скін столу "'+listing.skin_name+'" придбано! З\'явиться в інвентарі скінів.');
   }else{
     // Regular gem skin
     SAVE.inventory.skins.push(boughtSkin);
