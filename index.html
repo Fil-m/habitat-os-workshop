@@ -88,6 +88,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .m3-board{display:grid;gap:2px;background:var(--bg2);padding:6px;border-radius:var(--radius);border:2px solid var(--surface);touch-action:manipulation}
 .m3-cell{width:40px;height:40px;border-radius:4px;cursor:pointer;transition:all .15s;position:relative;display:flex;align-items:center;justify-content:center}
 .m3-cell.bw{opacity:0.85}
+.m3-cell.selected{box-shadow:0 0 16px var(--neon);transform:scale(1.05);z-index:2}
+.m3-cell.selected .gem{box-shadow:0 0 12px var(--neon)}
 /* MATCH-3 GEMS — distinct shapes + high contrast */
 .m3-cell .gem{
   width:70%;height:70%;border-radius:4px;position:absolute;top:50%;left:50%;
@@ -333,7 +335,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     </div>
     <div class="m3-header">
       <span class="m3-stat">🎯 <span class="num" id="m3-score">0</span></span>
-      <span class="m3-stat">🔄 <span class="num" id="m3-moves">30</span></span>
       <span class="m3-stat">🏆 <span class="num" id="m3-highscore">0</span></span>
     </div>
     <div class="m3-board-wrap" id="m3-board-wrap">
@@ -424,14 +425,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     </div>
     <div class="shop-category" data-game="match3">⚡ Покращення Match-3</div>
     <div style="margin:0 16px">
-      <div class="shop-item" onclick="buyAchievement('extra_moves')">
-        <div class="shop-icon">🔄</div>
-        <div class="shop-info">
-          <div class="shop-name">+5 ходів</div>
-          <div class="shop-desc">Додаткові ходи в кожній грі</div>
-        </div>
-        <div class="shop-price" id="ach-price-extra_moves">15 🪙</div>
-      </div>
       <div class="shop-item" onclick="buyAchievement('combo')">
         <div class="shop-icon">💥</div>
         <div class="shop-info">
@@ -439,46 +432,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           <div class="shop-desc">Подвоює очки за комбо-збіги</div>
         </div>
         <div class="shop-price" id="ach-price-combo">30 🪙</div>
-      </div>
-      <div class="shop-item" onclick="buyAchievement('extra_swap')">
-        <div class="shop-icon">🔄</div>
-        <div class="shop-info">
-          <div class="shop-name">Extra Swap</div>
-          <div class="shop-desc">Можна поміняти 2 сусідні камінці без ходу</div>
-        </div>
-        <div class="shop-price" id="ach-price-extra_swap">20 🪙</div>
-      </div>
-      <div class="shop-item" onclick="buyAchievement('lucky_start')">
-        <div class="shop-icon">💎</div>
-        <div class="shop-info">
-          <div class="shop-name">Lucky Start</div>
-          <div class="shop-desc">Перший хід завжди дає комбо</div>
-        </div>
-        <div class="shop-price" id="ach-price-lucky_start">15 🪙</div>
-      </div>
-      <div class="shop-item" onclick="buyAchievement('shield')">
-        <div class="shop-icon">🛡️</div>
-        <div class="shop-info">
-          <div class="shop-name">Shield</div>
-          <div class="shop-desc">Один провальний хід не зараховується</div>
-        </div>
-        <div class="shop-price" id="ach-price-shield">25 🪙</div>
-      </div>
-      <div class="shop-item" onclick="buyAchievement('time_bonus')">
-        <div class="shop-icon">⏱</div>
-        <div class="shop-info">
-          <div class="shop-name">Time Bonus</div>
-          <div class="shop-desc">+30 секунд в Speed Mode</div>
-        </div>
-        <div class="shop-price" id="ach-price-time_bonus">20 🪙</div>
-      </div>
-      <div class="shop-item" onclick="buyAchievement('target_lock')">
-        <div class="shop-icon">🎯</div>
-        <div class="shop-info">
-          <div class="shop-name">Target Lock</div>
-          <div class="shop-desc">Показати який камінець дасть найбільше очок</div>
-        </div>
-        <div class="shop-price" id="ach-price-target_lock">30 🪙</div>
       </div>
     </div>
     <div class="shop-category" data-game="all">🏪 Торгівля гравців</div>
@@ -859,7 +812,7 @@ const DEFAULT_SAVE = {
   resources: {gold:50, ruby:0, sapphire:3, pixel_hours:500},
   inventory: {skins:[], canvases:[], owned_achievements:[]},
   equipped_skins: {ruby: null, sapphire: null, gold: null, emerald: null},
-  achievements: {extra_moves:false, combo:false, extra_swap:false, lucky_start:false, shield:false, time_bonus:false, target_lock:false},
+  achievements: {combo:false},
   market_listings: [],
   stats: {matches:0, earned:0, record:0, skins_created:0, skins_sold:0},
   chat: [],
@@ -868,7 +821,8 @@ const DEFAULT_SAVE = {
   active_effects: {},
   player: {id:null, name:'Гравець', email:'', created:null},
   github: {token:'', repo:'', connected:false},
-  board_skins: {bg: null, frame: null}
+  board_skins: {bg: null, frame: null},
+  sold_listings: []
 };
 
 function loadSave(){
@@ -906,12 +860,12 @@ function loadSave(){
       // Convert old achievements array to new object format
       if(Array.isArray(data.achievements)){
         const oldAch = data.achievements;
-        data.achievements = {extra_moves:false, combo:false, extra_swap:false, lucky_start:false, shield:false, time_bonus:false, target_lock:false};
+        data.achievements = {combo:false};
         for(const a of oldAch){
           if(a in data.achievements) data.achievements[a] = true;
         }
       }else if(typeof data.achievements !== 'object' || !data.achievements){
-        data.achievements = {extra_moves:false, combo:false, extra_swap:false, lucky_start:false, shield:false, time_bonus:false, target_lock:false};
+        data.achievements = {combo:false};
       }
       if(!Array.isArray(data.market_listings)) data.market_listings = [];
       // Generate player ID if missing
@@ -1048,13 +1002,8 @@ const BOARD_SIZE = 8;
 let board = [];
 let selectedCell = null;
 let score = 0;
-let movesLeft = 30;
 let isAnimating = false;
 let gameOver = false;
-
-function getMaxMoves(){
-  return 30 + (SAVE.inventory.owned_achievements.includes('extra_moves')?5:0);
-}
 
 function getComboMultiplier(){
   return SAVE.inventory.owned_achievements.includes('combo')?2:1;
@@ -1072,7 +1021,6 @@ function startMatch3(){
   gameOver = false;
   isAnimating = false;
   selectedCell = null;
-  movesLeft = getMaxMoves();
   score = 0;
   board = [];
   for(let r=0;r<BOARD_SIZE;r++){
@@ -1192,7 +1140,6 @@ function calcGridSize(){
 
 function updateM3UI(){
   document.getElementById('m3-score').textContent=score;
-  document.getElementById('m3-moves').textContent=movesLeft;
   document.getElementById('m3-highscore').textContent=SAVE.stats.record;
 }
 
@@ -1230,7 +1177,13 @@ function trySwap(r1,c1,r2,c2){
 
   const matches = findAllMatches();
   if(matches.length){
-    movesLeft--;
+    // Award resources per match: +1 Gold, randomly +1 Ruby or Sapphire
+    const matchGold = matches.length;
+    SAVE.resources.gold += matchGold;
+    if(Math.random() < 0.2) SAVE.resources.ruby = (SAVE.resources.ruby||0) + 1;
+    if(Math.random() < 0.2) SAVE.resources.sapphire = (SAVE.resources.sapphire||0) + 1;
+    saveToDisk();
+    updateUI();
     processMatches(matches, 1);
   }else{
     // Swap back
@@ -1334,10 +1287,7 @@ function applyGravity(){
 }
 
 function checkGameOver(){
-  if(movesLeft<=0){
-    gameOver=true;
-    endMatch3();
-  }
+  // Game never ends — unlimited play
   updateM3UI();
 }
 
@@ -1540,9 +1490,9 @@ const CANVAS_TYPES = {
 // ===== SHOP FUNCTIONS =====
 
 function buyAchievement(id){
-  const prices = {extra_moves:15, combo:30, extra_swap:20, lucky_start:15, shield:25, time_bonus:20, target_lock:30};
-  const names = {extra_moves:'+5 ходів', combo:'Комбо-множник ×2', extra_swap:'Extra Swap', lucky_start:'Lucky Start', shield:'Shield', time_bonus:'Time Bonus', target_lock:'Target Lock'};
-  const icons = {extra_moves:'👟', combo:'💥', extra_swap:'🔀', lucky_start:'🍀', shield:'🛡️', time_bonus:'⏱', target_lock:'🎯'};
+  const prices = {combo:30};
+  const names = {combo:'Комбо-множник ×2'};
+  const icons = {combo:'💥'};
   const price = prices[id];
   if(!price){ toast('❌ Невідома ачівка'); return; }
   if(SAVE.inventory.owned_achievements.includes(id) || SAVE.achievements[id]){
@@ -1566,9 +1516,9 @@ function updateAchieveList(){
   const container = document.getElementById('ach-list');
   if(!container) return;
   const owned = SAVE.inventory.owned_achievements || [];
-  const names = {extra_moves:'+5 ходів', combo:'Комбо-множник ×2', extra_swap:'Extra Swap', lucky_start:'Lucky Start', shield:'Shield', time_bonus:'Time Bonus', target_lock:'Target Lock'};
-  const icons = {extra_moves:'👟', combo:'💥', extra_swap:'🔀', lucky_start:'🍀', shield:'🛡️', time_bonus:'⏱', target_lock:'🎯'};
-  const descs = {extra_moves:'+5 ходів у Match-3', combo:'×2 бали за комбо', extra_swap:'Можна міняти не тільки сусідні', lucky_start:'Старт з 2 випадковими ходами', shield:'Один невдалий хід без втрати', time_bonus:'+30 сек в Speed Mode', target_lock:'Показати найкращий камінець'};
+  const names = {combo:'Комбо-множник ×2'};
+  const icons = {combo:'💥'};
+  const descs = {combo:'×2 бали за комбо'};
   if(!owned.length){
     container.innerHTML='<div class="empty-state"><span class="icon">🏆</span>Купіть ачівки в магазині</div>';
     return;
@@ -2070,11 +2020,15 @@ function updateEditorStats(){
   let ageStr = '';
   let deadCount = 0;
   let fadingCount = 0;
+  let pixelInfo = '🎨 '+gemUsed+' / '+total;
+  if(editorMode === 'board_bg' || editorMode === 'board_frame'){
+    pixelInfo = '🎨 '+gemUsed+' / '+total;
+  }
   if(editorEditingSkinId){
     const skin = SAVE.inventory.skins.find(s=>s.id===editorEditingSkinId);
     if(skin){
       // Count dead and fading gem pixels
-      for(let i=0;i<256;i++){
+      for(let i=0;i<editorPixels.length;i++){
         if(editorPixels[i] && editorPixelTimestamps && editorPixelTimestamps[i]){
           const lt = editorPixelLifetimes[i] || PIXEL_LIFETIME_MS;
           const age = Date.now() - editorPixelTimestamps[i];
@@ -2089,7 +2043,7 @@ function updateEditorStats(){
       }else{
         const now = Date.now();
         let minAge = Infinity;
-        for(let i=0;i<256;i++){
+        for(let i=0;i<editorPixels.length;i++){
           if(editorPixels[i] && editorPixelTimestamps && editorPixelTimestamps[i]){
             minAge = Math.min(minAge, Date.now() - editorPixelTimestamps[i]);
           }
@@ -2101,12 +2055,34 @@ function updateEditorStats(){
       }
     }
   }
+  // Find oldest pixel age
+  let oldestAgeStr = '';
+  if(editorPixelTimestamps){
+    let oldestTs = 0;
+    for(let i=0;i<editorPixels.length;i++){
+      if(editorPixels[i]!==null && editorPixelTimestamps[i]){
+        if(editorPixelTimestamps[i] > oldestTs) oldestTs = editorPixelTimestamps[i];
+      }
+    }
+    if(oldestTs > 0){
+      const ageHrs = Math.floor((Date.now() - oldestTs) / 3600000);
+      oldestAgeStr = ageHrs < 1 ? '<1 год' : ageHrs < 24 ? oldestAgeStr+' год' : Math.floor(ageHrs/24)+' дн';
+    }
+  }
   const lifetimeLabel = PIXEL_LIFETIME_OPTIONS.find(o => o.ms === editorPixelLifetime)?.label || '24h';
-  document.getElementById('editor-stats').innerHTML = `🎨 ${gemUsed} · 🖼 ${bgUsed} · ⊞ ${frameUsed} / ${total} · 🎨 ${SAVE.resources.pixel_hours} px-год${ageStr ? ' · '+ageStr : ''}`;
+  document.getElementById('editor-stats').innerHTML = `${pixelInfo} · 🎨 ${SAVE.resources.pixel_hours} px-год${ageStr ? ' · '+ageStr : ''}${oldestAgeStr ? ' · ⏳ найст. '+oldestAgeStr : ''}`;
   document.getElementById('editor-pixels-left').textContent = SAVE.resources.pixel_hours;
   // Show estimated cost at save
-  const estCost = (gemUsed + bgUsed + frameUsed) * editorPixelCost;
-  document.getElementById('editor-cost-stats').innerHTML = `🆕 ${editorNewPixelsCount} нових · 💰 ~${estCost} px-год · ⌛ ${lifetimeLabel}`;
+  const estCost = gemUsed * editorPixelCost;
+  const costHtml = `<span style="font-weight:600">🆕 ${editorNewPixelsCount} нових · 💰 ~${estCost} px-год · ⌛ ${lifetimeLabel}</span>`;
+  const costEl = document.getElementById('editor-cost-stats');
+  if(costEl){
+    if(SAVE.resources.pixel_hours < estCost){
+      costEl.innerHTML = costHtml + ' <span style="color:var(--red);font-weight:700">⚠️ Недостатньо px-год!</span>';
+    }else{
+      costEl.innerHTML = costHtml;
+    }
+  }
 }
 
 function clearSkinCanvas(){
@@ -2396,6 +2372,7 @@ function updateSkinList(){
         </div>
         <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
           <button class="btn btn-small btn-success" onclick="equipBoardSkin('bg')" style="flex:1">🎨 Як фон дошки</button>
+          <button class="btn btn-small btn-primary" onclick="listSkinOnMarket('${bs.bg.id}')" style="flex:1">📤 На ринок</button>
           <button class="btn btn-small btn-secondary" onclick="openBoardSkinEditor('board_bg')" style="flex:0">✏️</button>
           <button class="btn btn-small btn-danger" onclick="removeBoardSkin('bg')" style="flex:0">🗑</button>
         </div>
@@ -2413,6 +2390,7 @@ function updateSkinList(){
         </div>
         <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
           <button class="btn btn-small btn-success" onclick="equipBoardSkin('frame')" style="flex:1">⊞ Як рамку дошки</button>
+          <button class="btn btn-small btn-primary" onclick="listSkinOnMarket('${bs.frame.id}')" style="flex:1">📤 На ринок</button>
           <button class="btn btn-small btn-secondary" onclick="openBoardSkinEditor('board_frame')" style="flex:0">✏️</button>
           <button class="btn btn-small btn-danger" onclick="removeBoardSkin('frame')" style="flex:0">🗑</button>
         </div>
@@ -2460,6 +2438,7 @@ function equipBoardSkin(key){
   toast('✅ Скін встановлено: '+(key==='bg'?'🖼 Фон дошки':'⊞ Рамка дошки'));
   saveToDisk();
   updateUI();
+  renderBoard();
 }
 
 function removeBoardSkin(key){
@@ -2985,6 +2964,20 @@ async function loadMarketFromGitHub(){
     marketSha = data.sha;
     const content = fromBase64(data.content);
     const listings = JSON.parse(content);
+    // Check for sold listings — credit the seller
+    const playerId = SAVE.player.id || '';
+    const oldListings = SAVE.market_listings || [];
+    // Find listings that disappeared (were sold) and belonged to this player
+    for(const old of oldListings){
+      if(old.seller_id === playerId){
+        const stillExists = listings.find(l=>l.id===old.id);
+        if(!stillExists){
+          // This listing was sold — credit gold
+          SAVE.resources.gold += old.price;
+          toast('💰 Ваш скін "'+old.skin_name+'" продано! +'+old.price+' 🪙');
+        }
+      }
+    }
     // REPLACE local listings with GitHub data (P2P sync — no merge)
     SAVE.market_listings = listings;
     return true;
@@ -3142,6 +3135,66 @@ loadMarketFromGitHub();
 loadChatFromGitHub();
 
 async function listSkinOnMarket(skinId){
+  // Check if it's a board skin first
+  const bs = SAVE.board_skins || {};
+  let boardSkinKey = null;
+  if(bs.bg && bs.bg.id === skinId) boardSkinKey = 'bg';
+  if(bs.frame && bs.frame.id === skinId) boardSkinKey = 'frame';
+  
+  if(boardSkinKey){
+    const boardSkin = bs[boardSkinKey];
+    if(SAVE.market_listings.find(l=>l.skin_id===skinId)){
+      toast('ℹ️ Скін вже виставлено на продаж!');
+      return;
+    }
+    const price = parseInt(prompt('Ціна продажу в Gold для "'+boardSkin.name+'":', '10'));
+    if(!price || price < 1) return;
+    if(!confirm('Виставити "'+boardSkin.name+'" на ринок за '+price+' 🪙?')) return;
+    const sellerName = (SAVE.player && SAVE.player.name) ? SAVE.player.name : 'Анонім';
+    const sellerId = SAVE.player.id || 'unknown';
+    const filledPixels = boardSkin.pixels ? boardSkin.pixels.filter(p=>p!==null).length : 0;
+    let oldestTs = 0;
+    if(boardSkin.pixel_ts){
+      for(let i=0;i<boardSkin.pixels.length;i++){
+        if(boardSkin.pixels[i]!==null && boardSkin.pixel_ts[i]){
+          if(boardSkin.pixel_ts[i] > oldestTs) oldestTs = boardSkin.pixel_ts[i];
+        }
+      }
+    }
+    const oldestAgeStr = oldestTs > 0 ? (()=>{const h=Math.floor((Date.now()-oldestTs)/3600000);return h<1?'<1год':h<24?h+'год':Math.floor(h/24)+'дн';})() : '';
+    const listing = {
+      id: 'm'+Date.now(),
+      seller: sellerName,
+      seller_id: sellerId,
+      skin_id: boardSkin.id,
+      skin_name: boardSkin.name,
+      skin_type: 'board_'+boardSkinKey,
+      gem_type: 'unknown',
+      price: price,
+      listed_at: new Date().toISOString().split('T')[0],
+      skin_data: JSON.parse(JSON.stringify(boardSkin)),
+      filled_pixels: filledPixels,
+      oldest_pixel_age: oldestAgeStr
+    };
+    SAVE.market_listings.push(listing);
+    delete bs[boardSkinKey];
+    saveToDisk();
+    updateUI();
+    toast('📤 "'+boardSkin.name+'" виставлено на ринок за '+price+' 🪙!');
+    saveMarketToGitHub();
+    await loadChatFromGitHub();
+    const hash = Math.random().toString(16).slice(2,10);
+    SAVE.chat.push({
+      hash: hash, author: '🏪 Ринок', text: '📤 '+sellerName+' виставив '+boardSkin.name+' на продаж за '+price+' 🪙',
+      time: Date.now(), trade: null
+    });
+    saveToDisk();
+    saveChatToGitHub().catch(()=>{});
+    renderChat();
+    return;
+  }
+  
+  // Regular gem skin
   const skin = SAVE.inventory.skins.find(s=>s.id===skinId);
   if(!skin){ toast('❌ Скін не знайдено'); return; }
   // Check if already listed
@@ -3154,16 +3207,29 @@ async function listSkinOnMarket(skinId){
   if(!confirm('Виставити "'+skin.name+'" на ринок за '+price+' 🪙?')) return;
   const sellerName = (SAVE.player && SAVE.player.name) ? SAVE.player.name : 'Анонім';
   const sellerId = SAVE.player.id || 'unknown';
+  const filledPixels = skin.pixels ? skin.pixels.filter(p=>p!==null).length : 0;
+  let oldestTs = 0;
+  if(skin.pixel_ts){
+    for(let i=0;i<skin.pixels.length;i++){
+      if(skin.pixels[i]!==null && skin.pixel_ts[i]){
+        if(skin.pixel_ts[i] > oldestTs) oldestTs = skin.pixel_ts[i];
+      }
+    }
+  }
+  const oldestAgeStr = oldestTs > 0 ? (()=>{const h=Math.floor((Date.now()-oldestTs)/3600000);return h<1?'<1год':h<24?h+'год':Math.floor(h/24)+'дн';})() : '';
   const listing = {
     id: 'm'+Date.now(),
     seller: sellerName,
     seller_id: sellerId,
     skin_id: skin.id,
     skin_name: skin.name,
+    skin_type: 'gem',
     gem_type: skin.gem_type || skin.type || 'unknown',
     price: price,
     listed_at: new Date().toISOString().split('T')[0],
-    skin_data: JSON.parse(JSON.stringify(skin))
+    skin_data: JSON.parse(JSON.stringify(skin)),
+    filled_pixels: filledPixels,
+    oldest_pixel_age: oldestAgeStr
   };
   SAVE.market_listings.push(listing);
   // Remove skin from inventory
@@ -3201,13 +3267,27 @@ function buyFromMarket(listingId){
     return;
   }
   if(!confirm('Купити "'+listing.skin_name+'" за '+listing.price+' 🪙?')) return;
-  // Deduct gold
+  // Deduct gold from buyer
   SAVE.resources.gold -= listing.price;
+  // Credit gold to seller (if seller is in the same game session)
+  // The seller will receive gold on next loadMarketFromGitHub sync
+  const soldListing = JSON.parse(JSON.stringify(listing));
+  if(!Array.isArray(SAVE.sold_listings)) SAVE.sold_listings = [];
+  SAVE.sold_listings.push(soldListing);
   // Add skin to buyer's inventory
   const boughtSkin = JSON.parse(JSON.stringify(listing.skin_data));
   boughtSkin.id = 'bought_'+Date.now();
   boughtSkin.created = new Date().toISOString().split('T')[0];
-  SAVE.inventory.skins.push(boughtSkin);
+  if(listing.skin_type && listing.skin_type.startsWith('board_')){
+    // Board skin goes to SAVE.board_skins
+    if(!SAVE.board_skins) SAVE.board_skins = {bg: null, frame: null};
+    const boardKey = listing.skin_type === 'board_bg' ? 'bg' : 'frame';
+    SAVE.board_skins[boardKey] = boughtSkin;
+    toast('🖼 Скін столу "'+listing.skin_name+'" придбано! З'явиться в інвентарі скінів.');
+  }else{
+    // Regular gem skin
+    SAVE.inventory.skins.push(boughtSkin);
+  }
   // Remove listing
   const idx = SAVE.market_listings.indexOf(listing);
   if(idx>=0) SAVE.market_listings.splice(idx,1);
@@ -3236,20 +3316,51 @@ function renderMarketListingsNow(container){
   for(const l of listings){
     const icon = gemIcons[l.gem_type] || '🎨';
     const isOwn = l.seller_id === (SAVE.player.id || '');
-    html += `<div class="shop-item" style="cursor:default">
-      <div class="shop-icon">${icon}</div>
-      <div class="shop-info">
-        <div class="shop-name">${l.skin_name}</div>
-        <div class="shop-desc">👤 ${l.seller} · ${l.listed_at}${isOwn?' · ⭐ Ваше':''}</div>
+    const skinTypeLabel = l.skin_type === 'board_bg' ? '🖼 Фон дошки' : l.skin_type === 'board_frame' ? '⊞ Рамка дошки' : '🎨 Скін камінця';
+    const previewId = 'market-preview-'+l.id;
+    html += `<div class="shop-item" style="cursor:default;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:10px;width:100%">
+        <div class="shop-icon">${icon}</div>
+        <div class="shop-info" style="flex:1;min-width:0">
+          <div class="shop-name">${l.skin_name}</div>
+          <div class="shop-desc">${skinTypeLabel}</div>
+          <div style="font-size:11px;color:var(--text3)">👤 ${l.seller} · ${l.listed_at}${isOwn?' · ⭐ Ваше':''}</div>
+          <div style="font-size:10px;color:var(--text3)">🎨 ${l.filled_pixels||'?'} пікселів · ⏳ ${l.oldest_pixel_age||'—'}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+          <canvas id="${previewId}" width="32" height="32" style="width:40px;height:40px;image-rendering:pixelated;image-rendering:crisp-edges;border-radius:4px;background:#1a1d33;display:block"></canvas>
+          <div class="shop-price" style="font-size:12px">${l.price} 🪙</div>
+        </div>
       </div>
-      <div class="shop-price">${l.price} 🪙</div>
-      ${isOwn
-        ? `<button class="btn btn-small btn-secondary" onclick="removeMarketListing('${l.id}')">↩ Зняти</button>`
-        : `<button class="btn btn-small btn-primary" onclick="buyFromMarket('${l.id}')">🪙 Купити</button>`
-      }
+      <div style="display:flex;gap:6px;width:100%;margin-top:6px">
+        ${isOwn
+          ? `<button class="btn btn-small btn-secondary" onclick="removeMarketListing('${l.id}')" style="flex:1">↩ Зняти</button>`
+          : `<button class="btn btn-small btn-primary" onclick="buyFromMarket('${l.id}')" style="flex:1">🪙 Купити</button>`
+        }
+      </div>
     </div>`;
   }
   container.innerHTML = html;
+  
+  // Render previews
+  setTimeout(()=>{
+    for(const l of listings){
+      const canvas = document.getElementById('market-preview-'+l.id);
+      if(!canvas || !l.skin_data || !l.skin_data.pixels) continue;
+      const ctx = canvas.getContext('2d');
+      const sz = l.skin_data.size || 16;
+      canvas.width = sz;
+      canvas.height = sz;
+      const imageData = ctx.createImageData(sz, sz);
+      const pixels = l.skin_data.pixels;
+      for(let p=0;p<sz*sz;p++){
+        const color = pixels[p] || '#1a1d33';
+        const [r,g,b] = hexToRgb(color);
+        imageData.data[p*4]=r; imageData.data[p*4+1]=g; imageData.data[p*4+2]=b; imageData.data[p*4+3]=255;
+      }
+      ctx.putImageData(imageData,0,0);
+    }
+  },50);
 }
 
 function removeMarketListing(listingId){
@@ -3259,7 +3370,13 @@ function removeMarketListing(listingId){
   // Return skin to seller's inventory
   const returnedSkin = JSON.parse(JSON.stringify(listing.skin_data));
   returnedSkin.id = 'returned_'+Date.now();
-  SAVE.inventory.skins.push(returnedSkin);
+  if(listing.skin_type && listing.skin_type.startsWith('board_')){
+    if(!SAVE.board_skins) SAVE.board_skins = {bg: null, frame: null};
+    const boardKey = listing.skin_type === 'board_bg' ? 'bg' : 'frame';
+    SAVE.board_skins[boardKey] = returnedSkin;
+  }else{
+    SAVE.inventory.skins.push(returnedSkin);
+  }
   // Remove listing
   const idx = SAVE.market_listings.indexOf(listing);
   if(idx>=0) SAVE.market_listings.splice(idx,1);
