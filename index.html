@@ -404,23 +404,15 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         <button class="btn btn-small btn-primary" onclick="buyCanvas('emerald')">🎨 20🪙</button>
       </div>
     </div>
-    <div class="shop-category" data-game="match3">🖼 Скіни столу</div>
+    <div class="shop-category" data-game="match3">🖼 Скін столу</div>
     <div style="margin:0 16px">
       <div class="shop-item" data-game="match3">
         <div class="shop-icon">🖼</div>
         <div class="shop-info">
-          <div class="shop-name">Board BG Canvas — 32×32</div>
+          <div class="shop-name">Board Canvas — 32×32</div>
           <div class="shop-desc">Фон для всієї дошки Match-3</div>
         </div>
-        <button class="btn btn-small btn-primary" onclick="buyBoardCanvas('board_bg')">🖼 25🪙</button>
-      </div>
-      <div class="shop-item" data-game="match3">
-        <div class="shop-icon">⊞</div>
-        <div class="shop-info">
-          <div class="shop-name">Board Frame Canvas — 32×32</div>
-          <div class="shop-desc">Рамка навколо дошки Match-3</div>
-        </div>
-        <button class="btn btn-small btn-primary" onclick="buyBoardCanvas('board_frame')">⊞ 25🪙</button>
+        <button class="btn btn-small btn-primary" onclick="buyBoardCanvas('board')">🖼 25🪙</button>
       </div>
     </div>
     <div class="shop-category" data-game="match3">⚡ Покращення Match-3</div>
@@ -821,7 +813,7 @@ const DEFAULT_SAVE = {
   active_effects: {},
   player: {id:null, name:'Гравець', email:'', created:null},
   github: {token:'', repo:'', connected:false},
-  board_skins: {bg: null, frame: null},
+  board_skin: null,
   sold_listings: []
 };
 
@@ -1047,9 +1039,9 @@ function renderBoard(){
   container.style.gridTemplateColumns=`repeat(${BOARD_SIZE},${style}px)`;
   
   // Apply board skin: background
-  const bs = SAVE.board_skins || {};
-  if(bs.bg && bs.bg.pixels){
-    const bgUrl = renderPixelsToDataUrl(bs.bg.pixels, bs.bg.size || 32);
+  const boardSkin = SAVE.board_skin || null;
+  if(boardSkin && boardSkin.pixels){
+    const bgUrl = renderPixelsToDataUrl(boardSkin.pixels, boardSkin.size || 32);
     container.style.backgroundImage = 'url('+bgUrl+')';
     container.style.backgroundSize = 'cover';
     container.style.backgroundPosition = 'center';
@@ -1059,19 +1051,12 @@ function renderBoard(){
     container.style.backgroundSize = '';
     container.style.backgroundRepeat = '';
   }
-  
-  // Apply board skin: frame
-  if(bs.frame && bs.frame.pixels && bs.frame.pixels.some(p=>p!==null)){
-    const frameUrl = renderPixelsToDataUrl(bs.frame.pixels, bs.frame.size || 32);
-    container.style.borderImage = 'url('+frameUrl+') 4 fill stretch';
-    container.style.borderWidth = '6px';
-    container.style.borderStyle = 'solid';
-  }else{
-    container.style.borderImage = '';
-    container.style.borderWidth = '2px';
-    container.style.borderStyle = 'solid';
-    container.style.borderColor = 'var(--surface)';
-  }
+
+  // Reset border
+  container.style.borderImage = '';
+  container.style.borderWidth = '2px';
+  container.style.borderStyle = 'solid';
+  container.style.borderColor = 'var(--surface)';
   
   const gemGlowActive = isEffectActive('gem_glow');
   for(let r=0;r<BOARD_SIZE;r++){
@@ -1571,13 +1556,8 @@ function buyCanvas(type){
 
 // ===== BOARD CANVAS SHOP =====
 function buyBoardCanvas(skinType){
-  if(!SAVE.board_skins) SAVE.board_skins = {bg: null, frame: null};
-  const defs = {
-    board_bg: {name:'Board BG Canvas', icon:'🖼', price:25, size:32},
-    board_frame: {name:'Board Frame Canvas', icon:'⊞', price:25, size:32}
-  };
-  const def = defs[skinType];
-  if(!def){ toast('❌ Невідомий тип'); return; }
+  if(!SAVE.board_skin) SAVE.board_skin = null;
+  const def = {name:'Board Canvas', icon:'🖼', price:25, size:32};
   if(SAVE.resources.gold < def.price){
     toast('❌ Недостатньо Gold! Потрібно '+def.price+' 🪙');
     return;
@@ -1586,12 +1566,12 @@ function buyBoardCanvas(skinType){
   saveToDisk();
   updateUI();
   if(confirm('✅ '+def.name+' придбано! Відкрити редактор?')){
-    openBoardSkinEditor(skinType);
+    openBoardSkinEditor();
   }
 }
 
 function layerLabel(layer){
-  return layer==='gem' ? '🎨 Камінець' : layer==='bg' ? '🖼 Фон' : layer==='frame' ? '⊞ Рамка' : layer;
+  return layer==='gem' ? '🎨 Камінець' : layer==='bg' ? '🖼 Фон' : layer;
 }
 
 // ===== EFFECTS & RULES SYSTEM =====
@@ -1695,8 +1675,8 @@ let editorGemType = null;
 let editorDirty = false;
 let editorInitialized = false;
 let editorActiveLayer = 'gem';
-let editorMode = 'gem'; // 'gem' | 'board_bg' | 'board_frame'
-let editorBoardSkinType = null; // 'board_bg' or 'board_frame' when editing board skins
+let editorMode = 'gem'; // 'gem' | 'board_bg'
+let editorBoardSkinType = null; // non-null when editing a board skin
 let editorEditingSkinId = null; // null = new skin, string = editing existing skin
 let editorCanvasIdx = -1; // index in SAVE.inventory.canvases for new skins
 let editorTool = 'pen'; // 'pen' or 'eraser'
@@ -1742,9 +1722,9 @@ function openSkinEditor(gemType, canvasIndex){
 }
 
 // ===== OPEN BOARD SKIN EDITOR =====
-function openBoardSkinEditor(skinType){
-  editorMode = skinType; // 'board_bg' or 'board_frame'
-  editorBoardSkinType = skinType;
+function openBoardSkinEditor(){
+  editorMode = 'board_bg';
+  editorBoardSkinType = 'board_bg';
   editorEditingSkinId = null;
   editorCanvasIdx = -1;
   editorGemType = null;
@@ -1763,7 +1743,7 @@ function openBoardSkinEditor(skinType){
   updateEditorModeInfo();
   setTimeout(() => buildLifetimeOptions && buildLifetimeOptions(), 0);
   showScreen('skineditor');
-  toast('🎨 Малюйте '+ (skinType==='board_bg' ? 'фон дошки' : 'рамку дошки') +' (32×32)');
+  toast('🎨 Малюйте фон дошки (32×32)');
 }
 
 // ===== OPEN EXISTING SKIN FOR EDITING =====
@@ -2005,8 +1985,6 @@ function updateEditorModeInfo(){
   if(!el) return;
   if(editorMode === 'board_bg'){
     el.textContent = '🖼 Режим: Фон дошки (32×32)';
-  }else if(editorMode === 'board_frame'){
-    el.textContent = '⊞ Режим: Рамка дошки (32×32)';
   }else{
     el.textContent = '🎨 Режим: Скін камінця (16×16)';
   }
@@ -2021,7 +1999,7 @@ function updateEditorStats(){
   let deadCount = 0;
   let fadingCount = 0;
   let pixelInfo = '🎨 '+gemUsed+' / '+total;
-  if(editorMode === 'board_bg' || editorMode === 'board_frame'){
+  if(editorMode === 'board_bg'){
     pixelInfo = '🎨 '+gemUsed+' / '+total;
   }
   if(editorEditingSkinId){
@@ -2109,15 +2087,13 @@ function saveSkinFromEditor(){
   }
 
   // === BOARD SKIN SAVING ===
-  if(editorMode === 'board_bg' || editorMode === 'board_frame'){
-    if(!confirm('Зберегти '+(editorMode==='board_bg'?'фон дошки':'рамку дошки')+'?')) return;
-    if(!SAVE.board_skins) SAVE.board_skins = {bg: null, frame: null};
-    const key = editorMode === 'board_bg' ? 'bg' : 'frame';
-    const skinId = 'board_'+key+'_'+Date.now();
+  if(editorMode === 'board_bg'){
+    if(!confirm('Зберегти фон дошки?')) return;
+    const skinId = 'board_'+Date.now();
     const boardSkin = {
       id: skinId,
-      name: (editorMode==='board_bg'?'Board BG':'Board Frame')+' #'+(SAVE.inventory.skins.length+1),
-      type: editorMode,
+      name: 'Board Skin #'+(SAVE.inventory.skins.length+1),
+      type: 'board_bg',
       size: editorSize,
       pixels: [...editorPixels],
       pixel_ts: [...editorPixelTimestamps],
@@ -2125,10 +2101,10 @@ function saveSkinFromEditor(){
       created: new Date().toISOString().split('T')[0],
       updated: new Date().toISOString().split('T')[0]
     };
-    SAVE.board_skins[key] = boardSkin;
+    SAVE.board_skin = boardSkin;
     saveToDisk();
     updateUI();
-    toast('💾 '+(editorMode==='board_bg'?'Фон дошки':'Рамку дошки')+' збережено!');
+    toast('💾 Фон дошки збережено!');
     closeEditorAndGoBack();
     return;
   }
@@ -2356,46 +2332,26 @@ function updateSkinList(){
   // Render board skins section
   const boardContainer = document.createElement('div');
   boardContainer.id = 'board-skins-section';
-  const bs = SAVE.board_skins || {};
+  const boardSkin = SAVE.board_skin || null;
   let boardHtml = '';
-  if(bs.bg || bs.frame){
-    boardHtml += '<div style="margin:12px 0 4px;font-size:13px;font-weight:700;color:var(--neon)">🖼 Скіни столу</div>';
-    if(bs.bg){
-      const sz = bs.bg.size || 32;
-      boardHtml += `<div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px;margin-bottom:6px;border:1px solid var(--surface2)">
-        <div style="display:flex;align-items:center;gap:10px">
-          <canvas id="board-skin-bg-preview" width="${sz}" height="${sz}" style="width:64px;height:64px;image-rendering:pixelated;image-rendering:crisp-edges;border-radius:4px;background:#1a1d33;display:block"></canvas>
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:600;font-size:14px">🖼 Фон дошки</div>
-            <div style="font-size:10px;color:var(--text3)">📅 ${bs.bg.created||'—'}</div>
-          </div>
+  if(boardSkin){
+    boardHtml += '<div style="margin:12px 0 4px;font-size:13px;font-weight:700;color:var(--neon)">🖼 Скін столу</div>';
+    const sz = boardSkin.size || 32;
+    boardHtml += `<div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px;margin-bottom:6px;border:1px solid var(--surface2)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <canvas id="board-skin-preview" width="${sz}" height="${sz}" style="width:64px;height:64px;image-rendering:pixelated;image-rendering:crisp-edges;border-radius:4px;background:#1a1d33;display:block"></canvas>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:14px">🖼 Фон дошки</div>
+          <div style="font-size:10px;color:var(--text3)">📅 ${boardSkin.created||'—'}</div>
         </div>
-        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
-          <button class="btn btn-small btn-success" onclick="equipBoardSkin('bg')" style="flex:1">🎨 Як фон дошки</button>
-          <button class="btn btn-small btn-primary" onclick="listSkinOnMarket('${bs.bg.id}')" style="flex:1">📤 На ринок</button>
-          <button class="btn btn-small btn-secondary" onclick="openBoardSkinEditor('board_bg')" style="flex:0">✏️</button>
-          <button class="btn btn-small btn-danger" onclick="removeBoardSkin('bg')" style="flex:0">🗑</button>
-        </div>
-      </div>`;
-    }
-    if(bs.frame){
-      const sz = bs.frame.size || 32;
-      boardHtml += `<div style="background:var(--surface2);border-radius:var(--radius-sm);padding:10px;margin-bottom:6px;border:1px solid var(--surface2)">
-        <div style="display:flex;align-items:center;gap:10px">
-          <canvas id="board-skin-frame-preview" width="${sz}" height="${sz}" style="width:64px;height:64px;image-rendering:pixelated;image-rendering:crisp-edges;border-radius:4px;background:#1a1d33;display:block"></canvas>
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:600;font-size:14px">⊞ Рамка дошки</div>
-            <div style="font-size:10px;color:var(--text3)">📅 ${bs.frame.created||'—'}</div>
-          </div>
-        </div>
-        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
-          <button class="btn btn-small btn-success" onclick="equipBoardSkin('frame')" style="flex:1">⊞ Як рамку дошки</button>
-          <button class="btn btn-small btn-primary" onclick="listSkinOnMarket('${bs.frame.id}')" style="flex:1">📤 На ринок</button>
-          <button class="btn btn-small btn-secondary" onclick="openBoardSkinEditor('board_frame')" style="flex:0">✏️</button>
-          <button class="btn btn-small btn-danger" onclick="removeBoardSkin('frame')" style="flex:0">🗑</button>
-        </div>
-      </div>`;
-    }
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+        <button class="btn btn-small btn-success" onclick="equipBoardSkin()" style="flex:1">🎨 Встановити</button>
+        <button class="btn btn-small btn-primary" onclick="listSkinOnMarket('${boardSkin.id}')" style="flex:1">📤 На ринок</button>
+        <button class="btn btn-small btn-secondary" onclick="openBoardSkinEditor()" style="flex:0">✏️</button>
+        <button class="btn btn-small btn-danger" onclick="removeBoardSkin()" style="flex:0">🗑</button>
+      </div>
+    </div>`;
   }
   boardContainer.innerHTML = boardHtml;
   // Remove old board skins section to prevent duplicates
@@ -2403,29 +2359,15 @@ function updateSkinList(){
   if(oldBoardSection) oldBoardSection.remove();
   if(boardHtml) container.parentNode.insertBefore(boardContainer, container.nextSibling);
   
-  // Render board skin previews
-  if(bs.bg){
-    const bgCanvas = document.getElementById('board-skin-bg-preview');
-    if(bgCanvas){
-      const ctx = bgCanvas.getContext('2d');
-      const sz = bs.bg.size || 32;
+  // Render board skin preview
+  if(boardSkin){
+    const prevCanvas = document.getElementById('board-skin-preview');
+    if(prevCanvas){
+      const ctx = prevCanvas.getContext('2d');
+      const sz = boardSkin.size || 32;
       const imageData = ctx.createImageData(sz, sz);
       for(let p=0;p<sz*sz;p++){
-        const color = bs.bg.pixels[p] || '#1a1d33';
-        const [r,g,b] = hexToRgb(color);
-        imageData.data[p*4]=r; imageData.data[p*4+1]=g; imageData.data[p*4+2]=b; imageData.data[p*4+3]=255;
-      }
-      ctx.putImageData(imageData,0,0);
-    }
-  }
-  if(bs.frame){
-    const frCanvas = document.getElementById('board-skin-frame-preview');
-    if(frCanvas){
-      const ctx = frCanvas.getContext('2d');
-      const sz = bs.frame.size || 32;
-      const imageData = ctx.createImageData(sz, sz);
-      for(let p=0;p<sz*sz;p++){
-        const color = bs.frame.pixels[p] || '#1a1d33';
+        const color = boardSkin.pixels[p] || '#1a1d33';
         const [r,g,b] = hexToRgb(color);
         imageData.data[p*4]=r; imageData.data[p*4+1]=g; imageData.data[p*4+2]=b; imageData.data[p*4+3]=255;
       }
@@ -2435,20 +2377,20 @@ function updateSkinList(){
 }
 
 // ===== BOARD SKIN EQUIP =====
-function equipBoardSkin(key){
-  const bs = SAVE.board_skins || {};
-  if(!bs[key]){ toast('❌ Немає скіна для цього типу'); return; }
-  toast('✅ Скін встановлено: '+(key==='bg'?'🖼 Фон дошки':'⊞ Рамка дошки'));
+function equipBoardSkin(){
+  const bs = SAVE.board_skin;
+  if(!bs){ toast('❌ Немає скіна'); return; }
+  toast('✅ Скін столу встановлено!');
   saveToDisk();
   updateUI();
   renderBoard();
 }
 
-function removeBoardSkin(key){
-  const bs = SAVE.board_skins || {};
-  if(!bs[key]){ toast('❌ Немає скіна'); return; }
-  if(!confirm('Видалити '+(key==='bg'?'фон дошки':'рамку дошки')+'?')) return;
-  delete bs[key];
+function removeBoardSkin(){
+  const bs = SAVE.board_skin;
+  if(!bs){ toast('❌ Немає скіна'); return; }
+  if(!confirm('Видалити фон дошки?')) return;
+  SAVE.board_skin = null;
   saveToDisk();
   updateUI();
   toast('🗑 Скін видалено');
@@ -3144,13 +3086,8 @@ loadChatFromGitHub();
 
 async function listSkinOnMarket(skinId){
   // Check if it's a board skin first
-  const bs = SAVE.board_skins || {};
-  let boardSkinKey = null;
-  if(bs.bg && bs.bg.id === skinId) boardSkinKey = 'bg';
-  if(bs.frame && bs.frame.id === skinId) boardSkinKey = 'frame';
-  
-  if(boardSkinKey){
-    const boardSkin = bs[boardSkinKey];
+  const boardSkin = SAVE.board_skin || null;
+  if(boardSkin && boardSkin.id === skinId){
     if(SAVE.market_listings.find(l=>l.skin_id===skinId)){
       toast('ℹ️ Скін вже виставлено на продаж!');
       return;
@@ -3176,7 +3113,7 @@ async function listSkinOnMarket(skinId){
       seller_id: sellerId,
       skin_id: boardSkin.id,
       skin_name: boardSkin.name,
-      skin_type: 'board_'+boardSkinKey,
+      skin_type: 'board',
       gem_type: 'unknown',
       price: price,
       listed_at: new Date().toISOString().split('T')[0],
@@ -3185,7 +3122,7 @@ async function listSkinOnMarket(skinId){
       oldest_pixel_age: oldestAgeStr
     };
     SAVE.market_listings.push(listing);
-    delete bs[boardSkinKey];
+    SAVE.board_skin = null;
     saveToDisk();
     updateUI();
     toast('📤 "'+boardSkin.name+'" виставлено на ринок за '+price+' 🪙!');
@@ -3286,12 +3223,9 @@ function buyFromMarket(listingId){
   const boughtSkin = JSON.parse(JSON.stringify(listing.skin_data));
   boughtSkin.id = 'bought_'+Date.now();
   boughtSkin.created = new Date().toISOString().split('T')[0];
-  if(listing.skin_type && listing.skin_type.startsWith('board_')){
-    // Board skin goes to SAVE.board_skins
-    if(!SAVE.board_skins) SAVE.board_skins = {bg: null, frame: null};
-    const boardKey = listing.skin_type === 'board_bg' ? 'bg' : 'frame';
-    SAVE.board_skins[boardKey] = boughtSkin;
-    toast('🖼 Скін столу "'+listing.skin_name+'" придбано! З\'явиться в інвентарі скінів.');
+  if(listing.skin_type && listing.skin_type === 'board'){
+    SAVE.board_skin = boughtSkin;
+    toast('🖼 Скін столу "'+listing.skin_name+'" придбано!');
   }else{
     // Regular gem skin
     SAVE.inventory.skins.push(boughtSkin);
@@ -3340,7 +3274,7 @@ function renderMarketListingsNow(container){
   for(const l of listings){
     const icon = gemIcons[l.gem_type] || '🎨';
     const isOwn = l.seller_id === (SAVE.player.id || '');
-    const skinTypeLabel = l.skin_type === 'board_bg' ? '🖼 Фон дошки' : l.skin_type === 'board_frame' ? '⊞ Рамка дошки' : '🎨 Скін камінця';
+    const skinTypeLabel = l.skin_type === 'board' ? '🖼 Скін столу' : '🎨 Скін камінця';
     const previewId = 'market-preview-'+l.id;
     html += `<div class="shop-item" style="cursor:default;flex-wrap:wrap">
       <div style="display:flex;align-items:center;gap:10px;width:100%">
@@ -3394,10 +3328,10 @@ function removeMarketListing(listingId){
   // Return skin to seller's inventory
   const returnedSkin = JSON.parse(JSON.stringify(listing.skin_data));
   returnedSkin.id = 'returned_'+Date.now();
-  if(listing.skin_type && listing.skin_type.startsWith('board_')){
-    if(!SAVE.board_skins) SAVE.board_skins = {bg: null, frame: null};
-    const boardKey = listing.skin_type === 'board_bg' ? 'bg' : 'frame';
-    SAVE.board_skins[boardKey] = returnedSkin;
+  if(listing.skin_type && listing.skin_type === 'board'){
+    // Board skin returned
+    SAVE.board_skin = returnedSkin;
+    toast('🖼 Скін столу "'+listing.skin_name+'" повернено!');
   }else{
     SAVE.inventory.skins.push(returnedSkin);
   }
@@ -3406,13 +3340,10 @@ function removeMarketListing(listingId){
   if(idx>=0) SAVE.market_listings.splice(idx,1);
   saveToDisk();
   updateUI();
-  renderMarketListings();
-  toast('↩ "'+listing.skin_name+'" знято з ринку');
-  // Sync to GitHub
   saveMarketToGitHub();
+  toast('↩️ "'+listing.skin_name+'" знято з продажу');
 }
 
-// ===== TRADE IN CHAT =====
 function showTradePanel(){
   const skins = SAVE.inventory.skins || [];
   if(!skins.length){
