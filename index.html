@@ -1682,22 +1682,6 @@ function layerLabel(layer){
   return layer==='gem' ? '🎨 Камінець' : layer==='bg' ? '🖼 Фон' : layer;
 }
 
-// ===== EFFECTS & RULES SYSTEM =====
-const EFFECTS_DEF = {
-  gem_glow: {name:'Gem Glow', icon:'✨', type:'visual', price_per_min:5, desc:'Камінці світяться при збігу'},
-  particle_trail: {name:'Particle Trail', icon:'💫', type:'visual', price_per_min:3, desc:'Частинки після збігу'},
-  screen_pulse: {name:'Screen Pulse', icon:'🌊', type:'visual', price_per_min:2, desc:'Екран пульсує на комбо'},
-  gravity_flip: {name:'Gravity Flip', icon:'🔄', type:'rule', price_per_min:10, desc:'Камінці падають ВГОРУ'},
-  speed_mode: {name:'Speed Mode', icon:'⚡', type:'rule', price_per_min:8, desc:'Зворотній таймер'},
-  invisible_gems: {name:'Invisible Gems', icon:'👻', type:'rule', price_per_min:12, desc:'Камінці невидимі до наведення'},
-  bomb_mode: {name:'Bomb Mode', icon:'💥', type:'rule', price_per_min:15, desc:'Збіг створює вибух навколо'},
-  chain_reaction: {name:'Chain Reaction', icon:'🔥', type:'rule', price_per_min:12, desc:'Кожен збіг вибухає сусідні'},
-  gold_rush: {name:'Gold Rush', icon:'💰', type:'rule', price_per_min:10, desc:'×2 золота за кожен збіг'},
-  wild_swap: {name:'Wild Swap', icon:'🔄', type:'rule', price_per_min:8, desc:'Можна міняти будь-які камінці'},
-  x_ray: {name:'X-Ray', icon:'👁', type:'rule', price_per_min:6, desc:'Показати наступні камінці'},
-  lucky_match: {name:'Lucky Match', icon:'🎯', type:'rule', price_per_min:7, desc:'Підсвітити можливий збіг'}
-};
-
 function isEffectActive(effectId){
   const eff = SAVE.active_effects[effectId];
   if(!eff || !eff.active) return false;
