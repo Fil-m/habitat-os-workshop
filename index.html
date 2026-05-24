@@ -93,7 +93,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .m3-cell.lucky{box-shadow:0 0 20px var(--gold);transform:scale(1.08);z-index:3;animation:pulse-gold .8s infinite alternate}
 @keyframes pulse-gold{from{box-shadow:0 0 10px var(--gold)}to{box-shadow:0 0 25px var(--gold)}}
 /* Star burst overlay */
-.star-burst-overlay{position:absolute;pointer-events:none;z-index:10}
+<!-- Star Burst CSS was removed -->
 /* MATCH-3 GEMS — distinct shapes + high contrast */
 .m3-cell .gem{
   width:70%;height:70%;border-radius:4px;position:absolute;top:50%;left:50%;
@@ -458,17 +458,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           <button class="btn btn-small btn-primary" onclick="buyEffect('gem_glow',5)">Купити</button>
         </div>
       </div>
-      <div class="shop-item" id="eff-star_burst">
-        <div class="shop-icon">💫</div>
-        <div class="shop-info">
-          <div class="shop-name">Star Burst</div>
-          <div class="shop-desc">Зірки при збігу</div>
-          <div class="effect-timer" id="eff-timer-star_burst">4 🪙/хв · Неактивно</div>
-        </div>
-        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
-          <input class="effect-buy-input" id="eff-minutes-star_burst" type="number" min="1" max="120" value="5">
-          <button class="btn btn-small btn-primary" onclick="buyEffect('star_burst',4)">Купити</button>
-        </div>
       <!-- Rules -->
       <div style="font-size:12px;font-weight:600;color:var(--neon);margin:12px 0 4px">🎮 Правила гри</div>
       <div class="shop-item" id="eff-gravity_flip">
@@ -1300,11 +1289,6 @@ function processMatches(matches, comboLevel){
   saveToDisk();
   updateUI();
 
-  // Star Burst: visual star particles on match
-  if(isEffectActive('star_burst') && matches.length >= 1){
-    spawnStarBurst(matches);
-  }
-
   // Visual feedback
   renderBoard();
   // Mark removed
@@ -1369,11 +1353,7 @@ function checkGameOver(){
 function endMatch3(){
   // Rewards
   const goldEarned = Math.floor(score / 10);
-  let rubyEarned = 0;
-  if(Math.random() < 0.01) rubyEarned = 1;
-
   SAVE.resources.gold += goldEarned;
-  SAVE.resources.ruby += rubyEarned;
   SAVE.stats.matches++;
   SAVE.stats.earned += goldEarned;
   if(score > SAVE.stats.record) SAVE.stats.record = score;
@@ -1382,9 +1362,25 @@ function endMatch3(){
 
   // Show result
   document.getElementById('m3-final-score').textContent = score;
-  document.getElementById('m3-rewards').innerHTML = `🪙 +${goldEarned} Gold &nbsp; 💎 +${rubyEarned>0?'1 Ruby':'0 Ruby'}`;
+  document.getElementById('m3-rewards').innerHTML = `🪙 +${goldEarned} Gold`;
   document.getElementById('m3-result').classList.remove('hidden');
 }
+
+// ===== EFFECTS & RULES SYSTEM =====
+const EFFECTS_DEF = {
+  gem_glow: {name:'Gem Glow', icon:'✨', type:'visual', price_per_min:5, desc:'Камінці світяться при збігу'},
+  particle_trail: {name:'Particle Trail', icon:'💫', type:'visual', price_per_min:3, desc:'Частинки після збігу'},
+  screen_pulse: {name:'Screen Pulse', icon:'🌊', type:'visual', price_per_min:2, desc:'Екран пульсує на комбо'},
+  gravity_flip: {name:'Gravity Flip', icon:'🔄', type:'rule', price_per_min:10, desc:'Камінці падають ВГОРУ'},
+  speed_mode: {name:'Speed Mode', icon:'⚡', type:'rule', price_per_min:8, desc:'Зворотній таймер'},
+  invisible_gems: {name:'Invisible Gems', icon:'👻', type:'rule', price_per_min:12, desc:'Камінці невидимі до наведення'},
+  bomb_mode: {name:'Bomb Mode', icon:'💥', type:'rule', price_per_min:15, desc:'Збіг створює вибух навколо'},
+  chain_reaction: {name:'Chain Reaction', icon:'🔥', type:'rule', price_per_min:12, desc:'Кожен збіг вибухає сусідні'},
+  gold_rush: {name:'Gold Rush', icon:'💰', type:'rule', price_per_min:10, desc:'×2 золота за кожен збіг'},
+  wild_swap: {name:'Wild Swap', icon:'🔄', type:'rule', price_per_min:8, desc:'Можна міняти будь-які камінці'},
+  x_ray: {name:'X-Ray', icon:'👁', type:'rule', price_per_min:6, desc:'Показати наступні камінці'},
+  lucky_match: {name:'Lucky Match', icon:'🎯', type:'rule', price_per_min:7, desc:'Підсвітити можливий збіг'},
+};
 
 // ===== SYSTEM PACKS (набори ефектів/правил) =====
 const SYSTEM_PACKS = {
@@ -1402,15 +1398,15 @@ const SYSTEM_PACKS = {
     name: 'Візуальний',
     icon: '✨',
     price: 20,
-    desc: 'Gem Glow + Star Burst + Particle Trail на 30 хв',
-    effects: ['gem_glow', 'star_burst', 'particle_trail'],
+    desc: 'Gem Glow + Particle Trail + Screen Pulse на 30 хв',
+    effects: ['gem_glow', 'particle_trail', 'screen_pulse'],
     duration: 30
   },
   chaos: {
     id: 'chaos',
     name: 'Хаос',
     icon: '🌀',
-    price: 30,
+    price: 40,
     desc: 'Gold Rush + Wild Swap + X-Ray на 20 хв',
     effects: ['gold_rush', 'wild_swap', 'x_ray'],
     duration: 20
@@ -1689,7 +1685,6 @@ function layerLabel(layer){
 // ===== EFFECTS & RULES SYSTEM =====
 const EFFECTS_DEF = {
   gem_glow: {name:'Gem Glow', icon:'✨', type:'visual', price_per_min:5, desc:'Камінці світяться при збігу'},
-  star_burst: {name:'Star Burst', icon:'💫', type:'visual', price_per_min:4, desc:'Зірки при збігу'},
   particle_trail: {name:'Particle Trail', icon:'💫', type:'visual', price_per_min:3, desc:'Частинки після збігу'},
   screen_pulse: {name:'Screen Pulse', icon:'🌊', type:'visual', price_per_min:2, desc:'Екран пульсує на комбо'},
   gravity_flip: {name:'Gravity Flip', icon:'🔄', type:'rule', price_per_min:10, desc:'Камінці падають ВГОРУ'},
@@ -1777,95 +1772,9 @@ function deactivateEffect(effectId){
   }
 }
 
-// ===== STAR BURST EFFECT =====
-function spawnStarBurst(matches){
-  const boardEl = document.getElementById('m3-board');
-  if(!boardEl) return;
-  const container = document.getElementById('m3-board-wrap');
-  if(!container) return;
-  
-  // Create overlay canvas
-  const canvas = document.createElement('canvas');
-  canvas.className = 'star-burst-overlay';
-  canvas.width = boardEl.offsetWidth;
-  canvas.height = boardEl.offsetHeight;
-  canvas.style.cssText = 'position:absolute;top:'+boardEl.offsetTop+'px;left:'+boardEl.offsetLeft+'px;width:'+boardEl.offsetWidth+'px;height:'+boardEl.offsetHeight+'px;pointer-events:none;z-index:10';
-  
-  const rect = boardEl.getBoundingClientRect();
-  const wrapRect = container.getBoundingClientRect();
-  canvas.style.left = (rect.left - wrapRect.left) + 'px';
-  canvas.style.top = (rect.top - wrapRect.top) + 'px';
-  
-  container.style.position = 'relative';
-  container.appendChild(canvas);
-  
-  const ctx = canvas.getContext('2d');
-  const stars = [];
-  const cols = ['#ff0','#fff','#0ff','#f0f','#ff8800','#00ff88'];
-  
-  // Create stars near match positions
-  for(const [r,c] of matches){
-    const cell = document.querySelector('.m3-cell[data-r="'+r+'"][data-c="'+c+'"]');
-    if(!cell) continue;
-    const cellRect = cell.getBoundingClientRect();
-    const cx = cellRect.left - rect.left + cellRect.width/2;
-    const cy = cellRect.top - rect.top + cellRect.height/2;
-    for(let i=0;i<5;i++){
-      stars.push({
-        x: cx + (Math.random()-0.5)*40,
-        y: cy + (Math.random()-0.5)*40,
-        vx: (Math.random()-0.5)*4,
-        vy: -Math.random()*4 - 2,
-        size: 2 + Math.random()*4,
-        color: cols[Math.floor(Math.random()*cols.length)],
-        life: 1.0,
-        decay: 0.015 + Math.random()*0.015
-      });
-    }
-  }
-  
-  function animateStars(){
-    if(!canvas.parentNode){ return; }
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    let alive = false;
-    for(const s of stars){
-      if(s.life <= 0) continue;
-      alive = true;
-      s.x += s.vx;
-      s.y += s.vy;
-      s.vy += 0.1; // gravity
-      s.life -= s.decay;
-      ctx.globalAlpha = Math.max(0, s.life);
-      ctx.fillStyle = s.color;
-      // Draw star shape
-      ctx.beginPath();
-      const spikes = 4;
-      const outerR = s.size;
-      const innerR = s.size * 0.4;
-      for(let i=0;i<spikes*2;i++){
-        const r2 = i%2===0 ? outerR : innerR;
-        const angle = (i * Math.PI / spikes) - Math.PI/2;
-        const px = s.x + Math.cos(angle) * r2;
-        const py = s.y + Math.sin(angle) * r2;
-        if(i===0) ctx.moveTo(px,py);
-        else ctx.lineTo(px,py);
-      }
-      ctx.closePath();
-      ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-    if(alive){
-      requestAnimationFrame(animateStars);
-    }else{
-      canvas.remove();
-    }
-  }
-  animateStars();
-  // Clean up after 2 sec
-  setTimeout(()=>{
-    if(canvas.parentNode) canvas.remove();
-  }, 2000);
-}
+// (Star Burst видалено — був глючний і незрозумілий)
+
+
 
 // ===== X-RAY EFFECT =====
 function showXRayPreview(){
