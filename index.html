@@ -84,7 +84,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .m3-header{display:flex;justify-content:space-between;padding:10px 16px;background:var(--bg2);align-items:center;font-family:var(--mono);font-size:13px;flex-shrink:0}
 .m3-header .m3-stat{display:flex;align-items:center;gap:6px}
 .m3-header .m3-stat .num{color:var(--neon);font-weight:700}
-.m3-board-wrap{display:flex;justify-content:center;align-items:center;flex:1;padding:12px;min-height:0}
+.m3-board-wrap{display:flex;justify-content:center;align-items:center;flex:1;padding:12px;min-height:0;aspect-ratio:1/1;width:100%;max-width:380px;margin:0 auto}
 .m3-board{display:grid;gap:2px;background:var(--bg2);padding:6px;border-radius:var(--radius);border:2px solid var(--surface);touch-action:manipulation}
 .m3-cell{width:40px;height:40px;border-radius:4px;cursor:pointer;transition:all .15s;position:relative;display:flex;align-items:center;justify-content:center}
 .m3-cell.bw{opacity:0.85}
@@ -331,7 +331,11 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     <div class="header">
       <button class="btn btn-secondary btn-small" onclick="showScreen('dashboard')">← Назад</button>
       <h1 style="font-size:15px">☰ MATCH-3</h1>
-      <div style="width:60px"></div>
+      <div class="resources">
+        <span class="resource">🪙<span class="val" id="game-gold">0</span></span>
+        <span class="resource">💎<span class="val" id="game-ruby">0</span></span>
+        <span class="resource">🟡<span class="val" id="game-sapphire">0</span></span>
+      </div>
     </div>
     <div class="m3-header">
       <span class="m3-stat">🎯 <span class="num" id="m3-score">0</span></span>
@@ -891,8 +895,8 @@ function toast(msg){
 
 function updateUI(){
   const r = SAVE.resources;
-  const ids = ['hdr-gold','hdr-ruby','hdr-sapphire','dash-gold','dash-ruby','dash-sapphire','shop-gold'];
-  const vals = [r.gold, r.ruby, r.sapphire, r.gold, r.ruby, r.sapphire, r.gold];
+  const ids = ['hdr-gold','hdr-ruby','hdr-sapphire','dash-gold','dash-ruby','dash-sapphire','shop-gold','game-gold','game-ruby','game-sapphire'];
+  const vals = [r.gold, r.ruby, r.sapphire, r.gold, r.ruby, r.sapphire, r.gold, r.gold, r.ruby, r.sapphire];
   for(let i=0;i<ids.length;i++){
     const el = document.getElementById(ids[i]);
     if(el) el.textContent = vals[i];
@@ -1117,6 +1121,8 @@ function renderBoard(){
 
 function calcGridSize(){
   const wrap = document.getElementById('m3-board-wrap');
+  // Enforce square: height = width
+  wrap.style.height = wrap.offsetWidth + 'px';
   const w = wrap.clientWidth-24;
   const h = wrap.clientHeight-24;
   const maxSize = Math.min(Math.floor(w/BOARD_SIZE), Math.floor(h/BOARD_SIZE), 52);
@@ -1362,6 +1368,7 @@ function buyPack(packId){
   updateUI();
   updatePacksList();
   updateEffectsUI();
+  refreshGameSkins();
   toast('✅ Пак "'+pack.name+'" придбано! Ефекти активовано на '+pack.duration+' хв.');
 }
 
@@ -1391,6 +1398,7 @@ function applyPack(packId){
   saveToDisk();
   updateUI();
   updateEffectsUI();
+  refreshGameSkins();
   toast('✅ Пак "'+pack.name+'" активовано! Ефекти подовжено на '+pack.duration+' хв.');
 }
 
@@ -1631,6 +1639,7 @@ function buyEffect(effectId, pricePerMin){
   saveToDisk();
   updateUI();
   updateEffectsUI();
+  refreshGameSkins();
   const def = EFFECTS_DEF[effectId];
   toast('✅ '+(def?def.name:effectId)+' активовано на '+minutes+' хв!');
 }
@@ -2383,7 +2392,7 @@ function equipBoardSkin(){
   toast('✅ Скін столу встановлено!');
   saveToDisk();
   updateUI();
-  renderBoard();
+  refreshGameSkins();
 }
 
 function removeBoardSkin(){
@@ -2393,6 +2402,7 @@ function removeBoardSkin(){
   SAVE.board_skin = null;
   saveToDisk();
   updateUI();
+  refreshGameSkins();
   toast('🗑 Скін видалено');
 }
 
@@ -3204,7 +3214,7 @@ async function listSkinOnMarket(skinId){
   renderChat();
 }
 
-function buyFromMarket(listingId){
+async function buyFromMarket(listingId){
   const listing = SAVE.market_listings.find(l=>l.id===listingId);
   if(!listing){ toast('❌ Пропозицію не знайдено'); return; }
   if(SAVE.resources.gold < listing.price){
@@ -3236,7 +3246,7 @@ function buyFromMarket(listingId){
   saveToDisk();
   updateUI();
   // Sync to GitHub FIRST so fresh data is available
-  saveMarketToGitHub();
+  await saveMarketToGitHub();
   renderMarketListings();
   toast('✅ "'+listing.skin_name+'" придбано за '+listing.price+' 🪙!');
 }
