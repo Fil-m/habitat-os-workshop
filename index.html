@@ -90,6 +90,10 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .m3-cell.bw{opacity:0.85}
 .m3-cell.selected{box-shadow:0 0 16px var(--neon);transform:scale(1.05);z-index:2}
 .m3-cell.selected .gem{box-shadow:0 0 12px var(--neon)}
+.m3-cell.lucky{box-shadow:0 0 20px var(--gold);transform:scale(1.08);z-index:3;animation:pulse-gold .8s infinite alternate}
+@keyframes pulse-gold{from{box-shadow:0 0 10px var(--gold)}to{box-shadow:0 0 25px var(--gold)}}
+/* Star burst overlay */
+.star-burst-overlay{position:absolute;pointer-events:none;z-index:10}
 /* MATCH-3 GEMS — distinct shapes + high contrast */
 .m3-cell .gem{
   width:70%;height:70%;border-radius:4px;position:absolute;top:50%;left:50%;
@@ -465,31 +469,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           <input class="effect-buy-input" id="eff-minutes-star_burst" type="number" min="1" max="120" value="5">
           <button class="btn btn-small btn-primary" onclick="buyEffect('star_burst',4)">Купити</button>
         </div>
-      </div>
-      <div class="shop-item" id="eff-rainbow_trail">
-        <div class="shop-icon">🌈</div>
-        <div class="shop-info">
-          <div class="shop-name">Rainbow Trail</div>
-          <div class="shop-desc">Райдужний слід за курсором</div>
-          <div class="effect-timer" id="eff-timer-rainbow_trail">6 🪙/хв · Неактивно</div>
-        </div>
-        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
-          <input class="effect-buy-input" id="eff-minutes-rainbow_trail" type="number" min="1" max="120" value="5">
-          <button class="btn btn-small btn-primary" onclick="buyEffect('rainbow_trail',6)">Купити</button>
-        </div>
-      </div>
-      <div class="shop-item" id="eff-sound_ping">
-        <div class="shop-icon">🎵</div>
-        <div class="shop-info">
-          <div class="shop-name">Sound Ping</div>
-          <div class="shop-desc">Візуальна імітація звукового сигналу при збігу</div>
-          <div class="effect-timer" id="eff-timer-sound_ping">3 🪙/хв · Неактивно</div>
-        </div>
-        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
-          <input class="effect-buy-input" id="eff-minutes-sound_ping" type="number" min="1" max="120" value="5">
-          <button class="btn btn-small btn-primary" onclick="buyEffect('sound_ping',3)">Купити</button>
-        </div>
-      </div>
       <!-- Rules -->
       <div style="font-size:12px;font-weight:600;color:var(--neon);margin:12px 0 4px">🎮 Правила гри</div>
       <div class="shop-item" id="eff-gravity_flip">
@@ -504,52 +483,40 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           <button class="btn btn-small btn-primary" onclick="buyEffect('gravity_flip',10)">Купити</button>
         </div>
       </div>
-      <div class="shop-item" style="opacity:0.5">
+      <div class="shop-item" id="eff-speed_mode">
         <div class="shop-icon">⚡</div>
         <div class="shop-info">
           <div class="shop-name">Speed Mode</div>
-          <div class="shop-desc">Зворотній таймер · 8 🪙/хв</div>
-          <div class="effect-timer">🔜 Незабаром</div>
+          <div class="shop-desc">Зворотній таймер</div>
+          <div class="effect-timer" id="eff-timer-speed_mode">8 🪙/хв · Неактивно</div>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
+          <input class="effect-buy-input" id="eff-minutes-speed_mode" type="number" min="1" max="120" value="5">
+          <button class="btn btn-small btn-primary" onclick="buyEffect('speed_mode',8)">Купити</button>
         </div>
       </div>
-      <div class="shop-item" style="opacity:0.5">
+      <div class="shop-item" id="eff-invisible_gems">
         <div class="shop-icon">👻</div>
         <div class="shop-info">
           <div class="shop-name">Invisible Gems</div>
-          <div class="shop-desc">Камінці невидимі до наведення · 12 🪙/хв</div>
-          <div class="effect-timer">🔜 Незабаром</div>
+          <div class="shop-desc">Камінці невидимі до наведення</div>
+          <div class="effect-timer" id="eff-timer-invisible_gems">12 🪙/хв · Неактивно</div>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
+          <input class="effect-buy-input" id="eff-minutes-invisible_gems" type="number" min="1" max="120" value="5">
+          <button class="btn btn-small btn-primary" onclick="buyEffect('invisible_gems',12)">Купити</button>
         </div>
       </div>
-      <div class="shop-item" style="opacity:0.5">
+      <div class="shop-item" id="eff-bomb_mode">
         <div class="shop-icon">💥</div>
         <div class="shop-info">
           <div class="shop-name">Bomb Mode</div>
-          <div class="shop-desc">Збіг створює вибух навколо · 15 🪙/хв</div>
-          <div class="effect-timer">🔜 Незабаром</div>
-        </div>
-      </div>
-      <div class="shop-item" id="eff-random_swap">
-        <div class="shop-icon">🔄</div>
-        <div class="shop-info">
-          <div class="shop-name">Random Swap</div>
-          <div class="shop-desc">Кожен хід 2 випадкові камінці міняються</div>
-          <div class="effect-timer" id="eff-timer-random_swap">8 🪙/хв · Неактивно</div>
+          <div class="shop-desc">Збіг створює вибух навколо</div>
+          <div class="effect-timer" id="eff-timer-bomb_mode">15 🪙/хв · Неактивно</div>
         </div>
         <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
-          <input class="effect-buy-input" id="eff-minutes-random_swap" type="number" min="1" max="120" value="5">
-          <button class="btn btn-small btn-primary" onclick="buyEffect('random_swap',8)">Купити</button>
-        </div>
-      </div>
-      <div class="shop-item" id="eff-frozen_row">
-        <div class="shop-icon">🧊</div>
-        <div class="shop-info">
-          <div class="shop-name">Frozen Row</div>
-          <div class="shop-desc">Нижній ряд не можна міняти</div>
-          <div class="effect-timer" id="eff-timer-frozen_row">10 🪙/хв · Неактивно</div>
-        </div>
-        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
-          <input class="effect-buy-input" id="eff-minutes-frozen_row" type="number" min="1" max="120" value="5">
-          <button class="btn btn-small btn-primary" onclick="buyEffect('frozen_row',10)">Купити</button>
+          <input class="effect-buy-input" id="eff-minutes-bomb_mode" type="number" min="1" max="120" value="5">
+          <button class="btn btn-small btn-primary" onclick="buyEffect('bomb_mode',15)">Купити</button>
         </div>
       </div>
       <div class="shop-item" id="eff-chain_reaction">
@@ -564,16 +531,52 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           <button class="btn btn-small btn-primary" onclick="buyEffect('chain_reaction',12)">Купити</button>
         </div>
       </div>
-      <div class="shop-item" id="eff-peek">
-        <div class="shop-icon">👀</div>
+      <div class="shop-item" id="eff-gold_rush">
+        <div class="shop-icon">💰</div>
         <div class="shop-info">
-          <div class="shop-name">Peek</div>
-          <div class="shop-desc">Показати наступні 3 камінці</div>
-          <div class="effect-timer" id="eff-timer-peek">5 🪙/хв · Неактивно</div>
+          <div class="shop-name">Gold Rush</div>
+          <div class="shop-desc">×2 золота за кожен збіг</div>
+          <div class="effect-timer" id="eff-timer-gold_rush">10 🪙/хв · Неактивно</div>
         </div>
         <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
-          <input class="effect-buy-input" id="eff-minutes-peek" type="number" min="1" max="120" value="5">
-          <button class="btn btn-small btn-primary" onclick="buyEffect('peek',5)">Купити</button>
+          <input class="effect-buy-input" id="eff-minutes-gold_rush" type="number" min="1" max="120" value="5">
+          <button class="btn btn-small btn-primary" onclick="buyEffect('gold_rush',10)">Купити</button>
+        </div>
+      </div>
+      <div class="shop-item" id="eff-wild_swap">
+        <div class="shop-icon">🔄</div>
+        <div class="shop-info">
+          <div class="shop-name">Wild Swap</div>
+          <div class="shop-desc">Можна міняти будь-які камінці</div>
+          <div class="effect-timer" id="eff-timer-wild_swap">8 🪙/хв · Неактивно</div>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
+          <input class="effect-buy-input" id="eff-minutes-wild_swap" type="number" min="1" max="120" value="5">
+          <button class="btn btn-small btn-primary" onclick="buyEffect('wild_swap',8)">Купити</button>
+        </div>
+      </div>
+      <div class="shop-item" id="eff-x_ray">
+        <div class="shop-icon">👁</div>
+        <div class="shop-info">
+          <div class="shop-name">X-Ray</div>
+          <div class="shop-desc">Показати наступні камінці</div>
+          <div class="effect-timer" id="eff-timer-x_ray">6 🪙/хв · Неактивно</div>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
+          <input class="effect-buy-input" id="eff-minutes-x_ray" type="number" min="1" max="120" value="5">
+          <button class="btn btn-small btn-primary" onclick="buyEffect('x_ray',6)">Купити</button>
+        </div>
+      </div>
+      <div class="shop-item" id="eff-lucky_match">
+        <div class="shop-icon">🎯</div>
+        <div class="shop-info">
+          <div class="shop-name">Lucky Match</div>
+          <div class="shop-desc">Підсвітити можливий збіг</div>
+          <div class="effect-timer" id="eff-timer-lucky_match">7 🪙/хв · Неактивно</div>
+        </div>
+        <div style="display:flex;gap:4px;align-items:center;flex-shrink:0">
+          <input class="effect-buy-input" id="eff-minutes-lucky_match" type="number" min="1" max="120" value="5">
+          <button class="btn btn-small btn-primary" onclick="buyEffect('lucky_match',7)">Купити</button>
         </div>
       </div>
     </div>
@@ -1118,6 +1121,10 @@ function renderBoard(){
       container.appendChild(cell);
     }
   }
+  // X-Ray: show preview of next gems
+  showXRayPreview();
+  // Lucky Match: highlight a random possible match
+  highlightLuckyMatch();
 }
 
 function calcGridSize(){
@@ -1148,10 +1155,11 @@ function onCellClick(r,c){
     renderBoard();
     return;
   }
-  // Check adjacency
+  // Check adjacency (or Wild Swap allows any swap)
+  const isWildSwap = isEffectActive('wild_swap');
   const dr = Math.abs(sr-r);
   const dc = Math.abs(sc-c);
-  if((dr===1 && dc===0) || (dr===0 && dc===1)){
+  if(isWildSwap || (dr===1 && dc===0) || (dr===0 && dc===1)){
     // Swap
     selectedCell=null;
     trySwap(sr,sc,r,c);
@@ -1217,6 +1225,11 @@ function processMatches(matches, comboLevel){
   const matchSizeBonus = Math.floor(matches.length / 3) - 1; // 3=+0, 4=+1, 5=+2
   let goldEarned = baseGold + matchBonus + comboBonus + matchSizeBonus;
   if(goldEarned < 1) goldEarned = 1; // minimum 1
+  
+  // Gold Rush: ×2 gold
+  if(isEffectActive('gold_rush')){
+    goldEarned *= 2;
+  }
 
   SAVE.resources.gold += goldEarned;
 
@@ -1238,6 +1251,57 @@ function processMatches(matches, comboLevel){
   // Remove matched gems
   for(const [r,c] of matches){
     board[r][c] = -1; // Mark as removed
+  }
+
+  // Chain Reaction: blow up adjacent cells
+  if(isEffectActive('chain_reaction') && matches.length >= 1){
+    const allAffected = new Set();
+    for(const [r,c] of matches){
+      for(const [dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]){
+        const nr = r+dr, nc = c+dc;
+        if(nr>=0 && nr<BOARD_SIZE && nc>=0 && nc<BOARD_SIZE && board[nr][nc] !== -1){
+          allAffected.add(nr+','+nc);
+          board[nr][nc] = -1;
+        }
+      }
+    }
+    if(allAffected.size > 0){
+      goldEarned += allAffected.size * 5;
+      SAVE.resources.gold += allAffected.size * 5;
+      msg = '🔥 Chain! +'+allAffected.size*5+' Gold';
+      toast(msg);
+    }
+  }
+
+  // Bomb Mode: explosion around matched cells
+  if(isEffectActive('bomb_mode') && matches.length >= 1){
+    const bombSet = new Set();
+    for(const [r,c] of matches){
+      for(let dr=-1;dr<=1;dr++){
+        for(let dc=-1;dc<=1;dc++){
+          if(dr===0 && dc===0) continue;
+          const nr = r+dr, nc = c+dc;
+          if(nr>=0 && nr<BOARD_SIZE && nc>=0 && nc<BOARD_SIZE && board[nr][nc] !== -1){
+            bombSet.add(nr+','+nc);
+            board[nr][nc] = -1;
+          }
+        }
+      }
+    }
+    if(bombSet.size > 0){
+      goldEarned += bombSet.size * 3;
+      SAVE.resources.gold += bombSet.size * 3;
+      msg = '💥 Boom! +'+bombSet.size*3+' Gold';
+      toast(msg);
+    }
+  }
+
+  saveToDisk();
+  updateUI();
+
+  // Star Burst: visual star particles on match
+  if(isEffectActive('star_burst') && matches.length >= 1){
+    spawnStarBurst(matches);
   }
 
   // Visual feedback
@@ -1337,17 +1401,17 @@ const SYSTEM_PACKS = {
     name: 'Візуальний',
     icon: '✨',
     price: 20,
-    desc: 'Gem Glow + Star Burst + Rainbow Trail на 30 хв',
-    effects: ['gem_glow', 'star_burst', 'rainbow_trail'],
+    desc: 'Gem Glow + Star Burst + Particle Trail на 30 хв',
+    effects: ['gem_glow', 'star_burst', 'particle_trail'],
     duration: 30
   },
   chaos: {
     id: 'chaos',
     name: 'Хаос',
     icon: '🌀',
-    price: 40,
-    desc: 'Invisible Gems + Random Swap + Frozen Row на 20 хв',
-    effects: ['invisible_gems', 'random_swap', 'frozen_row'],
+    price: 30,
+    desc: 'Gold Rush + Wild Swap + X-Ray на 20 хв',
+    effects: ['gold_rush', 'wild_swap', 'x_ray'],
     duration: 20
   }
 };
@@ -1531,11 +1595,31 @@ function updateAchieveList(){
   const names = {combo:'Комбо-множник ×2'};
   const icons = {combo:'💥'};
   const descs = {combo:'×2 бали за комбо'};
-  if(!owned.length){
+
+  // Show active effects with deactivate button
+  let activeHtml = '';
+  for(const id in SAVE.active_effects){
+    if(!isEffectActive(id)) continue;
+    const def = EFFECTS_DEF[id];
+    if(!def) continue;
+    const remaining = Math.max(0, Math.floor((SAVE.active_effects[id].expires_at - Date.now()) / 1000));
+    const mins = Math.floor(remaining / 60);
+    const secs = remaining % 60;
+    activeHtml += `<div class="ach-item owned" style="border-color:var(--green)">
+      <span class="ach-icon">${def.icon}</span>
+      <div class="ach-info">
+        <div class="ach-name">${def.name}</div>
+        <div class="ach-desc" style="color:var(--green)">✅ Активно: ${mins}:${secs<10?'0':''}${secs}</div>
+      </div>
+      <button class="btn btn-small btn-danger" onclick="deactivateEffect('${id}')" style="padding:4px 8px;font-size:11px">⏹ Викл</button>
+    </div>`;
+  }
+
+  if(!owned.length && !activeHtml){
     container.innerHTML='<div class="empty-state"><span class="icon">🏆</span>Купіть ачівки в магазині</div>';
     return;
   }
-  let html='';
+  let html = activeHtml;
   for(const id of owned){
     html+=`<div class="ach-item owned">
       <span class="ach-icon">${icons[id]||'🏆'}</span>
@@ -1605,19 +1689,17 @@ function layerLabel(layer){
 const EFFECTS_DEF = {
   gem_glow: {name:'Gem Glow', icon:'✨', type:'visual', price_per_min:5, desc:'Камінці світяться при збігу'},
   star_burst: {name:'Star Burst', icon:'💫', type:'visual', price_per_min:4, desc:'Зірки при збігу'},
-  rainbow_trail: {name:'Rainbow Trail', icon:'🌈', type:'visual', price_per_min:6, desc:'Райдужний слід за курсором'},
-  sound_ping: {name:'Sound Ping', icon:'🎵', type:'visual', price_per_min:3, desc:'Візуальна імітація звукового сигналу при збігу'},
   particle_trail: {name:'Particle Trail', icon:'💫', type:'visual', price_per_min:3, desc:'Частинки після збігу'},
   screen_pulse: {name:'Screen Pulse', icon:'🌊', type:'visual', price_per_min:2, desc:'Екран пульсує на комбо'},
   gravity_flip: {name:'Gravity Flip', icon:'🔄', type:'rule', price_per_min:10, desc:'Камінці падають ВГОРУ'},
   speed_mode: {name:'Speed Mode', icon:'⚡', type:'rule', price_per_min:8, desc:'Зворотній таймер'},
   invisible_gems: {name:'Invisible Gems', icon:'👻', type:'rule', price_per_min:12, desc:'Камінці невидимі до наведення'},
   bomb_mode: {name:'Bomb Mode', icon:'💥', type:'rule', price_per_min:15, desc:'Збіг створює вибух навколо'},
-  target_mode: {name:'Target Mode', icon:'🎯', type:'rule', price_per_min:10, desc:'Треба зібрати конкретні камінці'},
-  random_swap: {name:'Random Swap', icon:'🔄', type:'rule', price_per_min:8, desc:'Кожен хід 2 випадкові камінці міняються'},
-  frozen_row: {name:'Frozen Row', icon:'🧊', type:'rule', price_per_min:10, desc:'Нижній ряд не можна міняти'},
   chain_reaction: {name:'Chain Reaction', icon:'🔥', type:'rule', price_per_min:12, desc:'Кожен збіг вибухає сусідні'},
-  peek: {name:'Peek', icon:'👀', type:'rule', price_per_min:5, desc:'Показати наступні 3 камінці'}
+  gold_rush: {name:'Gold Rush', icon:'💰', type:'rule', price_per_min:10, desc:'×2 золота за кожен збіг'},
+  wild_swap: {name:'Wild Swap', icon:'🔄', type:'rule', price_per_min:8, desc:'Можна міняти будь-які камінці'},
+  x_ray: {name:'X-Ray', icon:'👁', type:'rule', price_per_min:6, desc:'Показати наступні камінці'},
+  lucky_match: {name:'Lucky Match', icon:'🎯', type:'rule', price_per_min:7, desc:'Підсвітити можливий збіг'}
 };
 
 function isEffectActive(effectId){
@@ -1679,6 +1761,164 @@ function updateEffectsUI(){
       timerEl.innerHTML = def.price_per_min+' 🪙/хв · Неактивно';
       timerEl.className = 'effect-timer';
     }
+  }
+}
+
+function deactivateEffect(effectId){
+  if(SAVE.active_effects[effectId]){
+    delete SAVE.active_effects[effectId];
+    saveToDisk();
+    updateUI();
+    updateEffectsUI();
+    refreshGameSkins();
+    const def = EFFECTS_DEF[effectId];
+    toast('⏹ Ефект "'+(def?def.name:effectId)+'" вимкнено');
+  }
+}
+
+// ===== STAR BURST EFFECT =====
+function spawnStarBurst(matches){
+  const boardEl = document.getElementById('m3-board');
+  if(!boardEl) return;
+  const container = document.getElementById('m3-board-wrap');
+  if(!container) return;
+  
+  // Create overlay canvas
+  const canvas = document.createElement('canvas');
+  canvas.className = 'star-burst-overlay';
+  canvas.width = boardEl.offsetWidth;
+  canvas.height = boardEl.offsetHeight;
+  canvas.style.cssText = 'position:absolute;top:'+boardEl.offsetTop+'px;left:'+boardEl.offsetLeft+'px;width:'+boardEl.offsetWidth+'px;height:'+boardEl.offsetHeight+'px;pointer-events:none;z-index:10';
+  
+  const rect = boardEl.getBoundingClientRect();
+  const wrapRect = container.getBoundingClientRect();
+  canvas.style.left = (rect.left - wrapRect.left) + 'px';
+  canvas.style.top = (rect.top - wrapRect.top) + 'px';
+  
+  container.style.position = 'relative';
+  container.appendChild(canvas);
+  
+  const ctx = canvas.getContext('2d');
+  const stars = [];
+  const cols = ['#ff0','#fff','#0ff','#f0f','#ff8800','#00ff88'];
+  
+  // Create stars near match positions
+  for(const [r,c] of matches){
+    const cell = document.querySelector('.m3-cell[data-r="'+r+'"][data-c="'+c+'"]');
+    if(!cell) continue;
+    const cellRect = cell.getBoundingClientRect();
+    const cx = cellRect.left - rect.left + cellRect.width/2;
+    const cy = cellRect.top - rect.top + cellRect.height/2;
+    for(let i=0;i<5;i++){
+      stars.push({
+        x: cx + (Math.random()-0.5)*40,
+        y: cy + (Math.random()-0.5)*40,
+        vx: (Math.random()-0.5)*4,
+        vy: -Math.random()*4 - 2,
+        size: 2 + Math.random()*4,
+        color: cols[Math.floor(Math.random()*cols.length)],
+        life: 1.0,
+        decay: 0.015 + Math.random()*0.015
+      });
+    }
+  }
+  
+  function animateStars(){
+    if(!canvas.parentNode){ return; }
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    let alive = false;
+    for(const s of stars){
+      if(s.life <= 0) continue;
+      alive = true;
+      s.x += s.vx;
+      s.y += s.vy;
+      s.vy += 0.1; // gravity
+      s.life -= s.decay;
+      ctx.globalAlpha = Math.max(0, s.life);
+      ctx.fillStyle = s.color;
+      // Draw star shape
+      ctx.beginPath();
+      const spikes = 4;
+      const outerR = s.size;
+      const innerR = s.size * 0.4;
+      for(let i=0;i<spikes*2;i++){
+        const r2 = i%2===0 ? outerR : innerR;
+        const angle = (i * Math.PI / spikes) - Math.PI/2;
+        const px = s.x + Math.cos(angle) * r2;
+        const py = s.y + Math.sin(angle) * r2;
+        if(i===0) ctx.moveTo(px,py);
+        else ctx.lineTo(px,py);
+      }
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    if(alive){
+      requestAnimationFrame(animateStars);
+    }else{
+      canvas.remove();
+    }
+  }
+  animateStars();
+  // Clean up after 2 sec
+  setTimeout(()=>{
+    if(canvas.parentNode) canvas.remove();
+  }, 2000);
+}
+
+// ===== X-RAY EFFECT =====
+function showXRayPreview(){
+  if(!isEffectActive('x_ray')) return;
+  const boardEl = document.getElementById('m3-board');
+  if(!boardEl) return;
+  // Show a small preview overlay showing next gems after gravity
+  // Simple: add a small translucent overlay
+  let previewEl = document.getElementById('xray-preview');
+  if(!previewEl){
+    previewEl = document.createElement('div');
+    previewEl.id = 'xray-preview';
+    previewEl.style.cssText = 'position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,0.7);border-radius:8px;padding:6px 10px;font-size:10px;color:var(--neon);z-index:20;pointer-events:none';
+    const wrap = document.getElementById('m3-board-wrap');
+    if(wrap) wrap.appendChild(previewEl);
+  }
+  // Simulate: count empty cells and show upcoming gems
+  let emptyCount = 0;
+  for(let r=0;r<BOARD_SIZE;r++){
+    for(let c=0;c<BOARD_SIZE;c++){
+      if(board[r][c]===-1) emptyCount++;
+    }
+  }
+  previewEl.textContent = '👁 Наступних: '+emptyCount+' 🪨';
+}
+
+// ===== LUCKY MATCH EFFECT =====
+function highlightLuckyMatch(){
+  if(!isEffectActive('lucky_match')) return;
+  // Remove existing highlights
+  document.querySelectorAll('.m3-cell.lucky').forEach(el=>el.classList.remove('lucky'));
+  
+  // Find a random possible match
+  const possible = [];
+  for(let r=0;r<BOARD_SIZE;r++){
+    for(let c=0;c<BOARD_SIZE;c++){
+      const val = board[r][c];
+      if(val === -1) continue;
+      // Check horizontal
+      if(c <= BOARD_SIZE-3){
+        const same = board[r][c+1] === val || board[r][c+2] === val;
+        if(same) possible.push([r,c]);
+      }
+      // Check vertical
+      if(r <= BOARD_SIZE-3){
+        const same = board[r+1][c] === val || board[r+2][c] === val;
+        if(same) possible.push([r,c]);
+      }
+    }
+  }
+  if(possible.length){
+    const pick = possible[Math.floor(Math.random()*possible.length)];
+    const cell = document.querySelector('.m3-cell[data-r="'+pick[0]+'"][data-c="'+pick[1]+'"]');
+    if(cell) cell.classList.add('lucky');
   }
 }
 
