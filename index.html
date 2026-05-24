@@ -92,8 +92,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .m3-cell.selected .gem{box-shadow:0 0 12px var(--neon)}
 .m3-cell.lucky{box-shadow:0 0 20px var(--gold);transform:scale(1.08);z-index:3;animation:pulse-gold .8s infinite alternate}
 @keyframes pulse-gold{from{box-shadow:0 0 10px var(--gold)}to{box-shadow:0 0 25px var(--gold)}}
-/* Star burst overlay */
-<!-- Star Burst CSS was removed -->
 /* MATCH-3 GEMS — distinct shapes + high contrast */
 .m3-cell .gem{
   width:70%;height:70%;border-radius:4px;position:absolute;top:50%;left:50%;
@@ -333,7 +331,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
   <!-- Match-3 Screen -->
   <div id="screen-match3" class="screen">
     <div class="header">
-      <button class="btn btn-secondary btn-small" onclick="showScreen('dashboard')">← Назад</button>
+      <button class="btn btn-secondary btn-small" onclick="endMatch3(); showScreen('dashboard')">← Назад</button>
       <h1 style="font-size:15px">☰ MATCH-3</h1>
       <div class="resources">
         <span class="resource">🪙<span class="val" id="game-gold">0</span></span>
@@ -343,6 +341,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     </div>
     <div class="m3-header">
       <span class="m3-stat">🎯 <span class="num" id="m3-score">0</span></span>
+      <span class="m3-stat" id="m3-speed-timer" style="display:none;color:var(--gold)">⏱ 2:00</span>
       <span class="m3-stat">🏆 <span class="num" id="m3-highscore">0</span></span>
     </div>
     <div class="m3-board-wrap" id="m3-board-wrap">
@@ -889,8 +888,8 @@ function toast(msg){
 
 function updateUI(){
   const r = SAVE.resources;
-  const ids = ['hdr-gold','hdr-ruby','hdr-sapphire','dash-gold','dash-ruby','dash-sapphire','shop-gold','game-gold','game-ruby','game-sapphire'];
-  const vals = [r.gold, r.ruby, r.sapphire, r.gold, r.ruby, r.sapphire, r.gold, r.gold, r.ruby, r.sapphire];
+  const ids = ['hdr-gold','hdr-ruby','hdr-sapphire','shop-gold','shop-ruby','shop-sapphire','game-gold','game-ruby','game-sapphire'];
+  const vals = [r.gold, r.ruby, r.sapphire, r.gold, r.ruby, r.sapphire, r.gold, r.ruby, r.sapphire];
   for(let i=0;i<ids.length;i++){
     const el = document.getElementById(ids[i]);
     if(el) el.textContent = vals[i];
@@ -994,6 +993,8 @@ let selectedCell = null;
 let score = 0;
 let isAnimating = false;
 let gameOver = false;
+let speedTimerInterval = null;
+let speedTimeLeft = 0;
 
 function getComboMultiplier(){
   return SAVE.inventory.owned_achievements.includes('combo')?2:1;
@@ -1026,6 +1027,21 @@ function startMatch3(){
     for(const [r,c] of matches) board[r][c]=Math.floor(Math.random()*GEM_TYPES);
   }
   document.getElementById('m3-result').classList.add('hidden');
+  // Speed Mode: start countdown timer
+  if(speedTimerInterval) clearInterval(speedTimerInterval);
+  speedTimerInterval = null;
+  if(isEffectActive('speed_mode')){
+    speedTimeLeft = 120; // 120 seconds
+    speedTimerInterval = setInterval(()=>{
+      speedTimeLeft--;
+      if(speedTimeLeft <= 0){
+        clearInterval(speedTimerInterval);
+        speedTimerInterval = null;
+        endMatch3();
+      }
+      updateM3UI();
+    }, 1000);
+  }
   renderBoard();
   updateM3UI();
 }
@@ -1057,12 +1073,17 @@ function renderBoard(){
   container.style.borderColor = 'var(--surface)';
   
   const gemGlowActive = isEffectActive('gem_glow');
+  const invisibleActive = isEffectActive('invisible_gems');
   for(let r=0;r<BOARD_SIZE;r++){
     for(let c=0;c<BOARD_SIZE;c++){
       const cell = document.createElement('div');
       cell.className='m3-cell';
       const gt = board[r][c];
       if(isGemBw(gt)) cell.classList.add('bw');
+      // Invisible Gems: hide gem content unless cell is selected
+      if(invisibleActive && !(selectedCell && selectedCell[0]===r && selectedCell[1]===c)){
+        cell.style.opacity = '0.15';
+      }
       cell.dataset.r=r;
       cell.dataset.c=c;
       const gem = document.createElement('div');
@@ -1130,6 +1151,18 @@ function calcGridSize(){
 function updateM3UI(){
   document.getElementById('m3-score').textContent=score;
   document.getElementById('m3-highscore').textContent=SAVE.stats.record;
+  // Speed Mode timer display
+  const speedEl = document.getElementById('m3-speed-timer');
+  if(speedEl){
+    if(isEffectActive('speed_mode') && speedTimerInterval){
+      const mins = Math.floor(speedTimeLeft / 60);
+      const secs = speedTimeLeft % 60;
+      speedEl.textContent = '⏱ '+mins+':'+(secs<10?'0':'')+secs;
+      speedEl.style.display = '';
+    } else {
+      speedEl.style.display = 'none';
+    }
+  }
 }
 
 function onCellClick(r,c){
@@ -1351,6 +1384,11 @@ function checkGameOver(){
 }
 
 function endMatch3(){
+  // Stop speed timer if active
+  if(speedTimerInterval){
+    clearInterval(speedTimerInterval);
+    speedTimerInterval = null;
+  }
   // Rewards
   const goldEarned = Math.floor(score / 10);
   SAVE.resources.gold += goldEarned;
@@ -1678,10 +1716,6 @@ function buyBoardCanvas(skinType){
   }
 }
 
-function layerLabel(layer){
-  return layer==='gem' ? '🎨 Камінець' : layer==='bg' ? '🖼 Фон' : layer;
-}
-
 function isEffectActive(effectId){
   const eff = SAVE.active_effects[effectId];
   if(!eff || !eff.active) return false;
@@ -1755,10 +1789,6 @@ function deactivateEffect(effectId){
     toast('⏹ Ефект "'+(def?def.name:effectId)+'" вимкнено');
   }
 }
-
-// (Star Burst видалено — був глючний і незрозумілий)
-
-
 
 // ===== X-RAY EFFECT =====
 function showXRayPreview(){
@@ -2134,12 +2164,6 @@ function drawSkinCanvas(){
     ctx.moveTo(0,i);ctx.lineTo(size,i);
     ctx.stroke();
   }
-}
-
-function setEditorLayer(layer){
-  editorActiveLayer = 'gem';
-  drawSkinCanvas();
-  updateEditorStats();
 }
 
 function updateEditorModeInfo(){
@@ -2706,21 +2730,6 @@ function renderPixelsToDataUrl(pixels, size){
   return canvas.toDataURL();
 }
 
-function getGemClipPath(gemType){
-  // Returns CSS clip-path for gem shape by gem index or name
-  const shapes = [
-    'circle(50% at 50% 50%)',                          // ruby — circle
-    'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',     // sapphire — diamond
-    'polygon(50% 5%, 95% 95%, 5% 95%)',                 // gold — triangle
-    'polygon(33% 0%, 66% 0%, 66% 33%, 100% 33%, 100% 66%, 66% 66%, 66% 100%, 33% 100%, 33% 66%, 0% 66%, 0% 33%, 33% 33%)'      // emerald — square+cross
-  ];
-  const gemNames = ['ruby','sapphire','gold','emerald'];
-  if(typeof gemType === 'number' && gemType >= 0 && gemType < 4) return shapes[gemType];
-  const idx = gemNames.indexOf(gemType);
-  if(idx >= 0) return shapes[idx];
-  return 'none';
-}
-
 // ===== PIXEL AGE / FADE SYSTEM =====
 const PIXEL_LIFETIME_MS = 24 * 60 * 60 * 1000; // 24 hours (default)
 
@@ -2758,112 +2767,6 @@ function getPixelColorWithAge(color, idx, pixel_ts, pixel_lt){
     return blendColor(color, '#444466', fade);
   }
   return color;
-}
-
-function renderGemCompositeDataUrl(skin, gemType){
-  const size = skin.size || 16;
-  const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext('2d');
-
-  // 1. Apply clip path for gem shape
-  const gemIdx = (typeof gemType === 'number') ? gemType : ['ruby','sapphire','gold','emerald'].indexOf(gemType);
-  if(gemIdx < 0 || gemIdx > 3) gemIdx = 0;
-  const clipPath = new Path2D();
-  const cx = size/2, cy = size/2, r = size/2 - 0.5;
-  switch(gemIdx){
-    case 0: // Ruby — circle
-      clipPath.arc(cx, cy, r, 0, Math.PI*2);
-      break;
-    case 1: // Sapphire — diamond
-      clipPath.moveTo(cx, 0); clipPath.lineTo(size, cy); clipPath.lineTo(cx, size); clipPath.lineTo(0, cy);
-      clipPath.closePath();
-      break;
-    case 2: // Gold — triangle
-      clipPath.moveTo(cx, 0.5*size/16); clipPath.lineTo(size*0.95, size*0.95); clipPath.lineTo(size*0.05, size*0.95);
-      clipPath.closePath();
-      break;
-    case 3: // Emerald — square+cross
-      // 12-point polygon for square+cross shape
-      clipPath.moveTo(size*0.33, 0); clipPath.lineTo(size*0.66, 0); clipPath.lineTo(size*0.66, size*0.33);
-      clipPath.lineTo(size, size*0.33); clipPath.lineTo(size, size*0.66); clipPath.lineTo(size*0.66, size*0.66);
-      clipPath.lineTo(size*0.66, size); clipPath.lineTo(size*0.33, size); clipPath.lineTo(size*0.33, size*0.66);
-      clipPath.lineTo(0, size*0.66); clipPath.lineTo(0, size*0.33); clipPath.lineTo(size*0.33, size*0.33);
-      clipPath.closePath();
-      break;
-  }
-  // 0. Draw background pixels first (full cell, no clip)
-  const total = size * size;
-  if(skin.bg_pixels && skin.bg_pixels.some(p=>p!==null)){
-    const bgData = ctx.createImageData(size, size);
-    for(let i=0;i<total;i++){
-      const color = skin.bg_pixels[i];
-      if(color){
-        let r,g,b;
-        if(color.startsWith('rgb(')){
-          const m = color.match(/(\d+)/g);
-          r=parseInt(m[0]); g=parseInt(m[1]); b=parseInt(m[2]);
-        }else{
-          [r,g,b] = hexToRgb(color);
-        }
-        bgData.data[i*4]=r; bgData.data[i*4+1]=g; bgData.data[i*4+2]=b; bgData.data[i*4+3]=255;
-      }else{
-        bgData.data[i*4]=0; bgData.data[i*4+1]=0; bgData.data[i*4+2]=0; bgData.data[i*4+3]=0;
-      }
-    }
-    ctx.putImageData(bgData, 0, 0);
-  }
-
-  // 1. Apply clip path for gem shape
-  ctx.save();
-  ctx.clip(clipPath);
-
-  // 2. Draw gem pixels
-  const gemPixels = skin.pixels || [];
-  const gemData = ctx.createImageData(size, size);
-  for(let i=0;i<total;i++){
-    const color = gemPixels[i];
-    if(color){
-      const aged = getPixelColorWithAge(color, i, skin.pixel_ts, skin.pixel_lt);
-      let r,g,b;
-      if(aged.startsWith('rgb(')){
-        const m = aged.match(/(\d+)/g);
-        r=parseInt(m[0]); g=parseInt(m[1]); b=parseInt(m[2]);
-      }else{
-        [r,g,b] = hexToRgb(aged);
-      }
-      gemData.data[i*4]=r; gemData.data[i*4+1]=g; gemData.data[i*4+2]=b; gemData.data[i*4+3]=255;
-    }else{
-      gemData.data[i*4]=0; gemData.data[i*4+1]=0; gemData.data[i*4+2]=0; gemData.data[i*4+3]=0;
-    }
-  }
-  ctx.putImageData(gemData, 0, 0);
-
-  // 3. Draw frame pixels on top
-  if(skin.frame_pixels && skin.frame_pixels.some(p=>p!==null)){
-    const frameData = ctx.createImageData(size, size);
-    for(let i=0;i<total;i++){
-      const color = skin.frame_pixels[i];
-      if(color){
-        const aged = getPixelColorWithAge(color, i, skin.frame_pixel_ts || skin.pixel_ts, skin.frame_pixel_lt || skin.pixel_lt);
-        let r,g,b;
-        if(aged.startsWith('rgb(')){
-          const m = aged.match(/(\d+)/g);
-          r=parseInt(m[0]); g=parseInt(m[1]); b=parseInt(m[2]);
-        }else{
-          [r,g,b] = hexToRgb(aged);
-        }
-        frameData.data[i*4]=r; frameData.data[i*4+1]=g; frameData.data[i*4+2]=b; frameData.data[i*4+3]=255;
-      }else{
-        frameData.data[i*4]=0; frameData.data[i*4+1]=0; frameData.data[i*4+2]=0; frameData.data[i*4+3]=0;
-      }
-    }
-    ctx.putImageData(frameData, 0, 0);
-  }
-
-  ctx.restore();
-  return canvas.toDataURL();
 }
 
 // ===== EXPORT / IMPORT PROGRESS =====
@@ -3034,6 +2937,16 @@ function startChatPolling(){
       renderChat();
     }).catch(()=>{});
   }, 5000);
+}
+
+function clearChat(){
+  if(!confirm('Очистити всі повідомлення?')) return;
+  SAVE.chat = [];
+  saveToDisk();
+  renderChat();
+  // Also sync empty chat to GitHub
+  saveChatToGitHub().catch(()=>{});
+  toast('🗑 Чат очищено');
 }
 
 function stopChatPolling(){
@@ -3592,7 +3505,6 @@ function sendTradeOffer(skin, price){
 }
 
 // Override acceptTrade to handle skin trades
-const _origAcceptTrade = acceptTrade || function(){};
 function acceptTrade(hash){
   const msg = SAVE.chat.find(m=>m.hash===hash);
   if(!msg || !msg.trade){
