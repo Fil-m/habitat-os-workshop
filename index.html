@@ -818,6 +818,7 @@ const DEFAULT_SAVE = {
   player: {id:null, name:'Гравець', email:'', created:null},
   github: {token:'', repo:'', connected:false},
   board_skin: null,
+  board_skin_equipped: false,
   sold_listings: []
 };
 
@@ -1044,7 +1045,7 @@ function renderBoard(){
   
   // Apply board skin: background
   const boardSkin = SAVE.board_skin || null;
-  if(boardSkin && boardSkin.pixels){
+  if(boardSkin && boardSkin.pixels && SAVE.board_skin_equipped){
     const bgUrl = renderPixelsToDataUrl(boardSkin.pixels, boardSkin.size || 32);
     container.style.backgroundImage = 'url('+bgUrl+')';
     container.style.backgroundSize = 'cover';
@@ -1168,13 +1169,6 @@ function trySwap(r1,c1,r2,c2){
 
   const matches = findAllMatches();
   if(matches.length){
-    // Award resources per match: +1 Gold, randomly +1 Ruby or Sapphire
-    const matchGold = matches.length;
-    SAVE.resources.gold += matchGold;
-    if(Math.random() < 0.2) SAVE.resources.ruby = (SAVE.resources.ruby||0) + 1;
-    if(Math.random() < 0.2) SAVE.resources.sapphire = (SAVE.resources.sapphire||0) + 1;
-    saveToDisk();
-    updateUI();
     processMatches(matches, 1);
   }else{
     // Swap back
@@ -1215,6 +1209,31 @@ function processMatches(matches, comboLevel){
   const multi = getComboMultiplier();
   let points = matches.length * 10 * comboLevel * multi;
   score += points;
+
+  // === Нова економіка ===
+  const baseGold = 1;
+  const matchBonus = Math.floor(SAVE.stats.matches / 20); // +1 gold every 20 matches
+  const comboBonus = comboLevel - 1; // 0 at first cascade, +1 at second, etc.
+  const matchSizeBonus = Math.floor(matches.length / 3) - 1; // 3=+0, 4=+1, 5=+2
+  let goldEarned = baseGold + matchBonus + comboBonus + matchSizeBonus;
+  if(goldEarned < 1) goldEarned = 1; // minimum 1
+
+  SAVE.resources.gold += goldEarned;
+
+  let rubyEarned = 0, sapphireEarned = 0;
+  if(Math.random() < 0.02 + SAVE.stats.matches * 0.0005){ SAVE.resources.ruby++; rubyEarned = 1; }
+  if(Math.random() < 0.03 + SAVE.stats.matches * 0.0005){ SAVE.resources.sapphire++; sapphireEarned = 1; }
+
+  saveToDisk();
+  updateUI();
+
+  // Toast for each cascade — but short-lived, doesn't block
+  let msg = '🪙 +'+goldEarned+' Gold';
+  if(rubyEarned>0) msg += ' 💎 +'+rubyEarned;
+  if(sapphireEarned>0) msg += ' 🟡 +'+sapphireEarned;
+  if(comboLevel > 1) msg = '⚡ Combo x'+comboLevel+' '+msg;
+  toast(msg);
+  // === Кінець економіки ===
 
   // Remove matched gems
   for(const [r,c] of matches){
@@ -2355,10 +2374,13 @@ function updateSkinList(){
         </div>
       </div>
       <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
-        <button class="btn btn-small btn-success" onclick="equipBoardSkin()" style="flex:1">🎨 Встановити</button>
-        <button class="btn btn-small btn-primary" onclick="listSkinOnMarket('${boardSkin.id}')" style="flex:1">📤 На ринок</button>
-        <button class="btn btn-small btn-secondary" onclick="openBoardSkinEditor()" style="flex:0">✏️</button>
-        <button class="btn btn-small btn-danger" onclick="removeBoardSkin()" style="flex:0">🗑</button>
+        ${SAVE.board_skin_equipped
+          ? `<button class="btn btn-small btn-secondary" onclick="unequipBoardSkin()" style="flex:1">⬇ Зняти</button>`
+          : `<button class="btn btn-small btn-success" onclick="equipBoardSkin()" style="flex:1">🎨 Встановити</button>`
+        }
+        <button class="btn btn-small btn-secondary" onclick="openBoardSkinEditor()" style="flex:0">✏️ Редагувати</button>
+        <button class="btn btn-small btn-danger" onclick="sellBoardSkin()" style="flex:0">💰 Продати</button>
+        <button class="btn btn-small btn-danger" onclick="removeBoardSkin()" style="flex:0">🗑 Видалити</button>
       </div>
     </div>`;
   }
@@ -2389,6 +2411,7 @@ function updateSkinList(){
 function equipBoardSkin(){
   const bs = SAVE.board_skin;
   if(!bs){ toast('❌ Немає скіна'); return; }
+  SAVE.board_skin_equipped = true;
   toast('✅ Скін столу встановлено!');
   saveToDisk();
   updateUI();
@@ -2400,10 +2423,38 @@ function removeBoardSkin(){
   if(!bs){ toast('❌ Немає скіна'); return; }
   if(!confirm('Видалити фон дошки?')) return;
   SAVE.board_skin = null;
+  SAVE.board_skin_equipped = false;
   saveToDisk();
   updateUI();
   refreshGameSkins();
   toast('🗑 Скін видалено');
+}
+
+function unequipBoardSkin(){
+  const bs = SAVE.board_skin;
+  if(!bs){ toast('❌ Немає скіна'); return; }
+  SAVE.board_skin_equipped = false;
+  saveToDisk();
+  updateUI();
+  updateSkinList();
+  refreshGameSkins();
+  toast('⬇ Скін знято з дошки');
+}
+
+function sellBoardSkin(){
+  const bs = SAVE.board_skin;
+  if(!bs){ toast('❌ Немає скіна'); return; }
+  const totalUsed = bs.pixels ? bs.pixels.filter(p=>p!==null).length : 0;
+  const price = Math.max(1, totalUsed * 2);
+  if(!confirm('Продати фон дошки за '+price+' 🪙? ('+totalUsed+' пікселів)')) return;
+  SAVE.resources.gold += price;
+  SAVE.board_skin = null;
+  SAVE.board_skin_equipped = false;
+  saveToDisk();
+  updateUI();
+  updateSkinList();
+  refreshGameSkins();
+  toast('💰 Фон дошки продано за '+price+' Gold!');
 }
 
 function equipSkinById(skinId, gemType){
