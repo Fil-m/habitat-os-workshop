@@ -1145,10 +1145,16 @@ function calcGridSize(){
   const wrap = document.getElementById('m3-board-wrap');
   // Enforce square: height = width
   wrap.style.height = wrap.offsetWidth + 'px';
-  const w = wrap.clientWidth-24;
-  const h = wrap.clientHeight-24;
-  const maxSize = Math.min(Math.floor(w/BOARD_SIZE), Math.floor(h/BOARD_SIZE), 52);
-  return Math.max(28, Math.min(maxSize, 52));
+  const board = document.getElementById('m3-board');
+  const availW = wrap.clientWidth-24;
+  const availH = wrap.clientHeight-24;
+  const maxCell = Math.min(Math.floor(availW/BOARD_SIZE), Math.floor(availH/BOARD_SIZE), 52);
+  const cellSize = Math.max(28, Math.min(maxCell, 52));
+  // Set explicit board dimensions so board skin (32x32) maps 1:4 to cells (8x8)
+  const boardW = cellSize * BOARD_SIZE + 7 * 2 + 16; // cells + gaps + padding
+  board.style.width = boardW + 'px';
+  board.style.height = boardW + 'px';
+  return cellSize;
 }
 
 function updateM3UI(){
