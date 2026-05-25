@@ -952,6 +952,7 @@ function selectMiner(id){
 
 // ===== SCREEN NAV =====
 async function showScreen(id){
+  try {
   // Chat polling lifecycle
   if(id==='chat') {
     await loadChatFromGitHub();
@@ -976,6 +977,7 @@ async function showScreen(id){
     selectMiner(selectedMiner);
   }
   updateUI();
+  } catch(e) { console.error('showScreen error:', e); }
 }
 
 function setEditorTool(tool){
@@ -3562,7 +3564,7 @@ window.addEventListener('resize',()=>{
 
 // ===== INIT =====
 updateUI();
-console.log('⬡ Habitat OS loaded');
+console.log('⬡ Habitat OS loaded [build 2026-05-24-v2]');
 console.log('Save data:', SAVE);
 </script>
 </body>
