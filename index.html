@@ -87,7 +87,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .m3-header .m3-stat{display:flex;align-items:center;gap:6px}
 .m3-header .m3-stat .num{color:var(--neon);font-weight:700}
 .m3-board-wrap{display:flex;justify-content:center;align-items:center;flex:1;padding:12px;min-height:0;aspect-ratio:1/1;width:100%;max-width:380px;margin:0 auto}
-.m3-board{display:grid;gap:3px;background:var(--bg2);padding:6px;border-radius:var(--radius);border:2px solid var(--surface);touch-action:manipulation}
+.m3-board{display:grid;gap:2px;background:var(--bg2);padding:6px;border-radius:var(--radius);border:2px solid var(--surface);touch-action:manipulation}
 .m3-cell{width:100%;height:100%;border-radius:4px;cursor:pointer;transition:all .15s;position:relative;display:flex;align-items:center;justify-content:center}
 .m3-cell.bw{opacity:0.85}
 .m3-cell.selected{box-shadow:0 0 16px var(--neon);transform:scale(1.05);z-index:2}
@@ -96,7 +96,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 @keyframes pulse-gold{from{box-shadow:0 0 10px var(--gold)}to{box-shadow:0 0 25px var(--gold)}}
 /* MATCH-3 GEMS — distinct shapes + high contrast */
 .m3-cell .gem{
-  width:70%;height:70%;border-radius:4px;position:absolute;top:50%;left:50%;
+  width:55%;height:55%;border-radius:4px;position:absolute;top:50%;left:50%;
   transform:translate(-50%,-50%);
   transition:all 0.15s;
   box-shadow:0 2px 6px rgba(0,0,0,0.3);
@@ -1145,8 +1145,7 @@ function calcGridSize(){
   const board = document.getElementById('m3-board');
   const availW = wrap.clientWidth-24;
   const availH = wrap.clientHeight-24;
-  const gapTotal = 7 * 3; // 7 gaps × 3px
-  const maxCell = Math.min(Math.floor((availW - gapTotal)/BOARD_SIZE), Math.floor((availH - gapTotal)/BOARD_SIZE), 52);
+  const maxCell = Math.min(Math.floor(availW/BOARD_SIZE), Math.floor(availH/BOARD_SIZE), 52);
   const cellSize = Math.max(28, Math.min(maxCell, 52));
   // Remove explicit board sizing - let grid auto-size. Board skin uses background-size:cover.
   return cellSize;
