@@ -2713,24 +2713,18 @@ function getSkinAgeStr(skin){
 }
 
 function renderPixelsToDataUrl(pixels, size){
-  const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext('2d');
-  const total = size * size;
-  const imageData = ctx.createImageData(size, size);
-  for(let i=0;i<total;i++){
+  // SVG — кожен піксель це rect. Векторна графіка, чітка на будь-якому екрані.
+  const px = 1; // одиничний піксель в SVG координатах
+  let rects = '';
+  for(let i=0;i<size*size;i++){
     const color = pixels[i];
-    let r,g,b;
-    if(color){
-      [r,g,b] = hexToRgb(color);
-    }else{
-      r=26;g=29;b=51;
-    }
-    imageData.data[i*4]=r; imageData.data[i*4+1]=g; imageData.data[i*4+2]=b; imageData.data[i*4+3]=255;
+    if(!color) continue; // прозорі пропускаємо
+    const x = (i % size) * px;
+    const y = Math.floor(i / size) * px;
+    rects += `<rect x="${x}" y="${y}" width="${px}" height="${px}" fill="${color}"/>`;
   }
-  ctx.putImageData(imageData,0,0);
-  return canvas.toDataURL();
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" shape-rendering="crispEdges">${rects}</svg>`;
+  return 'data:image/svg+xml,' + encodeURIComponent(svg);
 }
 
 // ===== PIXEL AGE / FADE SYSTEM =====
