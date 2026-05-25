@@ -1054,6 +1054,7 @@ function renderBoard(){
   container.innerHTML='';
   const style = calcGridSize();
   container.style.gridTemplateColumns=`repeat(${BOARD_SIZE},${style}px)`;
+  container.style.gridTemplateRows=`repeat(${BOARD_SIZE},${style}px)`;
   
   // Apply board skin: background
   const boardSkin = SAVE.board_skin || null;
