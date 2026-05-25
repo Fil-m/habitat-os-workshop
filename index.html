@@ -1060,7 +1060,7 @@ function renderBoard(){
   if(boardSkin && boardSkin.pixels && SAVE.board_skin_equipped){
     const bgUrl = renderPixelsToDataUrl(boardSkin.pixels, boardSkin.size || 32);
     container.style.backgroundImage = 'url('+bgUrl+')';
-    container.style.backgroundSize = 'cover';
+    container.style.backgroundSize = '100% 100%';
     container.style.backgroundPosition = 'center';
     container.style.backgroundRepeat = 'no-repeat';
   }else{
