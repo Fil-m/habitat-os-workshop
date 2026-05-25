@@ -6,6 +6,7 @@
 <meta name="build" content="2026-05-24-v2">
 <title>Habitat OS</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⬡</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -3098,6 +3099,7 @@ async function loadChatFromGitHub(){
     const r = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${CHAT_PATH}`, {
       headers: {Authorization: 'Bearer '+GITHUB_TOKEN, Accept: 'application/vnd.github.v3+json'}
     });
+    if(r.status === 404) return false; // First run - file doesn't exist yet
     if(!r.ok) return false;
     const data = await r.json();
     chatSha = data.sha;
