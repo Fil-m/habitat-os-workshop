@@ -96,7 +96,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 @keyframes pulse-gold{from{box-shadow:0 0 10px var(--gold)}to{box-shadow:0 0 25px var(--gold)}}
 /* MATCH-3 GEMS — distinct shapes + high contrast */
 .m3-cell .gem{
-  width:70%;height:70%;border-radius:4px;position:absolute;top:50%;left:50%;
+  width:60%;height:60%;border-radius:4px;position:absolute;top:50%;left:50%;
   transform:translate(-50%,-50%);
   transition:all 0.15s;
   box-shadow:0 2px 6px rgba(0,0,0,0.3);
@@ -225,12 +225,12 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 /* Responsive */
 @media(min-width:480px){
   .m3-cell{width:48px;height:48px}
-  .m3-cell .gem{width:38px;height:38px}
+  .m3-cell .gem{width:32px;height:32px}
   .editor-canvas-wrap canvas{width:384px;height:384px}
 }
 @media(max-width:374px){
   .m3-cell{width:34px;height:34px}
-  .m3-cell .gem{width:26px;height:26px}
+  .m3-cell .gem{width:22px;height:22px}
   .editor-canvas-wrap canvas{width:256px;height:256px}
   .resource-grid{grid-template-columns:1fr}
 }
