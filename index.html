@@ -572,7 +572,6 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     </div>
     <div style="flex:1;min-height:20px"></div>
   </div>
-</div>
 
   <!-- Achievements Screen (includes inventory, canvases, packs, stats, bonuses — all in one scroll) -->
   <div id="screen-achieve" class="screen">
@@ -2234,7 +2233,7 @@ function updateEditorStats(){
     }
     if(oldestTs > 0){
       const ageHrs = Math.floor((Date.now() - oldestTs) / 3600000);
-      oldestAgeStr = ageHrs < 1 ? '<1 год' : ageHrs < 24 ? oldestAgeStr+' год' : Math.floor(ageHrs/24)+' дн';
+      oldestAgeStr = ageHrs < 1 ? '<1 год' : ageHrs < 24 ? ageHrs+' год' : Math.floor(ageHrs/24)+' дн';
     }
   }
   const lifetimeLabel = PIXEL_LIFETIME_OPTIONS.find(o => o.ms === editorPixelLifetime)?.label || '24h';
@@ -3569,6 +3568,5 @@ updateUI();
 console.log('⬡ Habitat OS loaded [build 2026-05-24-v2]');
 console.log('Save data:', SAVE);
 </script>
-</div>
 </body>
 </html>
