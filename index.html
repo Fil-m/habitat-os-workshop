@@ -607,6 +607,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         </div>
       </div>
       <div id="duel-list" style="margin-top:8px"></div>
+      <div id="duel-status" style="margin-top:8px"></div>
     </div>
 
     <!-- Section 3: Inventory — My Skins -->
@@ -1264,11 +1265,9 @@ function processMatches(matches, comboLevel){
     goldEarned *= 2;
   }
 
-  // Duel multiplier
-  const duelM = getDuelMultiplier();
-  if(duelM !== 1){
-    goldEarned = Math.round(goldEarned * duelM);
-    applyDuelResult();
+  // Duel: track 10-move battle
+  if(SAVE.duel && SAVE.duel.stage === 'playing'){
+    handleDuelMove(points);
   }
 
   SAVE.resources.gold += goldEarned;
@@ -1686,137 +1685,219 @@ function updateAchieveList(){
   container.innerHTML=html;
 }
 
-// ===== DUEL / MULTIPLAYER ACHIEVEMENT =====
+// ===== DUEL / 10-MOVE BATTLE =====
 const DUEL_PATH = 'data/duel_invites.json';
+let duelCheckInterval = null;
 
-async function getPlayers(){
-  try{
-    const r=await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/data/players.json`,{
-      headers:{Authorization:'Bearer '+GITHUB_TOKEN,'Accept':'application/vnd.github.v3+json'}
-    });
-    if(!r.ok) return [];
-    const d=await r.json();
-    const players=JSON.parse(atob(d.content));
-    return players.filter(p=>p!==GITHUB_USER);
-  }catch(e){return [];}
+function getDuelStatus(){
+  if(!SAVE.duel) return null;
+  const d = SAVE.duel;
+  if(!d.active) return null;
+  if(d.stage === 'playing') return {moves:d.moves, max:d.max_moves, score:d.score, opp:d.opponent, oppStatus:d.opp_status||'waiting'};
+  if(d.stage === 'done') return {done:true, score:d.score, opp:d.opponent, oppStatus:d.opp_status||'waiting'};
+  return null;
 }
 
-let duelPollTimer=null;
-function startDuel(){
+async function startDuel(){
   const owned=SAVE.inventory.owned_achievements||[];
   if(!owned.includes('duel')&&!SAVE.achievements.duel){
     toast('❌ Спочатку придбайте ачівку "Дуель" в магазині'); return;
   }
-  if(SAVE.duel_active){
-    toast('ℹ️ Дуель вже активна! Множник: ×'+SAVE.duel_multiplier.toFixed(2));
-    return;
+  if(SAVE.duel && SAVE.duel.active){
+    toast('ℹ️ Дуель вже активна!'); return;
   }
-  showDuelMenu();
-}
-
-async function showDuelMenu(){
   const players=await getPlayers();
-  if(!players.length){
-    toast('❌ Немає інших гравців');
-    return;
-  }
-  let html='<div class="card"><div class="card-title">🎯 Оберіть суперника</div>';
+  if(!players.length){ toast('❌ Немає інших гравців'); return; }
+  let html='<div class="card"><div class="card-title">🎯 Оберіть суперника на 10 ходів</div>';
   for(const p of players){
-    html+=`<div class="duel-player" onclick="sendDuelInvite('${p}')">
-      <span>${p}</span><button class="btn btn-small btn-gold">🎯 Викликати</button>
-    </div>`;
+    html+=`<div class="duel-player" onclick="sendDuelInvite('${p}')"><span>${p}</span><button class="btn btn-small btn-gold">🎯 Викликати</button></div>`;
   }
   html+='</div>';
   const c=document.getElementById('duel-list');
   if(c) c.innerHTML=html;
 }
 
-async function sendDuelInvite(target){
+async function getPlayers(){
   try{
-    const invite={from:GITHUB_USER,to:target,status:'pending',ts:Date.now()};
-    const list=await loadDuelInvites();
-    list.push(invite);
-    await saveDuelInvites(list);
-    toast('✅ Запрошення надіслано '+target);
-    checkDuelInvites();
-  }catch(e){toast('❌ Помилка: '+e.message);}
+    const r=await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/data/players.json`,{
+      headers:{Authorization:'Bearer '+GITHUB_TOKEN,'Accept':'application/vnd.github.v3+json'}
+    });
+    if(!r.ok) return []; const d=await r.json(); const p=JSON.parse(atob(d.content));
+    return p.filter(x=>x!==GITHUB_USER);
+  }catch(e){return [];}
 }
 
-async function loadDuelInvites(){
+async function loadInvites(){
   try{
     const r=await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${DUEL_PATH}`,{
       headers:{Authorization:'Bearer '+GITHUB_TOKEN,'Accept':'application/vnd.github.v3+json'}
     });
-    if(!r.ok) return [];
-    const d=await r.json();
-    return JSON.parse(atob(d.content));
+    if(!r.ok) return []; const d=await r.json(); return JSON.parse(atob(d.content));
   }catch(e){return [];}
 }
 
-async function saveDuelInvites(list){
-  const payload={content:btoa(unescape(encodeURIComponent(JSON.stringify(list)))),message:'duel update'};
+async function saveInvites(list, sha){
+  const content=btoa(unescape(encodeURIComponent(JSON.stringify(list))));
+  const payload={content,message:'duel update'};
+  if(sha) payload.sha=sha;
   const r=await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${DUEL_PATH}`,{
     method:'PUT',headers:{Authorization:'Bearer '+GITHUB_TOKEN,'Content-Type':'application/json','Accept':'application/vnd.github.v3+json'},
     body:JSON.stringify(payload)
   });
-  return r.ok;
+  return r.ok ? (await r.json()).content.sha : null;
+}
+
+async function sendDuelInvite(target){
+  try{
+    const invites=await loadInvites();
+    // Get sha for update
+    const getR=await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${DUEL_PATH}`,{
+      headers:{Authorization:'Bearer '+GITHUB_TOKEN,'Accept':'application/vnd.github.v3+json'}
+    });
+    const sha=getR.ok ? (await getR.json()).sha : null;
+    const id='d_'+Date.now();
+    invites.push({id,from:GITHUB_USER,to:target,status:'pending',ts:Date.now()});
+    await saveInvites(invites, sha);
+    toast('✅ Запрошення надіслано '+target);
+  }catch(e){toast('❌ '+e.message);}
 }
 
 async function checkDuelInvites(){
-  const list=await loadDuelInvites();
-  const mine=list.find(i=>i.to===GITHUB_USER&&i.status==='pending');
-  if(mine){
-    if(!confirm('🎯 Вас викликають на дуель від '+mine.from+'! Прийняти?')) return;
-    mine.status='accepted';
-    mine.accepted_ts=Date.now();
-    await saveDuelInvites(list);
-    // Generate opposite multipliers
-    const m=0.5+Math.random();
-    const myM=Math.round(m*100)/100;
-    const theirM=Math.round((2-m)*100)/100;
-    SAVE.duel_active=mine.from;
-    SAVE.duel_multiplier=myM;
-    SAVE.duel_partner_multiplier=theirM;
-    SAVE.duel_result_written=false;
+  const invites=await loadInvites();
+  // Check pending invites for us
+  const pending=invites.find(i=>i.to===GITHUB_USER && i.status==='pending');
+  if(pending){
+    if(!confirm('🎯 '+pending.from+' викликає вас на дуель (10 ходів)! Прийняти?')) return;
+    await acceptDuel(pending, invites);
+  }
+  // Check if our opponent finished and we haven't checked
+  if(SAVE.duel && SAVE.duel.active){
+    const our=invites.find(i=>i.id===SAVE.duel.invite_id);
+    if(our){
+      if(our.opponent_score !== undefined && SAVE.duel.stage === 'done' && !SAVE.duel.opponent_score){
+        SAVE.duel.opponent_score = our.opponent_score;
+        SAVE.duel.opp_status = 'done';
+        saveToDisk();
+        showDuelResult();
+      }
+      if(our.status === 'finished' && SAVE.duel.stage !== 'finished'){
+        SAVE.duel.stage = 'finished';
+        SAVE.duel.winner = our.winner;
+        saveToDisk();
+        showDuelResult();
+      }
+    }
+  }
+}
+
+async function acceptDuel(invite, invites){
+  // Get sha
+  const getR=await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${DUEL_PATH}`,{
+    headers:{Authorization:'Bearer '+GITHUB_TOKEN,'Accept':'application/vnd.github.v3+json'}
+  });
+  const sha=getR.ok ? (await getR.json()).sha : null;
+  invite.status='playing';
+  const idx=invites.findIndex(i=>i.id===invite.id);
+  if(idx>=0) invites[idx]=invite;
+  await saveInvites(invites, sha);
+  SAVE.duel={active:true, opponent:invite.from, invite_id:invite.id, moves:0, max_moves:10, score:0, stage:'playing', opp_status:'waiting'};
+  saveToDisk();
+  toast('🎯 Дуель розпочато! Зробіть 10 ходів');
+  updateUI();
+  startDuelPolling();
+}
+
+function handleDuelMove(points){
+  if(!SAVE.duel || SAVE.duel.stage !== 'playing') return;
+  SAVE.duel.moves++;
+  SAVE.duel.score += points;
+  if(SAVE.duel.moves >= 10){
+    SAVE.duel.stage='done';
     saveToDisk();
-    toast('🎯 Дуель прийнято! Ваш множник: ×'+myM);
+    finishDuel();
+  }else{
+    saveToDisk();
   }
-  // Check if we have an accepted invite whose result needs writing
-  const ourInvite=list.find(i=>i.from===GITHUB_USER&&i.status==='accepted'&&!i.result_written);
-  if(ourInvite&&SAVE.duel_active&&!SAVE.duel_result_written){
-    // We already have the result, just need to ensure partner gets theirs
-    // Result is already set in the duel_active flow
-  }
+  updateDuelUI();
 }
 
-function getDuelMultiplier(){
-  if(SAVE.duel_active){
-    checkDuelInvites();
-    return SAVE.duel_multiplier||1;
-  }
-  return 1;
-}
-
-async function applyDuelResult(){
-  if(!SAVE.duel_active||SAVE.duel_result_written) return;
-  const list=await loadDuelInvites();
-  const invite=list.find(i=>(i.from===GITHUB_USER||i.to===GITHUB_USER)&&i.status==='accepted');
+async function finishDuel(){
+  const invites=await loadInvites();
+  const getR=await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${DUEL_PATH}`,{
+    headers:{Authorization:'Bearer '+GITHUB_TOKEN,'Accept':'application/vnd.github.v3+json'}
+  });
+  const sha=getR.ok ? (await getR.json()).sha : null;
+  const invite=invites.find(i=>i.id===SAVE.duel.invite_id);
   if(invite){
-    invite.result_from=GITHUB_USER;
-    invite.result_written=true;
-    invite.my_multiplier=SAVE.duel_multiplier;
-    await saveDuelInvites(list);
+    invite.player_score=SAVE.duel.score;
+    invite.player=GITHUB_USER;
+    invite.player_moves=SAVE.duel.moves;
+    // If opponent already finished
+    if(invite.opponent_score !== undefined){
+      invite.status='finished';
+      invite.winner = invite.player_score > invite.opponent_score ? GITHUB_USER : (invite.player_score < invite.opponent_score ? invite.opponent : 'draw');
+      SAVE.duel.stage='finished';
+      SAVE.duel.winner=invite.winner;
+    }else{
+      invite.status='done_'+GITHUB_USER;
+    }
   }
-  SAVE.duel_result_written=true;
-  // Complete duel after both have mined
-  const inv=list.find(i=>i.result_from&&i.from!==i.result_from&&i.result_written);
-  if(inv||true){ // clear after this mining
-    SAVE.duel_active=null;
-    SAVE.duel_multiplier=1;
-    SAVE.duel_partner_multiplier=1;
+  await saveInvites(invites, sha);
+  saveToDisk();
+  toast('🎯 Ви завершили дуель! Рахунок: '+SAVE.duel.score);
+  if(SAVE.duel.stage==='finished') showDuelResult();
+  else toast('⏳ Чекаємо результату суперника...');
+  stopDuelPolling();
+}
+
+function showDuelResult(){
+  const w=SAVE.duel.winner;
+  if(!w) return;
+  if(w==='draw'){
+    toast('🤝 Нічия! Рахунок: '+SAVE.duel.score+' vs '+SAVE.duel.opponent_score);
+  }else if(w===GITHUB_USER){
+    toast('🏆 ВИ ПЕРЕМОГЛИ! '+SAVE.duel.score+' vs '+SAVE.duel.opponent_score+' +20🪙');
+    SAVE.resources.gold += 20;
+    SAVE.duel.active=false;
     saveToDisk();
-    toast('🎯 Дуель завершена!');
+  }else{
+    toast('😢 Ви програли... '+SAVE.duel.score+' vs '+SAVE.duel.opponent_score);
+    SAVE.duel.active=false;
+    saveToDisk();
   }
+  updateUI();
+}
+
+function updateDuelUI(){
+  const el=document.getElementById('duel-status');
+  if(!el || !SAVE.duel || !SAVE.duel.active) return;
+  const d=SAVE.duel;
+  if(d.stage==='playing'){
+    el.innerHTML=`<div class="card" style="border-color:var(--gold)">
+      <div class="card-title">🎯 Дуель з ${d.opponent}</div>
+      <div style="display:flex;gap:16px;font-size:14px">
+        <span>Ходи: ${d.moves}/${d.max_moves}</span>
+        <span style="color:var(--gold)">Рахунок: ${d.score}</span>
+        <span>Суперник: ${d.opp_status==='done'?'✅ завершив':'⏳ грає'}</span>
+      </div>
+    </div>`;
+  }else if(d.stage==='done'){
+    el.innerHTML=`<div class="card" style="border-color:var(--blue)">
+      <div class="card-title">⏳ Чекаємо суперника...</div>
+      <div style="font-size:14px">Ваш рахунок: ${d.score} | Суперник: ${d.opp_status==='done'?'✅ готовий':'⏳ грає'}</div>
+    </div>`;
+  }else if(d.stage==='finished'){
+    showDuelResult();
+  }
+}
+
+function startDuelPolling(){
+  stopDuelPolling();
+  duelCheckInterval = setInterval(()=>{checkDuelInvites();updateDuelUI();}, 5000);
+}
+
+function stopDuelPolling(){
+  if(duelCheckInterval){ clearInterval(duelCheckInterval); duelCheckInterval=null; }
 }
 
 // ===== CANVAS SHOP =====
