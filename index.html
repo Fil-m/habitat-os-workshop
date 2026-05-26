@@ -3819,7 +3819,14 @@ function removeMarketListing(listingId){
     SAVE.board_skin = returnedSkin;
     toast('🖼 Скін столу "'+listing.skin_name+'" повернено!');
   }else{
-    SAVE.inventory.skins.push(returnedSkin);
+    // Gem skin returned — check if already exists to avoid clones
+    const exists = SAVE.inventory.skins && SAVE.inventory.skins.some(s=>s.name===listing.skin_name);
+    if(!exists){
+      SAVE.inventory.skins.push(returnedSkin);
+      toast('🎨 Скін "'+listing.skin_name+'" повернено в інвентар!');
+    }else{
+      toast('ℹ️ Скін "'+listing.skin_name+'" вже є в інвентарі (клон не створено)');
+    }
   }
   // Remove listing
   const idx = SAVE.market_listings.indexOf(listing);
