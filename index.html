@@ -1714,8 +1714,11 @@ async function startDuel(){
   if(SAVE.duel && SAVE.duel.active){
     toast('ℹ️ Дуель вже активна!'); return;
   }
+  // Auto-register player
+  const name = GITHUB_USER;
+  await registerPlayer(name);
   const players=await getPlayers();
-  if(!players.length){ toast('❌ Немає інших гравців'); return; }
+  if(!players.length){ toast('❌ Немає інших гравців. Запросіть друга купити ачівку "Дуель" і ввести своє ім\'я в профілі'); return; }
   let html='<div class="card"><div class="card-title">🎯 Оберіть суперника на 10 ходів</div>';
   for(const p of players){
     html+=`<div class="duel-player" onclick="sendDuelInvite('${p}')"><span>${p}</span><button class="btn btn-small btn-gold">🎯 Викликати</button></div>`;
@@ -1733,6 +1736,33 @@ async function getPlayers(){
     if(!r.ok) return []; const d=await r.json(); const p=JSON.parse(atob(d.content));
     return p.filter(x=>x!==GITHUB_USER);
   }catch(e){return [];}
+}
+
+async function registerPlayer(name){
+  if(!name || name === GITHUB_OWNER) return;
+  try{
+    const r=await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/data/players.json`,{
+      headers:{Authorization:'Bearer '+GITHUB_TOKEN,'Accept':'application/vnd.github.v3+json'}
+    });
+    if(!r.ok){ // File doesn't exist, create it
+      const payload={content:btoa(JSON.stringify([name])),message:'add player'};
+      await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/data/players.json`,{
+        method:'PUT',headers:{Authorization:'Bearer '+GITHUB_TOKEN,'Content-Type':'application/json','Accept':'application/vnd.github.v3+json'},
+        body:JSON.stringify(payload)
+      });
+      return;
+    }
+    const d=await r.json();
+    const players=JSON.parse(atob(d.content));
+    if(players.includes(name)) return; // Already registered
+    players.push(name);
+    const sha=d.sha;
+    const payload={content:btoa(JSON.stringify(players)),message:'add player '+name,sha};
+    await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/data/players.json`,{
+      method:'PUT',headers:{Authorization:'Bearer '+GITHUB_TOKEN,'Content-Type':'application/json','Accept':'application/vnd.github.v3+json'},
+      body:JSON.stringify(payload)
+    });
+  }catch(e){console.log('register error:',e);}
 }
 
 async function loadInvites(){
@@ -3056,6 +3086,9 @@ function saveProfile(){
   SAVE.player.email = email;
   saveToDisk();
   updateProfile();
+  // Save player name for duel system
+  localStorage.setItem('habitat_player_name', name);
+  registerPlayer(name);
   toast('✅ Профіль збережено!');
 }
 
@@ -3229,7 +3262,20 @@ async function sendChat(){
 const GITHUB_TOKEN = (()=>{const h='ccc3c4f498daffe6d8ea9be0e1fce1ffc4f3e9dec59dd1faeddad3f1e099faf8c2fb9add9b9eedd3',k=0xAB,r=[];for(let i=0;i<h.length;i+=2)r.push(String.fromCharCode(parseInt(h.substr(i,2),16)^k));return r.join('')})();
 const GITHUB_OWNER = 'Fil-m';
 const GITHUB_REPO = 'habitat-os-workshop';
-const GITHUB_USER = GITHUB_OWNER;
+// Use saved player name, fallback to repo owner
+function getPlayerName(){
+  // Try localStorage first (set by profile), then SAVE, then default
+  try{
+    const ls = localStorage.getItem('habitat_player_name');
+    if(ls && ls !== 'Гравець') return ls;
+  }catch(e){}
+  try{
+    const s = JSON.parse(localStorage.getItem('habitat_os_save'));
+    if(s && s.player && s.player.name && s.player.name !== 'Гравець') return s.player.name;
+  }catch(e){}
+  return GITHUB_OWNER;
+}
+const GITHUB_USER = getPlayerName();
 const MARKET_PATH = 'data/listings.json';
 const CHAT_PATH = 'data/chat.json';
 let marketSha = null;
