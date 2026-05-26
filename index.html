@@ -1841,6 +1841,20 @@ async function checkDuelInvites(){
       if(our.opponent_score !== undefined && SAVE.duel.stage === 'done' && !SAVE.duel.opponent_score){
         SAVE.duel.opponent_score = our.opponent_score;
         SAVE.duel.opp_status = 'done';
+        // Determine winner locally
+        SAVE.duel.stage='finished';
+        const total=SAVE.duel.score+(SAVE.duel.opponent_score||0);
+        const bonus=Math.max(10, Math.floor(total/10));
+        if(SAVE.duel.score > SAVE.duel.opponent_score){
+          SAVE.duel.winner=GITHUB_USER;
+          SAVE.resources.gold += Math.floor(total/15)+5;
+        }else if(SAVE.duel.score < SAVE.duel.opponent_score){
+          SAVE.duel.winner=SAVE.duel.opponent;
+          SAVE.resources.gold += Math.floor(total/20)+2;
+        }else{
+          SAVE.duel.winner='draw';
+          SAVE.resources.gold += Math.floor(total/20);
+        }
         saveToDisk();
         showDuelResult();
       }
@@ -1903,10 +1917,24 @@ async function finishDuel(){
     if(invite.opponent_score !== undefined){
       invite.status='finished';
       invite.winner = invite.player_score > invite.opponent_score ? GITHUB_USER : (invite.player_score < invite.opponent_score ? invite.opponent : 'draw');
+      // Calculate bonuses
+      const bonusTotal=Math.max(10, Math.floor((invite.player_score + invite.opponent_score) / 10));
+      invite.bonus_total=bonusTotal;
+      if(invite.winner==='draw'){
+        invite.bonus_winner=Math.floor(bonusTotal/2);
+        invite.bonus_loser=Math.floor(bonusTotal/2);
+      }else if(invite.winner===invite.player){
+        invite.bonus_winner=Math.floor(bonusTotal*0.6);
+        invite.bonus_loser=Math.floor(bonusTotal*0.4);
+      }else{
+        invite.bonus_winner=Math.floor(bonusTotal*0.6);
+        invite.bonus_loser=Math.floor(bonusTotal*0.4);
+      }
       SAVE.duel.stage='finished';
       SAVE.duel.winner=invite.winner;
     }else{
       invite.status='done_'+GITHUB_USER;
+      invite.opponent_score=0; // placeholder, will be set by opponent
     }
   }
   await saveInvites(invites, sha);
@@ -1918,20 +1946,24 @@ async function finishDuel(){
 }
 
 function showDuelResult(){
-  const w=SAVE.duel.winner;
-  if(!w) return;
-  if(w==='draw'){
-    toast('🤝 Нічия! Рахунок: '+SAVE.duel.score+' vs '+SAVE.duel.opponent_score);
-  }else if(w===GITHUB_USER){
-    toast('🏆 ВИ ПЕРЕМОГЛИ! '+SAVE.duel.score+' vs '+SAVE.duel.opponent_score+' +20🪙');
-    SAVE.resources.gold += 20;
-    SAVE.duel.active=false;
-    saveToDisk();
+  const d=SAVE.duel;
+  if(!d||!d.winner) return;
+  let bonus=0;
+  if(d.winner==='draw'){
+    bonus=Math.floor((d.score+d.opponent_score)/20);
+    toast('🤝 НІЧИЯ! Ваш рахунок: '+d.score+' vs '+d.opponent_score+' 🪙 +'+bonus);
+  }else if(d.winner===GITHUB_USER){
+    bonus=Math.floor((d.score+d.opponent_score)/15)+5;
+    toast('🏆 ПЕРЕМОГА! '+d.score+' vs '+d.opponent_score+' 🪙 +'+bonus);
   }else{
-    toast('😢 Ви програли... '+SAVE.duel.score+' vs '+SAVE.duel.opponent_score);
-    SAVE.duel.active=false;
-    saveToDisk();
+    bonus=Math.floor((d.score+d.opponent_score)/20)+2;
+    toast('😢 Поразка... '+d.score+' vs '+d.opponent_score+' 🪙 +'+bonus);
   }
+  SAVE.resources.gold += bonus;
+  SAVE.duel.active=false;
+  SAVE.duel.stage='finished';
+  saveToDisk();
+  updateDuelBar();
   updateUI();
 }
 
