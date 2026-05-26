@@ -959,15 +959,20 @@ function selectMiner(id){
 }
 
 // ===== SCREEN NAV =====
-async function showScreen(id){
+function showScreen(id){
   try {
   // Chat polling lifecycle
   if(id==='chat') {
-    await loadChatFromGitHub();
-    renderChat();
-    startChatPolling();
+    loadChatFromGitHub().then(()=>{renderChat();startChatPolling();});
   }
   else stopChatPolling();
+  // Duel invite checking when viewing achievements
+  if(id==='achieve'){
+    checkDuelInvites();
+    startDuelCheck();
+  }else{
+    stopDuelCheck();
+  }
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   const screen = document.getElementById('screen-'+id);
   if(screen) screen.classList.add('active');
@@ -1936,6 +1941,15 @@ function startDuelPolling(){
 
 function stopDuelPolling(){
   if(duelCheckInterval){ clearInterval(duelCheckInterval); duelCheckInterval=null; }
+}
+
+let duelInviteCheckInterval = null;
+function startDuelCheck(){
+  stopDuelCheck();
+  duelInviteCheckInterval = setInterval(()=>{checkDuelInvites();}, 10000);
+}
+function stopDuelCheck(){
+  if(duelInviteCheckInterval){ clearInterval(duelInviteCheckInterval); duelInviteCheckInterval=null; }
 }
 
 // ===== CANVAS SHOP =====
