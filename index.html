@@ -3721,9 +3721,11 @@ async function buyFromMarket(listingId){
   if(idx>=0) SAVE.market_listings.splice(idx,1);
   saveToDisk();
   updateUI();
-  // Sync to GitHub FIRST so fresh data is available
+  // Sync to GitHub
   await saveMarketToGitHub();
-  renderMarketListings();
+  // Render from local data (don't reload from GitHub cache)
+  const container = document.getElementById('market-listings');
+  if(container) renderMarketListingsNow(container);
   toast('✅ "'+listing.skin_name+'" придбано за '+listing.price+' 🪙!');
 }
 
@@ -3830,7 +3832,9 @@ async function removeMarketListing(listingId){
   if(idx>=0) SAVE.market_listings.splice(idx,1);
   saveToDisk();
   updateUI();
-  renderMarketListings();
+  // Update UI immediately (don't reload from GitHub - use local data)
+  const container = document.getElementById('market-listings');
+  if(container) renderMarketListingsNow(container);
   // Then sync to GitHub
   const ok = await saveMarketToGitHub();
   if(ok){
