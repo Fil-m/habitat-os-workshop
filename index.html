@@ -216,6 +216,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .ach-item .ach-name{font-weight:600}
 .ach-item .ach-desc{font-size:11px;color:var(--text2)}
 .ach-item .ach-buy{font-size:12px;color:var(--gold);font-weight:700;cursor:pointer;white-space:nowrap;padding:4px 8px;border-radius:4px;background:var(--surface);transition:all .2s}
+.duel-player{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--surface2);border-radius:var(--radius-sm);margin-bottom:4px;cursor:pointer}
+.duel-player:hover{background:var(--surface)}
 .ach-item .ach-buy:active{background:var(--surface2);transform:scale(0.95)}
 
 /* Empty state */
@@ -604,6 +606,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           Покупки в магазині з'являться тут
         </div>
       </div>
+      <div id="duel-list" style="margin-top:8px"></div>
     </div>
 
     <!-- Section 3: Inventory — My Skins -->
@@ -1254,11 +1257,18 @@ function processMatches(matches, comboLevel){
   const comboBonus = comboLevel - 1; // 0 at first cascade, +1 at second, etc.
   const matchSizeBonus = Math.floor(matches.length / 3) - 1; // 3=+0, 4=+1, 5=+2
   let goldEarned = baseGold + matchBonus + comboBonus + matchSizeBonus;
-  if(goldEarned < 1) goldEarned = 1; // minimum 1
+  if(goldEarned < 1) goldEarned = 1;
   
   // Gold Rush: ×2 gold
   if(isEffectActive('gold_rush')){
     goldEarned *= 2;
+  }
+
+  // Duel multiplier
+  const duelM = getDuelMultiplier();
+  if(duelM !== 1){
+    goldEarned = Math.round(goldEarned * duelM);
+    applyDuelResult();
   }
 
   SAVE.resources.gold += goldEarned;
@@ -1608,9 +1618,9 @@ const CANVAS_TYPES = {
 // ===== SHOP FUNCTIONS =====
 
 function buyAchievement(id){
-  const prices = {combo:30};
-  const names = {combo:'Комбо-множник ×2'};
-  const icons = {combo:'💥'};
+  const prices = {combo:30, duel:50};
+  const names = {combo:'Комбо-множник ×2', duel:'🎯 Дуель'};
+  const icons = {combo:'💥', duel:'🎯'};
   const price = prices[id];
   if(!price){ toast('❌ Невідома ачівка'); return; }
   if(SAVE.inventory.owned_achievements.includes(id) || SAVE.achievements[id]){
@@ -1634,9 +1644,9 @@ function updateAchieveList(){
   const container = document.getElementById('ach-list');
   if(!container) return;
   const owned = SAVE.inventory.owned_achievements || [];
-  const names = {combo:'Комбо-множник ×2'};
-  const icons = {combo:'💥'};
-  const descs = {combo:'×2 бали за комбо'};
+  const names = {combo:'Комбо-множник ×2', duel:'🎯 Дуель'};
+  const icons = {combo:'💥', duel:'🎯'};
+  const descs = {combo:'×2 бали за комбо', duel:'Змагайся з іншими гравцями'};
 
   // Show active effects with deactivate button
   let activeHtml = '';
@@ -1663,16 +1673,150 @@ function updateAchieveList(){
   }
   let html = activeHtml;
   for(const id of owned){
+    const extraBtn = (id==='duel') ? `<button class="btn btn-small btn-gold" onclick="startDuel()" style="padding:4px 8px;font-size:11px">🎯 Грати</button>` : '';
     html+=`<div class="ach-item owned">
       <span class="ach-icon">${icons[id]||'🏆'}</span>
       <div class="ach-info">
         <div class="ach-name">${names[id]||id}</div>
         <div class="ach-desc">${descs[id]||''}</div>
       </div>
-      <span class="ach-buy">✅</span>
+      ${extraBtn || '<span class="ach-buy">✅</span>'}
     </div>`;
   }
   container.innerHTML=html;
+}
+
+// ===== DUEL / MULTIPLAYER ACHIEVEMENT =====
+const DUEL_PATH = 'data/duel_invites.json';
+
+async function getPlayers(){
+  try{
+    const r=await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/data/players.json`,{
+      headers:{Authorization:'Bearer '+GITHUB_TOKEN,'Accept':'application/vnd.github.v3+json'}
+    });
+    if(!r.ok) return [];
+    const d=await r.json();
+    const players=JSON.parse(atob(d.content));
+    return players.filter(p=>p!==GITHUB_USER);
+  }catch(e){return [];}
+}
+
+let duelPollTimer=null;
+function startDuel(){
+  const owned=SAVE.inventory.owned_achievements||[];
+  if(!owned.includes('duel')&&!SAVE.achievements.duel){
+    toast('❌ Спочатку придбайте ачівку "Дуель" в магазині'); return;
+  }
+  if(SAVE.duel_active){
+    toast('ℹ️ Дуель вже активна! Множник: ×'+SAVE.duel_multiplier.toFixed(2));
+    return;
+  }
+  showDuelMenu();
+}
+
+async function showDuelMenu(){
+  const players=await getPlayers();
+  if(!players.length){
+    toast('❌ Немає інших гравців');
+    return;
+  }
+  let html='<div class="card"><div class="card-title">🎯 Оберіть суперника</div>';
+  for(const p of players){
+    html+=`<div class="duel-player" onclick="sendDuelInvite('${p}')">
+      <span>${p}</span><button class="btn btn-small btn-gold">🎯 Викликати</button>
+    </div>`;
+  }
+  html+='</div>';
+  const c=document.getElementById('duel-list');
+  if(c) c.innerHTML=html;
+}
+
+async function sendDuelInvite(target){
+  try{
+    const invite={from:GITHUB_USER,to:target,status:'pending',ts:Date.now()};
+    const list=await loadDuelInvites();
+    list.push(invite);
+    await saveDuelInvites(list);
+    toast('✅ Запрошення надіслано '+target);
+    checkDuelInvites();
+  }catch(e){toast('❌ Помилка: '+e.message);}
+}
+
+async function loadDuelInvites(){
+  try{
+    const r=await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${DUEL_PATH}`,{
+      headers:{Authorization:'Bearer '+GITHUB_TOKEN,'Accept':'application/vnd.github.v3+json'}
+    });
+    if(!r.ok) return [];
+    const d=await r.json();
+    return JSON.parse(atob(d.content));
+  }catch(e){return [];}
+}
+
+async function saveDuelInvites(list){
+  const payload={content:btoa(unescape(encodeURIComponent(JSON.stringify(list)))),message:'duel update'};
+  const r=await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${DUEL_PATH}`,{
+    method:'PUT',headers:{Authorization:'Bearer '+GITHUB_TOKEN,'Content-Type':'application/json','Accept':'application/vnd.github.v3+json'},
+    body:JSON.stringify(payload)
+  });
+  return r.ok;
+}
+
+async function checkDuelInvites(){
+  const list=await loadDuelInvites();
+  const mine=list.find(i=>i.to===GITHUB_USER&&i.status==='pending');
+  if(mine){
+    if(!confirm('🎯 Вас викликають на дуель від '+mine.from+'! Прийняти?')) return;
+    mine.status='accepted';
+    mine.accepted_ts=Date.now();
+    await saveDuelInvites(list);
+    // Generate opposite multipliers
+    const m=0.5+Math.random();
+    const myM=Math.round(m*100)/100;
+    const theirM=Math.round((2-m)*100)/100;
+    SAVE.duel_active=mine.from;
+    SAVE.duel_multiplier=myM;
+    SAVE.duel_partner_multiplier=theirM;
+    SAVE.duel_result_written=false;
+    saveToDisk();
+    toast('🎯 Дуель прийнято! Ваш множник: ×'+myM);
+  }
+  // Check if we have an accepted invite whose result needs writing
+  const ourInvite=list.find(i=>i.from===GITHUB_USER&&i.status==='accepted'&&!i.result_written);
+  if(ourInvite&&SAVE.duel_active&&!SAVE.duel_result_written){
+    // We already have the result, just need to ensure partner gets theirs
+    // Result is already set in the duel_active flow
+  }
+}
+
+function getDuelMultiplier(){
+  if(SAVE.duel_active){
+    checkDuelInvites();
+    return SAVE.duel_multiplier||1;
+  }
+  return 1;
+}
+
+async function applyDuelResult(){
+  if(!SAVE.duel_active||SAVE.duel_result_written) return;
+  const list=await loadDuelInvites();
+  const invite=list.find(i=>(i.from===GITHUB_USER||i.to===GITHUB_USER)&&i.status==='accepted');
+  if(invite){
+    invite.result_from=GITHUB_USER;
+    invite.result_written=true;
+    invite.my_multiplier=SAVE.duel_multiplier;
+    await saveDuelInvites(list);
+  }
+  SAVE.duel_result_written=true;
+  // Complete duel after both have mined
+  const inv=list.find(i=>i.result_from&&i.from!==i.result_from&&i.result_written);
+  if(inv||true){ // clear after this mining
+    SAVE.duel_active=null;
+    SAVE.duel_multiplier=1;
+    SAVE.duel_partner_multiplier=1;
+    saveToDisk();
+    toast('🎯 Дуель завершена!');
+  }
 }
 
 // ===== CANVAS SHOP =====
@@ -2853,6 +2997,7 @@ function updateProfile(){
   updateGithubUI();
 }
 
+
 // ===== GITHUB SYNC =====
 function saveGithubSettings(){
   const tokenInput = document.getElementById('github-token-input');
@@ -2995,6 +3140,7 @@ async function sendChat(){
 const GITHUB_TOKEN = (()=>{const h='ccc3c4f498daffe6d8ea9be0e1fce1ffc4f3e9dec59dd1faeddad3f1e099faf8c2fb9add9b9eedd3',k=0xAB,r=[];for(let i=0;i<h.length;i+=2)r.push(String.fromCharCode(parseInt(h.substr(i,2),16)^k));return r.join('')})();
 const GITHUB_OWNER = 'Fil-m';
 const GITHUB_REPO = 'habitat-os-workshop';
+const GITHUB_USER = GITHUB_OWNER;
 const MARKET_PATH = 'data/listings.json';
 const CHAT_PATH = 'data/chat.json';
 let marketSha = null;
