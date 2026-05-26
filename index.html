@@ -344,6 +344,9 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       <span class="m3-stat" id="m3-speed-timer" style="display:none;color:var(--gold)">⏱ 2:00</span>
       <span class="m3-stat">🏆 <span class="num" id="m3-highscore">0</span></span>
     </div>
+    <div id="duel-bar" style="display:none;padding:6px 16px;background:var(--gold);color:#000;font-size:12px;font-weight:700;text-align:center">
+      🎯 ДУЕЛЬ: <span id="duel-bar-text">—</span>
+    </div>
     <div class="m3-board-wrap" id="m3-board-wrap">
       <div class="m3-board" id="m3-board" style="grid-template-columns:repeat(8,40px)"></div>
     </div>
@@ -1846,7 +1849,9 @@ async function acceptDuel(invite, invites){
   SAVE.duel={active:true, opponent:invite.from, invite_id:invite.id, moves:0, max_moves:10, score:0, stage:'playing', opp_status:'waiting'};
   saveToDisk();
   toast('🎯 Дуель розпочато! Зробіть 10 ходів');
-  updateUI();
+  updateDuelBar();
+  showScreen('match3');
+  startMatch3();
   startDuelPolling();
 }
 
@@ -1861,7 +1866,7 @@ function handleDuelMove(points){
   }else{
     saveToDisk();
   }
-  updateDuelUI();
+  updateDuelBar();
 }
 
 async function finishDuel(){
@@ -1913,24 +1918,49 @@ function showDuelResult(){
 
 function updateDuelUI(){
   const el=document.getElementById('duel-status');
-  if(!el || !SAVE.duel || !SAVE.duel.active) return;
-  const d=SAVE.duel;
-  if(d.stage==='playing'){
-    el.innerHTML=`<div class="card" style="border-color:var(--gold)">
-      <div class="card-title">🎯 Дуель з ${d.opponent}</div>
+  if(!el) return;
+  updateDuelBar();
+  // Also update achieve screen
+  if(SAVE.duel && SAVE.duel.active){
+    const d=SAVE.duel;
+    if(d.stage==='playing'){
+      el.innerHTML=`<div class="card" style="border-color:var(--gold)"><div class="card-title">🎯 Дуель з ${d.opponent}</div>
       <div style="display:flex;gap:16px;font-size:14px">
         <span>Ходи: ${d.moves}/${d.max_moves}</span>
         <span style="color:var(--gold)">Рахунок: ${d.score}</span>
         <span>Суперник: ${d.opp_status==='done'?'✅ завершив':'⏳ грає'}</span>
-      </div>
-    </div>`;
-  }else if(d.stage==='done'){
-    el.innerHTML=`<div class="card" style="border-color:var(--blue)">
-      <div class="card-title">⏳ Чекаємо суперника...</div>
-      <div style="font-size:14px">Ваш рахунок: ${d.score} | Суперник: ${d.opp_status==='done'?'✅ готовий':'⏳ грає'}</div>
-    </div>`;
-  }else if(d.stage==='finished'){
-    showDuelResult();
+      </div></div>`;
+    }else if(d.stage==='done'){
+      el.innerHTML=`<div class="card" style="border-color:var(--blue)"><div class="card-title">⏳ Чекаємо суперника...</div>
+      <div style="font-size:14px">Ваш рахунок: ${d.score} | Суперник: ${d.opp_status==='done'?'✅ готовий':'⏳ грає'}</div></div>`;
+    }
+  }else{
+    el.innerHTML='';
+  }
+}
+
+function updateDuelBar(){
+  const bar=document.getElementById('duel-bar');
+  const text=document.getElementById('duel-bar-text');
+  if(!bar||!text) return;
+  if(SAVE.duel&&SAVE.duel.active){
+    bar.style.display='block';
+    const d=SAVE.duel;
+    if(d.stage==='playing'){
+      text.textContent=`${d.opponent} · Ходи: ${d.moves}/${d.max_moves} · Бали: ${d.score}`;
+      bar.style.background='var(--gold)';
+      bar.style.color='#000';
+    }else if(d.stage==='done'){
+      text.textContent=`${d.opponent} · Завершено: ${d.score} балів · Чекаємо суперника`;
+      bar.style.background='var(--blue)';
+      bar.style.color='#fff';
+    }else{
+      text.textContent=`${d.opponent} · ${d.winner===GITHUB_USER?'🏆 Перемога!':d.winner==='draw'?'🤝 Нічия':'😢 Поразка'}`;
+      bar.style.background=d.winner===GITHUB_USER?'var(--green)':'var(--red)';
+      bar.style.color='#fff';
+    }
+  }else{
+    bar.style.display='none';
   }
 }
 
