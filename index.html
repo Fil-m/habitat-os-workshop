@@ -3759,7 +3759,7 @@ function renderMarketListingsNow(container){
   const gemIcons = {ruby:'🟣', sapphire:'🔵', gold:'🟡', emerald:'🟢', unknown:'🎨'};
   for(const l of listings){
     const icon = gemIcons[l.gem_type] || '🎨';
-    const isOwn = l.seller_id === (SAVE.player.id || '') || l.seller === (SAVE.player && SAVE.player.name) || l.seller === GITHUB_USER || l.seller === 'Гравець' || l.seller === (localStorage.getItem('habitat_player_name')||'');
+    const isOwn = l.seller_id === (SAVE.player.id || '');
     const skinTypeLabel = l.skin_type === 'board' ? '🖼 Скін столу' : '🎨 Скін камінця';
     const previewId = 'market-preview-'+l.id;
     html += `<div class="shop-item" style="cursor:default;flex-wrap:wrap">
@@ -3807,7 +3807,7 @@ function renderMarketListingsNow(container){
   },50);
 }
 
-function removeMarketListing(listingId){
+async function removeMarketListing(listingId){
   const listing = SAVE.market_listings.find(l=>l.id===listingId);
   if(!listing){ toast('❌ Пропозицію не знайдено'); return; }
   if(!confirm('Зняти "'+listing.skin_name+'" з продажу?')) return;
@@ -3815,29 +3815,33 @@ function removeMarketListing(listingId){
   const returnedSkin = JSON.parse(JSON.stringify(listing.skin_data));
   returnedSkin.id = 'returned_'+Date.now();
   if(listing.skin_type && listing.skin_type === 'board'){
-    // Board skin returned
     SAVE.board_skin = returnedSkin;
     toast('🖼 Скін столу "'+listing.skin_name+'" повернено!');
   }else{
-    // Gem skin returned — check if already exists to avoid clones
     const exists = SAVE.inventory.skins && SAVE.inventory.skins.some(s=>s.name===listing.skin_name);
     if(!exists){
       SAVE.inventory.skins.push(returnedSkin);
-      toast('🎨 Скін "'+listing.skin_name+'" повернено в інвентар!');
     }else{
-      toast('ℹ️ Скін "'+listing.skin_name+'" вже є в інвентарі (клон не створено)');
+      toast('ℹ️ Скін "'+listing.skin_name+'" вже є в інвентарі');
     }
   }
-  // Remove listing
+  // Remove listing locally FIRST
   const idx = SAVE.market_listings.indexOf(listing);
   if(idx>=0) SAVE.market_listings.splice(idx,1);
   saveToDisk();
   updateUI();
   renderMarketListings();
-  saveMarketToGitHub().then(r=>{
-    if(!r) toast('⚠️ Не вдалось синхронізувати з GitHub, оновіть сторінку');
-  });
-  toast('↩️ "'+listing.skin_name+'" знято з продажу');
+  // Then sync to GitHub
+  const ok = await saveMarketToGitHub();
+  if(ok){
+    toast('↩️ "'+listing.skin_name+'" знято з продажу');
+  }else{
+    toast('⚠️ Помилка синхронізації. Оновіть сторінку і спробуйте ще раз');
+    // Re-add listing to prevent data loss
+    SAVE.market_listings.splice(idx, 0, listing);
+    saveToDisk();
+    renderMarketListings();
+  }
 }
 
 function showTradePanel(){
