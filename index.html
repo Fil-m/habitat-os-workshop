@@ -3759,7 +3759,7 @@ function renderMarketListingsNow(container){
   const gemIcons = {ruby:'🟣', sapphire:'🔵', gold:'🟡', emerald:'🟢', unknown:'🎨'};
   for(const l of listings){
     const icon = gemIcons[l.gem_type] || '🎨';
-    const isOwn = l.seller_id === (SAVE.player.id || '') || l.seller === (SAVE.player && SAVE.player.name);
+    const isOwn = l.seller_id === (SAVE.player.id || '') || l.seller === (SAVE.player && SAVE.player.name) || l.seller === GITHUB_USER || l.seller === 'Гравець' || l.seller === (localStorage.getItem('habitat_player_name')||'');
     const skinTypeLabel = l.skin_type === 'board' ? '🖼 Скін столу' : '🎨 Скін камінця';
     const previewId = 'market-preview-'+l.id;
     html += `<div class="shop-item" style="cursor:default;flex-wrap:wrap">
