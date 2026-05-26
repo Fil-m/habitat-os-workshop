@@ -1738,7 +1738,7 @@ async function getPlayers(){
     const r=await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/data/players.json`,{
       headers:{Authorization:'Bearer '+GITHUB_TOKEN,'Accept':'application/vnd.github.v3+json'}
     });
-    if(!r.ok) return []; const d=await r.json(); const p=JSON.parse(atob(d.content));
+    if(!r.ok) return []; const d=await r.json(); const p=JSON.parse(decodeURIComponent(escape(atob(d.content))));
     return p.filter(x=>x!==GITHUB_USER);
   }catch(e){return [];}
 }
@@ -1749,8 +1749,8 @@ async function registerPlayer(name){
     const r=await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/data/players.json`,{
       headers:{Authorization:'Bearer '+GITHUB_TOKEN,'Accept':'application/vnd.github.v3+json'}
     });
-    if(!r.ok){ // File doesn't exist, create it
-      const payload={content:btoa(JSON.stringify([name])),message:'add player'};
+    if(!r.ok){
+      const payload={content:btoa(unescape(encodeURIComponent(JSON.stringify([name])))),message:'add player'};
       await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/data/players.json`,{
         method:'PUT',headers:{Authorization:'Bearer '+GITHUB_TOKEN,'Content-Type':'application/json','Accept':'application/vnd.github.v3+json'},
         body:JSON.stringify(payload)
@@ -1758,11 +1758,11 @@ async function registerPlayer(name){
       return;
     }
     const d=await r.json();
-    const players=JSON.parse(atob(d.content));
-    if(players.includes(name)) return; // Already registered
+    const players=JSON.parse(decodeURIComponent(escape(atob(d.content))));
+    if(players.includes(name)) return;
     players.push(name);
     const sha=d.sha;
-    const payload={content:btoa(JSON.stringify(players)),message:'add player '+name,sha};
+    const payload={content:btoa(unescape(encodeURIComponent(JSON.stringify(players)))),message:'add player '+name,sha};
     await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/data/players.json`,{
       method:'PUT',headers:{Authorization:'Bearer '+GITHUB_TOKEN,'Content-Type':'application/json','Accept':'application/vnd.github.v3+json'},
       body:JSON.stringify(payload)
@@ -1775,7 +1775,7 @@ async function loadInvites(){
     const r=await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${DUEL_PATH}`,{
       headers:{Authorization:'Bearer '+GITHUB_TOKEN,'Accept':'application/vnd.github.v3+json'}
     });
-    if(!r.ok) return []; const d=await r.json(); return JSON.parse(atob(d.content));
+    if(!r.ok) return []; const d=await r.json(); return JSON.parse(decodeURIComponent(escape(atob(d.content))));
   }catch(e){return [];}
 }
 
