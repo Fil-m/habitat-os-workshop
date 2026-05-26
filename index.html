@@ -3833,7 +3833,10 @@ function removeMarketListing(listingId){
   if(idx>=0) SAVE.market_listings.splice(idx,1);
   saveToDisk();
   updateUI();
-  saveMarketToGitHub();
+  renderMarketListings();
+  saveMarketToGitHub().then(r=>{
+    if(!r) toast('⚠️ Не вдалось синхронізувати з GitHub, оновіть сторінку');
+  });
   toast('↩️ "'+listing.skin_name+'" знято з продажу');
 }
 
