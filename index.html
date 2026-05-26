@@ -1816,6 +1816,24 @@ async function checkDuelInvites(){
     if(!confirm('🎯 '+pending.from+' викликає вас на дуель (10 ходів)! Прийняти?')) return;
     await acceptDuel(pending, invites);
   }
+  // Check if our sent invite was accepted
+  const accepted=invites.find(i=>i.from===GITHUB_USER && i.status==='playing' && !i.starter_notified);
+  if(accepted){
+    if(!confirm('🎯 '+accepted.to+' прийняв вашу дуель! Почати бій на 10 ходів?')) return;
+    accepted.starter_notified=true;
+    // Get sha for update
+    const getR2=await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${DUEL_PATH}`,{
+      headers:{Authorization:'Bearer '+GITHUB_TOKEN,'Accept':'application/vnd.github.v3+json'}
+    });
+    const sha2=getR2.ok ? (await getR2.json()).sha : null;
+    await saveInvites(invites, sha2);
+    SAVE.duel={active:true, opponent:accepted.to, invite_id:accepted.id, moves:0, max_moves:10, score:0, stage:'playing', opp_status:'playing'};
+    saveToDisk();
+    updateDuelBar();
+    showScreen('match3');
+    startMatch3();
+    startDuelPolling();
+  }
   // Check if our opponent finished and we haven't checked
   if(SAVE.duel && SAVE.duel.active){
     const our=invites.find(i=>i.id===SAVE.duel.invite_id);
@@ -1843,6 +1861,7 @@ async function acceptDuel(invite, invites){
   });
   const sha=getR.ok ? (await getR.json()).sha : null;
   invite.status='playing';
+  invite.accepted_ts=Date.now();
   const idx=invites.findIndex(i=>i.id===invite.id);
   if(idx>=0) invites[idx]=invite;
   await saveInvites(invites, sha);
@@ -1947,7 +1966,7 @@ function updateDuelBar(){
     bar.style.display='block';
     const d=SAVE.duel;
     if(d.stage==='playing'){
-      text.textContent=`${d.opponent} · Ходи: ${d.moves}/${d.max_moves} · Бали: ${d.score}`;
+      text.textContent=`${d.opponent} · Залишилось ходів: ${d.max_moves-d.moves}/${d.max_moves} · Бали: ${d.score}`;
       bar.style.background='var(--gold)';
       bar.style.color='#000';
     }else if(d.stage==='done'){
