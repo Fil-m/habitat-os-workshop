@@ -3720,10 +3720,9 @@ async function buyFromMarket(listingId){
   const idx = SAVE.market_listings.indexOf(listing);
   if(idx>=0) SAVE.market_listings.splice(idx,1);
   saveToDisk();
-  updateUI();
-  // Sync to GitHub
+  // Sync to GitHub first, then update UI to avoid stale reload
   await saveMarketToGitHub();
-  // Render from local data (don't reload from GitHub cache)
+  updateUI();
   const container = document.getElementById('market-listings');
   if(container) renderMarketListingsNow(container);
   toast('✅ "'+listing.skin_name+'" придбано за '+listing.price+' 🪙!');
@@ -3831,20 +3830,18 @@ async function removeMarketListing(listingId){
   const idx = SAVE.market_listings.indexOf(listing);
   if(idx>=0) SAVE.market_listings.splice(idx,1);
   saveToDisk();
-  updateUI();
-  // Update UI immediately (don't reload from GitHub - use local data)
-  const container = document.getElementById('market-listings');
-  if(container) renderMarketListingsNow(container);
-  // Then sync to GitHub
+  // Don't call updateUI() yet — it triggers renderMarketListings which reloads from GitHub (stale)
+  // First sync to GitHub, then update UI
   const ok = await saveMarketToGitHub();
   if(ok){
+    // Now update UI with fresh data
+    updateUI();
     toast('↩️ "'+listing.skin_name+'" знято з продажу');
   }else{
     toast('⚠️ Помилка синхронізації. Оновіть сторінку і спробуйте ще раз');
-    // Re-add listing to prevent data loss
     SAVE.market_listings.splice(idx, 0, listing);
     saveToDisk();
-    renderMarketListings();
+    updateUI();
   }
 }
 
