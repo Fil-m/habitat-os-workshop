@@ -668,14 +668,14 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     </div>
     <!-- Drawing view (always shown, no canvas selection — canvases are in achievements) -->
     <div id="editor-drawing-view">
-      <div class="editor-stats" id="editor-stats">Пікселів використано: 0 / 256 · 🎨 500 px-год</div>
+      <div class="editor-stats" id="editor-stats">Пікселів використано: 0 / 256 · 🎨 500 🪙 Gold</div>
       <div class="editor-wrap">
         <div class="editor-canvas-wrap">
           <canvas id="skin-canvas" width="16" height="16"></canvas>
         </div>
         <div class="editor-palette" id="editor-palette"></div>
         <div class="lt-options" id="lt-options"></div>
-        <div class="editor-cost-stats" id="editor-cost-stats">🆕 0 нових · 💰 0 px-год · ⌛ 24h</div>
+        <div class="editor-cost-stats" id="editor-cost-stats">🆕 0 нових · 💰 0 🪙 Gold · ⌛ 24h</div>
         <div class="editor-tools">
           <div style="display:flex;gap:8px;padding:4px 0">
             <button class="btn btn-small btn-primary" id="tool-pen" onclick="setEditorTool('pen')">✏️</button>
@@ -809,7 +809,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 <script>
 // ===== SAVE SYSTEM =====
 const DEFAULT_SAVE = {
-  resources: {gold:50, ruby:0, sapphire:3, pixel_hours:500},
+  resources: {gold:550, ruby:0, sapphire:3},
   inventory: {skins:[], canvases:[], owned_achievements:[]},
   equipped_skins: {ruby: null, sapphire: null, gold: null, emerald: null},
   achievements: {combo:false},
@@ -2599,15 +2599,15 @@ function updateEditorStats(){
     }
   }
   const lifetimeLabel = PIXEL_LIFETIME_OPTIONS.find(o => o.ms === editorPixelLifetime)?.label || '24h';
-  document.getElementById('editor-stats').innerHTML = `${pixelInfo} · 🎨 ${SAVE.resources.pixel_hours} px-год${ageStr ? ' · '+ageStr : ''}${oldestAgeStr ? ' · ⏳ найст. '+oldestAgeStr : ''}`;
-  document.getElementById('editor-pixels-left').textContent = SAVE.resources.pixel_hours;
+  document.getElementById('editor-stats').innerHTML = `${pixelInfo} · 🎨 ${SAVE.resources.gold} 🪙 Gold${ageStr ? ' · '+ageStr : ''}${oldestAgeStr ? ' · ⏳ найст. '+oldestAgeStr : ''}`;
+  document.getElementById('editor-pixels-left').textContent = SAVE.resources.gold;
   // Show estimated cost at save
   const estCost = gemUsed * editorPixelCost;
-  const costHtml = `<span style="font-weight:600">🆕 ${editorNewPixelsCount} нових · 💰 ~${estCost} px-год · ⌛ ${lifetimeLabel}</span>`;
+  const costHtml = `<span style="font-weight:600">🆕 ${editorNewPixelsCount} нових · 💰 ~${estCost} 🪙 Gold · ⌛ ${lifetimeLabel}</span>`;
   const costEl = document.getElementById('editor-cost-stats');
   if(costEl){
-    if(SAVE.resources.pixel_hours < estCost){
-      costEl.innerHTML = costHtml + ' <span style="color:var(--red);font-weight:700">⚠️ Недостатньо px-год!</span>';
+    if(SAVE.resources.gold < estCost){
+      costEl.innerHTML = costHtml + ' <span style="color:var(--red);font-weight:700">⚠️ Недостатньо 🪙 Gold!</span>';
     }else{
       costEl.innerHTML = costHtml;
     }
@@ -2683,11 +2683,11 @@ function saveSkinFromEditor(){
     }
     const cost = newPixels * editorPixelCost;
     if(cost > 0){
-      if(SAVE.resources.pixel_hours < cost){
-        toast('❌ Недостатньо піксель-годин! Потрібно '+cost+', є '+SAVE.resources.pixel_hours);
+      if(SAVE.resources.gold < cost){
+        toast('❌ Недостатньо піксель-годин! Потрібно '+cost+', є '+SAVE.resources.gold);
         return;
       }
-      SAVE.resources.pixel_hours -= cost;
+      SAVE.resources.gold -= cost;
     }
 
     // Update existing skin
@@ -2704,7 +2704,7 @@ function saveSkinFromEditor(){
     saveToDisk();
     updateUI();
     if(cost > 0){
-      toast('💾 Скін "'+existing.name+'" оновлено! (-'+cost+' px-год)');
+      toast('💾 Скін "'+existing.name+'" оновлено! (-'+cost+' 🪙 Gold)');
     }else{
       toast('💾 Скін "'+existing.name+'" оновлено!');
     }
@@ -2735,11 +2735,11 @@ function saveSkinFromEditor(){
   // Count all filled pixels and calculate cost
   const filledCount = used;
   const cost = filledCount * editorPixelCost;
-  if(cost > 0 && SAVE.resources.pixel_hours < cost){
-    toast('❌ Недостатньо піксель-годин! Потрібно '+cost+', є '+SAVE.resources.pixel_hours);
+  if(cost > 0 && SAVE.resources.gold < cost){
+    toast('❌ Недостатньо піксель-годин! Потрібно '+cost+', є '+SAVE.resources.gold);
     return;
   }
-  SAVE.resources.pixel_hours -= cost;
+  SAVE.resources.gold -= cost;
 
   // Consume the canvas
   SAVE.inventory.canvases.splice(canvasIdx, 1);
@@ -2766,7 +2766,7 @@ function saveSkinFromEditor(){
 
   saveToDisk();
   updateUI();
-  toast('💾 Скін "'+skin.name+'" збережено! (-'+cost+' px-год за '+filledCount+' пікселів)');
+  toast('💾 Скін "'+skin.name+'" збережено! (-'+cost+' 🪙 Gold за '+filledCount+' пікселів)');
   closeEditorAndGoBack();
 }
 
