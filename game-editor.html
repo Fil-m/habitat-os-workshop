@@ -1,346 +1,103 @@
-
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Evo-Editor</title>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Evo-Engine — Creator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/evo-editor.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
   <style>
-    :root {
-      --bg: #0b0d19;
-      --bg2: #121526;
-      --surface: #1e2240;
-      --surface2: #262b50;
-      --neon: #00f0ff;
-      --text: #e0e4f0;
-      --radius: 8px;
-      --touch-size: 44px;
-    }
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    body {
-      font-family: 'Outfit', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-    header {
-      background: var(--surface);
-      padding: 12px 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid var(--surface2);
-      font-weight: 600;
-      font-size: 18px;
-    }
-    header .title {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      color: var(--neon);
-    }
-    header .actions {
-      display: flex;
-      gap: 12px;
-    }
-    .btn {
-      background: var(--surface2);
-      border: none;
-      color: var(--text);
-      padding: 8px 12px;
-      border-radius: var(--radius);
-      cursor: pointer;
-      font-size: 14px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: all 0.2s;
-    }
-    .btn:hover {
-      background: var(--surface);
-      color: var(--neon);
-    }
-    .mode-pills {
-      display: flex;
-      background: var(--surface2);
-      border-radius: var(--radius);
-      padding: 4px;
-      margin: 12px 16px;
-      gap: 4px;
-      font-size: 14px;
-    }
-    .mode-pills button {
-      border: none;
-      background: transparent;
-      padding: 8px 12px;
-      border-radius: 6px;
-      color: var(--text);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: all 0.2s;
-    }
-    .mode-pills button.active {
-      background: var(--neon);
-      color: var(--bg);
-      font-weight: 600;
-    }
-    .mode-pills button:hover:not(.active) {
-      background: var(--surface);
-    }
-    .main-container {
-      display: flex;
-      flex: 1;
-      overflow: hidden;
-    }
-    .sidebar {
-      width: 260px;
-      background: var(--surface);
-      border-right: 1px solid var(--surface2);
-      display: flex;
-      flex-direction: column;
-      overflow-y: auto;
-    }
-    .sidebar-section {
-      padding: 16px;
-      border-bottom: 1px solid var(--surface2);
-    }
-    .sidebar-section h3 {
-      font-size: 14px;
-      margin-bottom: 12px;
-      color: var(--neon);
-      font-weight: 500;
-    }
-    .scene-list, .trigger-list, .var-list {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      max-height: 120px;
-      overflow-y: auto;
-    }
-    .scene-item, .trigger-item, .var-item {
-      padding: 6px 10px;
-      background: var(--surface2);
-      border-radius: 6px;
-      font-size: 13px;
-      cursor: pointer;
-    }
-    .scene-item.active, .trigger-item.active {
-      background: var(--neon);
-      color: var(--bg);
-    }
-    .palette {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
-    }
-    .palette-cell {
-      width: 100%;
-      aspect-ratio: 1;
-      border-radius: 6px;
-      cursor: pointer;
-      border: 2px solid transparent;
-      transition: transform 0.1s;
-    }
-    .palette-cell.selected {
-      border-color: var(--neon);
-      transform: scale(0.95);
-    }
-    .palette-cell.empty { background: transparent; border: 1px dashed #444; }
-    .palette-cell.wall { background: #555; }
-    .palette-cell.player_start { background: #44f; }
-    .palette-cell.goal { background: #4caf50; }
-    .palette-cell.collectible { background: #ffcc00; }
-    .palette-cell.enemy { background: #f44336; }
-    .palette-cell.npc { background: #2196f3; }
-    .palette-cell.door { background: #8b4513; }
-    .palette-cell.key { background: #ffd700; }
-    .palette-cell.hazard { background: #ff5722; }
-    .palette-cell.trigger { background: #9c27b0; }
-    .palette-cell.platform { background: #8d6e63; }
-
-    .viewport {
-      flex: 1;
-      background: var(--bg2);
-      position: relative;
-      overflow: hidden;
-    }
-    #game-canvas {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-    .toolbar {
-      position: absolute;
-      bottom: 16px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      background: var(--surface2);
-      border-radius: 12px;
-      padding: 6px;
-      gap: 4px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    }
-    .tool {
-      width: var(--touch-size);
-      height: var(--touch-size);
-      border-radius: 8px;
-      background: var(--surface);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--text);
-      cursor: pointer;
-      font-size: 20px;
-      transition: all 0.2s;
-    }
-    .tool.active {
-      background: var(--neon);
-      color: var(--bg);
-    }
-    .tool:hover {
-      background: var(--surface2);
-    }
-
-    .trigger-editor, .scene-editor {
-      display: none;
-      flex-direction: column;
-      gap: 8px;
-      font-size: 13px;
-    }
-    .trigger-editor .field, .scene-editor .field {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .trigger-editor input, .scene-editor input, .trigger-editor select {
-      background: var(--surface2);
-      border: 1px solid #333;
-      padding: 6px;
-      border-radius: 6px;
-      color: var(--text);
-    }
-    .actions-list, .conditions-list {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .action-item, .condition-item {
-      display: flex;
-      gap: 4px;
-      align-items: center;
-    }
-    .action-item input, .condition-item input, .condition-item select {
-      flex: 1;
-      background: var(--surface2);
-      border: 1px solid #333;
-      padding: 4px;
-      border-radius: 4px;
-      color: var(--text);
-      font-size: 12px;
-    }
-    .btn-small {
-      background: var(--surface2);
-      border: none;
-      color: var(--text);
-      padding: 4px 8px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 12px;
-    }
-    .btn-remove {
-      color: #f44;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+    :root { --bg: #0b0d19; --bg2: #121526; --surface: #1e2240; --surface2: #262b50; --neon: #00f0ff; --text: #e0e4f0; --text2: #8890b0; --radius: 8px; }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--bg2); border-bottom: 1px solid var(--surface2); flex-shrink: 0; }
+    .logo { font-size: 16px; font-weight: 600; color: var(--neon); }
+    .hdr-btns { display: flex; gap: 6px; }
+    .hdr-btns button { min-height: 36px; padding: 6px 12px; background: var(--surface2); border: 1px solid var(--surface2); border-radius: var(--radius); color: var(--text); cursor: pointer; font-size: 12px; }
+    .hdr-btns button.neon { border-color: var(--neon); color: var(--neon); }
+    .mode-row { display: flex; gap: 6px; padding: 6px 12px; background: var(--bg); border-bottom: 1px solid var(--surface2); flex-shrink: 0; overflow-x: auto; }
+    .mode-btn { padding: 6px 14px; background: var(--surface); border: 1px solid var(--surface2); border-radius: 50px; color: var(--text2); cursor: pointer; font-size: 12px; white-space: nowrap; min-height: 36px; display: flex; align-items: center; gap: 4px; }
+    .mode-btn.active { background: var(--neon); color: #000; border-color: var(--neon); font-weight: 600; }
+    .app { display: flex; flex: 1; overflow: hidden; }
+    #sidebar { width: 260px; background: var(--bg2); border-right: 1px solid var(--surface2); display: flex; flex-direction: column; overflow-y: auto; flex-shrink: 0; }
+    #viewport { flex: 1; position: relative; overflow: hidden; }
+    #scene { width: 100%; height: 100%; position: relative; }
+    .side-sec { padding: 10px; border-bottom: 1px solid var(--surface2); }
+    .side-sec h3 { font-size: 13px; color: var(--neon); margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+    .sc-item { padding: 6px; background: var(--surface); border-radius: 4px; margin-bottom: 4px; cursor: pointer; font-size: 12px; display: flex; justify-content: space-between; }
+    .sc-item.active { border: 1px solid var(--neon); }
+    .tr-item { padding: 6px; background: var(--surface); border-radius: 4px; margin-bottom: 4px; cursor: pointer; font-size: 12px; display: flex; justify-content: space-between; }
+    .tr-item.active { border: 1px solid var(--neon); }
+    .tr-item .del { color: #f44; cursor: pointer; }
+    .f-row { display: flex; gap: 4px; margin: 4px 0; flex-wrap: wrap; }
+    .f-row input, .f-row select, .f-row textarea { flex: 1; min-width: 50px; padding: 5px; background: var(--surface2); border: 1px solid #333; border-radius: 4px; color: var(--text); font-size: 11px; }
+    .f-row button { min-height: 28px; padding: 4px 8px; background: var(--surface2); border: 1px solid #333; border-radius: 4px; color: var(--text); cursor: pointer; font-size: 11px; }
+    .var-display { font-size: 11px; padding: 3px 0; color: var(--text2); }
+    .pal-bar { display: flex; gap: 3px; flex-wrap: wrap; }
+    .pal-item { width: 28px; height: 28px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; }
+    .pal-item.active { border-color: var(--neon); }
+    .debug { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.7); padding: 4px 8px; border-radius: 4px; font-size: 11px; z-index: 5; }
+    .tbar { display: flex; gap: 4px; padding: 6px 10px; background: var(--bg2); border-top: 1px solid var(--surface2); flex-shrink: 0; flex-wrap: wrap; }
+    .tbtn { min-height: 32px; padding: 4px 10px; background: var(--surface2); border: 1px solid var(--surface2); border-radius: 4px; color: var(--text); cursor: pointer; font-size: 12px; }
+    .tbtn.active { background: var(--neon); color: #000; }
+    .dialog-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 100; justify-content: center; align-items: center; }
+    .dialog-overlay.show { display: flex; }
+    .dialog-box { background: var(--surface); border: 1px solid var(--surface2); border-radius: 12px; padding: 24px; max-width: 400px; width: 90%; }
+    .dialog-box h3 { color: var(--neon); margin-bottom: 12px; }
+    .dialog-box p { margin-bottom: 16px; line-height: 1.5; }
+    .dialog-box button { min-height: 44px; padding: 10px 20px; background: var(--neon); color: #000; border: none; border-radius: var(--radius); cursor: pointer; font-weight: 600; margin: 4px; }
+    @media (max-width: 600px) { #sidebar { width: 100%; max-height: 35vh; border-right: none; border-bottom: 1px solid var(--surface2); } .app { flex-direction: column; } }
   </style>
 </head>
 <body>
   <header>
-    <div class="title">⬡ Evo-Engine</div>
-    <div class="actions">
-      <button class="btn" id="save-btn"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M8.5 1.5A1.5 1.5 0 0 1 10 0h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h6.5a1.5 1.5 0 0 1 1.5 1.5v7.793l2.146-2.147a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 1 1 .708-.708L7.5 9.293V1.5z"/></svg> Зберегти</button>
-      <button class="btn" id="export-btn"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/></svg> Експорт</button>
-      <button class="btn" id="import-btn"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 1.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 0.293V9.5a.5.5 0 0 0 1 0V0.293l2.146 2.147a.5.5 0 0 0 .708-.708l-3-3a.5.5 0 0 0-.708 0l-3 3a.5.5 0 0 0 .708.708L7.5 0.293V9.5a.5.5 0 0 0 1 0V0.293l-.146.147z"/></svg> Імпорт</button>
+    <div class="logo">⬡ Evo-Engine</div>
+    <div class="hdr-btns">
+      <button onclick="saveProject()">💾</button>
+      <button class="neon" onclick="exportProject()">📤</button>
+      <button onclick="document.getElementById('import-file').click()">📥</button>
+      <input type="file" id="import-file" style="display:none" accept=".json">
     </div>
   </header>
-
-  <div class="mode-pills">
-    <button id="mode-text" class="mode-btn"><span>📜</span> Текст</button>
-    <button id="mode-2d" class="mode-btn"><span>🗺️</span> Карта</button>
-    <button id="mode-3d" class="mode-btn"><span>🧊</span> 3D</button>
-    <button id="mode-play" class="mode-btn"><span>▶</span> Грати</button>
+  <div class="mode-row" id="mode-row">
+    <div class="mode-btn" data-view="text">📜 Текст</div>
+    <div class="mode-btn active" data-view="3d">🧊 3D</div>
+    <div class="mode-btn" data-view="top">🗺️ Карта</div>
+    <div class="mode-btn" data-view="play">▶ Грати</div>
   </div>
-
-  <div class="main-container">
-    <div class="sidebar">
-      <div class="sidebar-section">
-        <h3>Сцени</h3>
-        <div class="scene-list" id="scene-list"></div>
-        <button class="btn" style="margin-top: 8px;" id="add-scene-btn">+ Додати</button>
+  <div class="app">
+    <div id="sidebar">
+      <div class="side-sec"><h3>🎬 Сцени <button style="font-size:10px;padding:2px 6px;background:var(--surface2);border:1px solid #333;border-radius:3px;color:var(--text);cursor:pointer" onclick="addScene()">+</button></h3><div id="scene-list"></div></div>
+      <div class="side-sec"><h3>⚡ Тригери <button style="font-size:10px;padding:2px 6px;background:var(--surface2);border:1px solid #333;border-radius:3px;color:var(--text);cursor:pointer" onclick="addTrigger()">+</button></h3><div id="tr-list"></div></div>
+      <div class="side-sec" id="act-editor" style="display:none;"><h3 id="act-title">✏️ Дія</h3>
+        <div class="f-row"><select id="act-type" onchange="updateActUI()"><option value="dialog">📝 Діалог</option><option value="setVar">🔢 Змінна</option><option value="teleport">🌀 Телепорт</option></select></div>
+        <div id="act-params"></div>
+        <div class="f-row"><button onclick="saveTrigger()" style="background:var(--neon);color:#000;font-weight:600;">💾</button><button onclick="clearTrigger()">✕</button></div>
       </div>
-      <div class="sidebar-section">
-        <h3>Тригери</h3>
-        <div class="trigger-list" id="trigger-list"></div>
-        <button class="btn" style="margin-top: 8px;" id="add-trigger-btn">+ Додати</button>
-        <div class="trigger-editor" id="trigger-editor">
-          <div class="field">
-            <label>ID</label>
-            <input type="text" id="trigger-id"/>
-          </div>
-          <div class="field">
-            <label>Позиція (x,y,z)</label>
-            <input type="text" id="trigger-pos" placeholder="0,0,0"/>
-          </div>
-          <div class="field">
-            <label>Подія</label>
-            <select id="trigger-event">
-              <option value="onEnter">onEnter</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Умови</label>
-            <div class="conditions-list" id="conditions-list"></div>
-            <button class="btn-small" id="add-condition-btn">+ Умова</button>
-          </div>
-          <div class="field">
-            <label>Дії</label>
-            <div class="actions-list" id="actions-list"></div>
-            <button class="btn-small" id="add-action-btn">+ Дія</button>
-          </div>
-          <button class="btn" id="save-trigger-btn">Зберегти</button>
-        </div>
+      <div class="side-sec"><h3>📊 Змінні</h3><div id="vars-disp"></div>
+        <div class="f-row"><input id="vk" placeholder="Ключ"><input id="vv" placeholder="Значення"><button onclick="addVar()">+</button></div>
       </div>
-      <div class="sidebar-section">
-        <h3>Змінні</h3>
-        <div class="var-list" id="var-list"></div>
-        <button class="btn" style="margin-top: 8px;" id="add-var-btn">+ Додати</button>
-      </div>
-      <div class="sidebar-section">
-        <h3>Палітра</h3>
-        <div class="palette" id="palette"></div>
-      </div>
+      <div class="side-sec" id="pal-sec"><h3>🎨 Типи</h3><div class="pal-bar" id="pal-bar"></div></div>
     </div>
-
-    <div class="viewport">
-      <canvas id="game-canvas"></canvas>
-      <div class="toolbar" id="toolbar">
-        <div class="tool" id="tool-pen">✏️</div>
-        <div class="tool" id="tool-eraser">🧹</div>
-        <div class="tool" id="tool-undo">↩️</div>
-        <div class="tool" id="tool-play">▶</div>
+    <div id="viewport">
+      <div class="debug" id="debug">⬡ Evo-Engine</div>
+      <div id="scene"></div>
+      <div id="play-ctrl" style="display:none;position:absolute;bottom:16px;left:16px;right:16px;justify-content:space-between;pointer-events:none;">
+        <div style="color:yellow;font-weight:bold;background:rgba(0,0,0,0.5);padding:8px 12px;border-radius:6px;font-size:12px;">▶ WASD + Space</div>
+        <button id="btn-stop" style="pointer-events:auto;background:red;color:white;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;">⏹</button>
       </div>
     </div>
   </div>
-
+  <div class="tbar" id="tbar">
+    <button class="tbtn" data-tool="add" style="background:var(--neon);color:#000;">✏️</button>
+    <button class="tbtn" data-tool="erase">🧹</button>
+    <button class="tbtn" id="btn-undo">↩️</button>
+    <button class="tbtn" id="btn-redo">↪️</button>
+    <button class="tbtn" id="btn-copy">📄</button>
+    <button class="tbtn" id="btn-play" style="border-color:#00ff88;color:#00ff88;">▶</button>
+  </div>
+  <div class="dialog-overlay" id="dlg-overlay"><div class="dialog-box" id="dlg-box"></div></div>
   <script src="js/evo-engine.js"></script>
   <script>
   // EVO-ENGINE HOOKS
