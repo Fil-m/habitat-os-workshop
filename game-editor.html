@@ -340,6 +340,91 @@
   let selectedTileType = 'wall';
 
   // ============================================================
+  // TOP VIEW EDITING — click to place/remove voxels
+  // ============================================================
+  function setupTopViewEditing() {
+    const scene = document.getElementById('scene');
+    if (!scene) return;
+    scene.addEventListener('mousedown', function(e) {
+      if (currentView === '3d') return;
+      if (window.physics && window.physics.isRunning) return;
+      handleTopViewClick(e);
+    });
+    scene.addEventListener('touchstart', function(e) {
+      if (currentView === '3d') return;
+      if (window.physics && window.physics.isRunning) return;
+      if (e.touches.length > 1) return;
+      const touch = e.touches[0];
+      const target = document.elementFromPoint(touch.clientX, touch.clientY);
+      if (target) handleTopViewClick({ target: target, clientX: touch.clientX, clientY: touch.clientY });
+    }, {passive: true});
+  }
+
+  function handleTopViewClick(e) {
+    if (!window.world) return;
+    const target = e.target;
+    if (!target) return;
+    let x, y, z;
+    if (target.classList.contains('face')) {
+      const voxelEl = target.parentElement;
+      x = parseInt(voxelEl.dataset.x); y = parseInt(voxelEl.dataset.y); z = parseInt(voxelEl.dataset.z);
+      const dir = target.dataset.dir;
+      if (dir === 'top') z++; else if (dir === 'bottom') z--;
+      else if (dir === 'front') y++; else if (dir === 'back') y--;
+      else if (dir === 'right') x++; else if (dir === 'left') x--;
+    } else if (target.classList.contains('voxel')) {
+      x = parseInt(target.dataset.x); y = parseInt(target.dataset.y); z = parseInt(target.dataset.z);
+      window.world.deleteVoxel(x, y, z);
+      if (window.renderer) window.renderer.render();
+      return;
+    } else if (target.classList.contains('grid-floor')) {
+      if (e.clientX === undefined) return;
+      const rect = target.getBoundingClientRect();
+      const ox = e.clientX - rect.left; const oy = e.clientY - rect.top;
+      const s = window.innerWidth < 600 ? 0.4 : 0.6;
+      x = Math.floor(ox / (40 * s)); y = Math.floor(oy / (40 * s)); z = 0;
+    } else { return; }
+    if (x < 0 || x >= 16 || y < 0 || y >= 16 || z < 0 || z >= 16) return;
+    if (selectedTileType === 'empty') {
+      if (window.world.hasVoxel(x, y, z)) {
+        const tidx = window.world.triggers.findIndex(t => t.tile.x===x && t.tile.y===y && t.tile.z===z);
+        if (tidx >= 0) window.world.triggers.splice(tidx, 1);
+        window.world.deleteVoxel(x, y, z);
+        if (window.renderer) window.renderer.render();
+        renderTriggerList();
+      }
+    } else {
+      const color = TILE_COLORS[selectedTileType] || '#555';
+      window.world.setVoxel(x, y, z, { type: 'solid', color: color });
+      if (selectedTileType === 'trigger') {
+        window.world.triggers.push({
+          id: 'trg_' + Date.now(), tile: { x, y, z }, event: 'onEnter',
+          conditions: [], actions: [{ type: 'dialog', text: '...' }]
+        });
+        renderTriggerList();
+      }
+      if (window.renderer) window.renderer.render();
+    }
+    saveWorld();
+  }
+
+  // ============================================================
+  // TRIGGER CONDITIONS
+  // ============================================================
+  function checkTriggerConditions(t) {
+    if (!t.conditions || t.conditions.length === 0) return true;
+    const vars = window.world.globalVariables;
+    return t.conditions.every(c => {
+      const val = vars[c.key];
+      if (c.op === '==') return val == c.value;
+      if (c.op === '!=') return val != c.value;
+      if (c.op === '>') return parseFloat(val) > parseFloat(c.value);
+      if (c.op === '<') return parseFloat(val) < parseFloat(c.value);
+      return true;
+    });
+  }
+
+  // ============================================================
   // SAVE / LOAD
   // ============================================================
   function saveWorld() {
@@ -404,7 +489,7 @@
 
   // ============================================================
   // INIT
-  // ============================================================
+  // Init
   renderPalette();
   renderVariables();
 
@@ -414,6 +499,7 @@
       clearInterval(waitForWorld);
       renderTriggerList();
       renderVariables();
+      setupTopViewEditing();
       // Load saved project data
       const saved = localStorage.getItem(PROJECT_KEY);
       if (saved) {
@@ -441,6 +527,7 @@
         const pz = Math.round(this.player.z);
         (window.world.triggers || []).forEach(t => {
           if (t.tile.x === px && t.tile.y === py && t.tile.z === pz && t.event === 'onEnter') {
+            if (!checkTriggerConditions(t)) return;
             if (t.actions && t.actions[0]) {
               const a = t.actions[0];
               if (a.type === 'dialog') showDialog(a.text);
