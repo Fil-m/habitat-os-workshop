@@ -281,16 +281,18 @@ class RenderSystem {
   setViewMode(mode) {
     this.viewMode = mode;
     const parent = this.container.parentElement;
+    const scale = window.innerWidth < 600 ? 0.4 : 0.6;
     if (mode === 'top') {
-      this.container.style.transform = 'rotateX(90deg) rotateY(0deg) rotateZ(0deg)';
+      this.container.style.transform = `scale(${scale}) rotateX(90deg) rotateY(0deg) rotateZ(0deg)`;
       parent.style.perspective = 'none';
     } else if (mode === 'side') {
-      this.container.style.transform = 'rotateX(0deg) rotateY(0deg) rotateZ(0deg)';
+      this.container.style.transform = `scale(${scale}) rotateX(0deg) rotateY(0deg) rotateZ(0deg)`;
       parent.style.perspective = 'none';
     } else {
       parent.style.perspective = '800px';
       // Reset to default orbit
-      this.container.style.transform = 'rotateX(-30deg) rotateY(45deg)';
+      this.container.style.transform = `scale(${scale}) rotateX(-30deg) rotateY(45deg)`;
+      // Notify main controller if needed, but it handles its own variables via rotation drag
     }
     this.render();
   }
@@ -673,12 +675,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if(physics.isRunning) return;
     if(e.button !== 0) return; // only left click
     isDragging = true;
-    handleInteraction(e.target);
+    handleInteraction(e);
   });
   
   sceneEl.addEventListener('mousemove', (e) => {
     if(!isDragging) return;
-    handleInteraction(e.target);
+    handleInteraction(e);
   });
   
   window.addEventListener('mouseup', () => {
@@ -686,8 +688,29 @@ document.addEventListener('DOMContentLoaded', () => {
     lastFaceX = -1; lastFaceY = -1; lastFaceZ = -1;
   });
 
-  function handleInteraction(target) {
+  // Touch interaction for drawing
+  sceneEl.addEventListener('touchstart', (e) => {
+    if(physics.isRunning || e.touches.length > 1) return;
+    isDragging = true;
+    handleInteraction({ target: e.target, offsetX: 0, offsetY: 0, type: 'touch' });
+  }, {passive: true});
+  
+  sceneEl.addEventListener('touchmove', (e) => {
+    if(!isDragging || e.touches.length > 1) return;
+    const touch = e.touches[0];
+    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+    if(target) handleInteraction({ target, offsetX: 0, offsetY: 0, type: 'touch' });
+  }, {passive: true});
+
+  window.addEventListener('touchend', () => {
+    isDragging = false;
+    lastFaceX = -1; lastFaceY = -1; lastFaceZ = -1;
+  });
+
+  function handleInteraction(e) {
     if(physics.isRunning) return;
+    const target = e.target;
+    if(!target) return;
     
     let x, y, z;
     if (target.classList.contains('face')) {
@@ -696,7 +719,6 @@ document.addEventListener('DOMContentLoaded', () => {
       y = parseInt(voxelEl.dataset.y);
       z = parseInt(voxelEl.dataset.z);
       
-      // Calculate adjacent block for "add" tool
       if(activeTool === 'add' || activeTool === 'paste' || activeTool === 'entity') {
         const dir = target.dataset.dir;
         if (dir === 'top') z++;
@@ -707,9 +729,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (dir === 'left') x--;
       }
     } else if (target.classList.contains('grid-floor')) {
-       // Clicked on floor directly
-       // To do this perfectly we need raycasting, but for PoC we approximate
-       return; 
+      // If touch, we can't easily get offsetX. We approximate or ignore.
+      if (e.type === 'touch') return; 
+      x = Math.floor(e.offsetX / 40);
+      y = Math.floor(e.offsetY / 40);
+      z = renderer.activeLayer !== -1 ? renderer.activeLayer : 0;
     } else {
       return;
     }
@@ -727,14 +751,13 @@ document.addEventListener('DOMContentLoaded', () => {
       engine.fill(x, y, z, activeColor);
       renderer.render(engine.getNormalizedSelection());
     } else if (activeTool === 'select') {
-      // Just single block selection for now to keep PoC simple via mouse drag
       if(!engine.selection || !isDragging) engine.startSelection(x, y, z);
       else engine.updateSelection(x, y, z);
       renderer.render(engine.getNormalizedSelection());
     } else if (activeTool === 'paste') {
       engine.paste(x, y, z);
       renderer.render(engine.getNormalizedSelection());
-      isDragging = false; // only paste once per click
+      isDragging = false; 
     } else if (activeTool === 'entity') {
       world.addEntity(activeEntity, x, y, z);
       renderer.render(engine.getNormalizedSelection());
@@ -745,9 +768,20 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- CAMERA ORBIT (Right click or touches) ---
   let camDragging = false, lastX, lastY;
   let rotX = -30, rotY = 45;
+  let scale = window.innerWidth < 600 ? 0.4 : 0.6; // Scale down to fit 16x16 grid
+
+  const updateCamera = () => {
+    sceneEl.style.transform = `scale(${scale}) rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+  };
+  
+  // Apply initial scale
+  updateCamera();
 
   sceneEl.addEventListener('mousedown', (e) => {
-    if(e.button === 2) { camDragging = true; lastX = e.clientX; lastY = e.clientY; }
+    if(e.button === 2 || e.button === 1) { 
+      camDragging = true; lastX = e.clientX; lastY = e.clientY; 
+      e.preventDefault();
+    }
   });
   window.addEventListener('mousemove', (e) => {
     if(camDragging && renderer.viewMode === '3d') {
@@ -755,11 +789,33 @@ document.addEventListener('DOMContentLoaded', () => {
       rotX -= (e.clientY - lastY) * 0.5;
       rotX = Math.max(-89, Math.min(89, rotX));
       lastX = e.clientX; lastY = e.clientY;
-      sceneEl.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+      updateCamera();
     }
   });
   window.addEventListener('mouseup', () => camDragging = false);
   sceneEl.addEventListener('contextmenu', e => e.preventDefault());
+
+  // Touch Camera
+  document.getElementById('viewport').addEventListener('touchstart', (e) => {
+    if(e.touches.length === 1 && !e.target.classList.contains('face') && !e.target.classList.contains('grid-floor')) {
+      camDragging = true;
+      lastX = e.touches[0].clientX;
+      lastY = e.touches[0].clientY;
+    }
+  }, {passive: true});
+  
+  document.getElementById('viewport').addEventListener('touchmove', (e) => {
+    if(camDragging && renderer.viewMode === '3d' && e.touches.length === 1) {
+      rotY += (e.touches[0].clientX - lastX) * 0.5;
+      rotX -= (e.touches[0].clientY - lastY) * 0.5;
+      rotX = Math.max(-89, Math.min(89, rotX));
+      lastX = e.touches[0].clientX;
+      lastY = e.touches[0].clientY;
+      updateCamera();
+    }
+  }, {passive: true});
+  
+  window.addEventListener('touchend', () => camDragging = false);
 
   // Input State for Test Mode
   window.inputState = { up: false, down: false, left: false, right: false, jump: false };
