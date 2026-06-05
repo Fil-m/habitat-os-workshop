@@ -710,8 +710,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- INTERACTION LOGIC ---
   let isDragging = false;
   let lastFaceX = -1, lastFaceY = -1, lastFaceZ = -1;
+  let lastTouchTime = 0;
 
   sceneEl.addEventListener('mousedown', (e) => {
+    if (Date.now() - lastTouchTime < 500) return; // Prevent synthetic mouse events on touch devices
     if(physics.isRunning) return;
     if(activeTool === 'camera') return;
     if(e.button !== 0) return; // only left click
@@ -720,6 +722,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   
   sceneEl.addEventListener('mousemove', (e) => {
+    if (Date.now() - lastTouchTime < 500) return;
     if(!isDragging) return;
     handleInteraction(e);
   });
@@ -731,6 +734,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Touch interaction for drawing
   sceneEl.addEventListener('touchstart', (e) => {
+    lastTouchTime = Date.now();
     if(physics.isRunning || e.touches.length > 1) return;
     if(activeTool === 'camera') return; // let camera handler take it
     isDragging = true;
@@ -807,33 +811,52 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // --- CAMERA ORBIT & ZOOM ---
-  let camDragging = false, lastX, lastY;
+  // --- CAMERA ORBIT, PAN & ZOOM ---
+  let camDragging = false, isPanning = false, lastX, lastY;
   let rotX = -30, rotY = 45;
+  let panX = 0, panY = 0;
   let scale = window.innerWidth < 600 ? 0.4 : 0.6;
 
-  const updateCamera = () => {
-    sceneEl.style.transform = `scale(${scale}) rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+  window.updateCamera = () => {
+    if (renderer.viewMode === '3d') {
+      sceneEl.style.transform = `scale(${scale}) translate3d(${panX}px, ${panY}px, 0) rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+    } else if (renderer.viewMode === 'top') {
+      sceneEl.style.transform = `scale(${scale}) translate3d(${panX}px, ${panY}px, 0) rotateX(-90deg) rotateY(0deg) rotateZ(0deg)`;
+    } else if (renderer.viewMode === 'side') {
+      sceneEl.style.transform = `scale(${scale}) translate3d(${panX}px, ${panY}px, 0) rotateX(0deg) rotateY(0deg) rotateZ(0deg)`;
+    }
   };
   
-  updateCamera();
+  window.updateCamera();
 
   sceneEl.addEventListener('mousedown', (e) => {
+    if (Date.now() - lastTouchTime < 500) return;
     if(e.button === 2 || e.button === 1 || activeTool === 'camera') { 
-      camDragging = true; lastX = e.clientX; lastY = e.clientY; 
+      if (e.button === 1 || e.shiftKey) {
+        isPanning = true;
+      } else {
+        camDragging = true;
+      }
+      lastX = e.clientX; lastY = e.clientY; 
       e.preventDefault();
     }
   });
   window.addEventListener('mousemove', (e) => {
+    if (Date.now() - lastTouchTime < 500) return;
     if(camDragging && renderer.viewMode === '3d') {
       rotY += (e.clientX - lastX) * 0.5;
       rotX -= (e.clientY - lastY) * 0.5;
       rotX = Math.max(-89, Math.min(89, rotX));
       lastX = e.clientX; lastY = e.clientY;
-      updateCamera();
+      window.updateCamera();
+    } else if(isPanning) {
+      panX += (e.clientX - lastX) / scale;
+      panY += (e.clientY - lastY) / scale;
+      lastX = e.clientX; lastY = e.clientY;
+      window.updateCamera();
     }
   });
-  window.addEventListener('mouseup', () => camDragging = false);
+  window.addEventListener('mouseup', () => { camDragging = false; isPanning = false; });
   sceneEl.addEventListener('contextmenu', e => e.preventDefault());
 
   // Mouse Wheel Zoom
@@ -843,18 +866,28 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.deltaY < 0) scale += zoomSpeed;
     else scale -= zoomSpeed;
     scale = Math.max(0.2, Math.min(3.0, scale));
-    updateCamera();
+    window.updateCamera();
   }, { passive: false });
 
-  // Touch Camera & Pinch Zoom
+  // Touch Camera & Pinch Zoom & Pan
   let initialPinchDistance = null;
   let initialScale = scale;
+  let lastPanX = 0, lastPanY = 0;
 
   document.getElementById('viewport').addEventListener('touchstart', (e) => {
     if(e.touches.length === 2) {
       camDragging = false;
-      const dx = e.touches[0].clientX - e.touches[1].clientX;
-      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      isPanning = true;
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const centerX = (touch1.clientX + touch2.clientX) / 2;
+      const centerY = (touch1.clientY + touch2.clientY) / 2;
+      
+      lastPanX = centerX;
+      lastPanY = centerY;
+
+      const dx = touch1.clientX - touch2.clientX;
+      const dy = touch1.clientY - touch2.clientY;
       initialPinchDistance = Math.sqrt(dx*dx + dy*dy);
       initialScale = scale;
     } else if(e.touches.length === 1) {
@@ -867,25 +900,40 @@ document.addEventListener('DOMContentLoaded', () => {
   }, {passive: true});
   
   document.getElementById('viewport').addEventListener('touchmove', (e) => {
-    if(e.touches.length === 2 && initialPinchDistance) {
-      const dx = e.touches[0].clientX - e.touches[1].clientX;
-      const dy = e.touches[0].clientY - e.touches[1].clientY;
-      const dist = Math.sqrt(dx*dx + dy*dy);
-      scale = initialScale * (dist / initialPinchDistance);
-      scale = Math.max(0.2, Math.min(3.0, scale));
-      updateCamera();
+    if(e.touches.length === 2) {
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const centerX = (touch1.clientX + touch2.clientX) / 2;
+      const centerY = (touch1.clientY + touch2.clientY) / 2;
+
+      // Pan
+      panX += (centerX - lastPanX) / scale;
+      panY += (centerY - lastPanY) / scale;
+      lastPanX = centerX;
+      lastPanY = centerY;
+
+      // Zoom
+      if (initialPinchDistance) {
+        const dx = touch1.clientX - touch2.clientX;
+        const dy = touch1.clientY - touch2.clientY;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        scale = initialScale * (dist / initialPinchDistance);
+        scale = Math.max(0.2, Math.min(3.0, scale));
+      }
+      window.updateCamera();
     } else if(camDragging && renderer.viewMode === '3d' && e.touches.length === 1) {
       rotY += (e.touches[0].clientX - lastX) * 0.5;
       rotX -= (e.touches[0].clientY - lastY) * 0.5;
       rotX = Math.max(-89, Math.min(89, rotX));
       lastX = e.touches[0].clientX;
       lastY = e.touches[0].clientY;
-      updateCamera();
+      window.updateCamera();
     }
   }, {passive: true});
   
   window.addEventListener('touchend', () => {
     camDragging = false;
+    isPanning = false;
     initialPinchDistance = null;
   });
 
