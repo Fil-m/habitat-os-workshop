@@ -1,1576 +1,1052 @@
 
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Evo-Engine</title>
   <style>
-    /* === ГЛОБАЛЬНІ СТИЛІ === */
     :root {
-      --bg: #0a0a0a;
-      --text: #e0e0e0;
-      --accent: #0ff;
-      --accent-purple: #a0f;
-      --accent-red: #f33;
-      --accent-green: #3f3;
-      --border: #333;
-      --panel: #111;
-      --hover: #222;
-      --danger: #500;
-      --success: #050;
+      --bg: #000;
+      --neon: #0f0;
+      --neon-blue: #00f;
+      --neon-pink: #f0f;
+      --text: #0f0;
+      --border: #0f0;
+      --btn-bg: #111;
+      --btn-hover: #222;
     }
-
     * {
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
-      box-sizing: border-box;
       font-family: 'Courier New', monospace;
+      color: var(--text);
     }
-
     body {
       background: var(--bg);
-      color: var(--text);
       overflow: hidden;
       display: flex;
       flex-direction: column;
       height: 100vh;
-      touch-action: manipulation;
+      position: relative;
     }
-
-    h1, h2, h3 {
-      color: var(--accent);
-      text-shadow: 0 0 5px var(--accent);
-    }
-
-    button, input, select {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 8px;
-      border-radius: 4px;
-      font-size: 14px;
-    }
-
-    button {
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    button:hover {
-      background: var(--hover);
-      box-shadow: 0 0 8px var(--accent);
-    }
-
-    button.accent {
-      background: transparent;
-      border-color: var(--accent);
-      color: var(--accent);
-    }
-
-    button.accent:hover {
-      background: rgba(0, 255, 255, 0.1);
-    }
-
-    button.danger {
-      background: var(--danger);
-      border-color: var(--accent-red);
-      color: var(--accent-red);
-    }
-
-    button.success {
-      background: var(--success);
-      border-color: var(--accent-green);
-      color: var(--accent-green);
-    }
-
-    input:focus, select:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 5px var(--accent);
-    }
-
-    .container {
-      flex: 1;
+    header {
+      background: rgba(0, 0, 0, 0.8);
       padding: 10px;
-      overflow-y: auto;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      z-index: 10;
+    }
+    h1 {
+      font-size: 1.4em;
+      text-shadow: 0 0 5px var(--neon);
+    }
+    main {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+    .tab-content {
       display: none;
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
     }
-
-    .active {
-      display: block;
+    .tab-content.active {
+      display: flex;
     }
-
     .nav {
       display: flex;
       justify-content: space-around;
-      background: var(--panel);
-      border-top: 1px solid var(--border);
+      align-items: center;
+      background: rgba(0, 0, 0, 0.9);
       padding: 10px 0;
-      position: fixed;
+      border-top: 1px solid var(--border);
+      position: absolute;
       bottom: 0;
       width: 100%;
-      z-index: 1000;
+      z-index: 10;
     }
-
     .nav button {
-      background: none;
-      border: none;
+      background: var(--btn-bg);
+      border: 1px solid var(--border);
       color: var(--text);
-      font-size: 18px;
-      padding: 5px 10px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.9em;
+      cursor: pointer;
+      transition: all 0.3s;
+      width: 20%;
     }
-
-    .nav button.active {
-      color: var(--accent);
-      text-shadow: 0 0 5px var(--accent);
+    .nav button:hover {
+      background: var(--btn-hover);
+      box-shadow: 0 0 8px var(--neon);
     }
-
-    /* === ПІКСЕЛЬНИЙ РЕДАКТОР === */
-    .pixel-editor {
+    .mode-switch {
       display: flex;
-      flex-direction: column;
-      align-items: center;
+      justify-content: center;
+      margin: 10px 0;
       gap: 10px;
     }
-
-    .canvas-container {
-      display: grid;
-      grid-template-columns: repeat(16, 20px);
-      grid-gap: 1px;
-      background: #333;
-      padding: 5px;
+    .mode-switch button {
+      background: var(--btn-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 0.8em;
+      cursor: pointer;
+    }
+    .mode-switch button.active {
+      background: var(--neon);
+      color: #000;
+    }
+    #editor-container {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    #scene-canvas {
+      flex: 1;
+      background: #111;
+      border: 1px solid var(--border);
+      margin: 10px;
+      position: relative;
+    }
+    #text-editor, #entity-editor {
+      padding: 10px;
+      background: #111;
+      border: 1px solid var(--border);
+      margin: 10px;
+      border-radius: 4px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .node-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin: 10px 0;
+    }
+    .node-btn {
+      padding: 6px 10px;
+      background: var(--btn-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 0.8em;
+      cursor: pointer;
+    }
+    .node-btn:hover {
+      box-shadow: 0 0 5px var(--neon-blue);
+    }
+    input, textarea, select {
+      background: #222;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px;
+      margin: 5px 0;
+      width: 100%;
       border-radius: 4px;
     }
-
-    .pixel {
-      width: 20px;
-      height: 20px;
-      background: #111;
-      cursor: pointer;
+    textarea {
+      height: 80px;
+      resize: vertical;
     }
-
-    .palette {
-      display: flex;
-      gap: 5px;
-      flex-wrap: wrap;
-      max-width: 325px;
+    .component-list {
+      margin: 10px 0;
     }
-
-    .color {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      cursor: pointer;
-      border: 2px solid transparent;
+    .component-item {
+      margin: 5px 0;
+      padding: 8px;
+      background: #222;
+      border: 1px solid var(--border);
+      border-radius: 4px;
     }
-
-    .color.selected {
-      border-color: white;
-      transform: scale(1.1);
-    }
-
-    .tools {
-      display: flex;
-      gap: 10px;
-    }
-
-    /* === МАЙНЕРИ === */
-    .miners {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
-
-    .gold-display {
-      font-size: 24px;
-      color: gold;
-      text-shadow: 0 0 10px gold;
-      text-align: center;
-    }
-
-    .clicker {
-      text-align: center;
-      padding: 20px;
-      background: var(--panel);
-      border-radius: 8px;
-    }
-
-    .upgrades {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .upgrade {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
       padding: 10px;
-      background: var(--panel);
-      border-radius: 6px;
+      background: #111;
+      margin: 10px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
     }
-
-    /* === ЧАТ === */
-    .chat {
+    .chat-input {
+      display: flex;
+      padding: 10px;
+    }
+    .chat-input input {
+      flex: 1;
+      margin-right: 5px;
+    }
+    .chat-input button {
+      width: 60px;
+    }
+    .profile-card {
+      margin: 20px auto;
+      padding: 20px;
+      background: #111;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      max-width: 300px;
+      text-align: center;
+    }
+    .profile-card img {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 2px solid var(--neon);
+      margin-bottom: 10px;
+    }
+    .mining-area {
       display: flex;
       flex-direction: column;
       height: 100%;
     }
-
-    .messages {
+    #mining-canvas {
       flex: 1;
-      overflow-y: auto;
-      padding: 10px;
+      background: #000;
+      margin: 10px;
       border: 1px solid var(--border);
-      border-radius: 6px;
-      margin-bottom: 10px;
+    }
+    .mining-controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      padding: 10px;
+    }
+    .mining-controls button {
+      padding: 8px 16px;
+      background: var(--btn-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .mining-controls button:hover {
+      box-shadow: 0 0 8px var(--neon-pink);
+    }
+    #text-player {
       display: flex;
       flex-direction: column;
+      height: 100%;
+    }
+    #text-display {
+      flex: 1;
+      padding: 20px;
+      background: #000;
+      margin: 10px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow-y: auto;
+      font-size: 1.1em;
+      line-height: 1.5;
+    }
+    #text-choices {
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
       gap: 8px;
     }
-
-    .message {
-      background: var(--panel);
-      padding: 8px 12px;
-      border-radius: 18px;
-      max-width: 80%;
-      word-wrap: break-word;
-    }
-
-    .message.own {
-      align-self: flex-end;
-      background: var(--accent);
-      color: black;
-    }
-
-    .message-input {
-      display: flex;
-      gap: 10px;
-    }
-
-    .message-input input {
-      flex: 1;
-    }
-
-    /* === ПРОФІЛЬ === */
-    .profile {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
-
-    .profile-field {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-
-    .stats {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .stat {
-      background: var(--panel);
-      padding: 10px;
-      border-radius: 6px;
-      text-align: center;
-    }
-
-    /* === SCENE EDITOR === */
-    .scene-editor {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
-      height: 100%;
-    }
-
-    @media (max-width: 768px) {
-      .scene-editor {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .scene-canvas {
-      display: grid;
-      grid-template-columns: repeat(16, 20px);
-      grid-gap: 1px;
-      background: #333;
-      padding: 5px;
-      justify-self: center;
-    }
-
-    .scene-preview {
-      background: var(--panel);
-      padding: 10px;
-      border-radius: 6px;
-    }
-
-    .scene-controls {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    /* === CHARACTER EDITOR === */
-    .char-editor {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15px;
-    }
-
-    .char-sprite {
-      display: grid;
-      grid-template-columns: repeat(8, 25px);
-      grid-gap: 1px;
-      background: #333;
-      padding: 5px;
-      justify-self: center;
-    }
-
-    .char-pixel {
-      width: 25px;
-      height: 25px;
-      background: #111;
-      cursor: pointer;
-    }
-
-    .char-stats {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    /* === BUTTON EDITOR === */
-    .button-editor {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
-
-    .button-list {
-      flex: 1;
-      overflow-y: auto;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 10px;
-    }
-
-    .button-item {
-      background: var(--panel);
-      padding: 10px;
-      margin-bottom: 10px;
-      border-radius: 6px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .button-form {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    /* === QUEST VALIDATOR === */
-    .validator {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
-
-    .graph {
-      flex: 1;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 10px;
-      overflow: auto;
-      background: #111;
-    }
-
-    .node {
-      position: absolute;
-      width: 100px;
-      height: 40px;
-      background: var(--panel);
-      border: 1px solid var(--accent);
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: move;
-      color: var(--text);
-      font-size: 12px;
-      user-select: none;
-    }
-
-    .node.dead {
-      border-color: var(--accent-red);
-      color: var(--accent-red);
-    }
-
-    .edge {
-      position: absolute;
-      pointer-events: none;
-      stroke: #555;
-      stroke-width: 2;
-      fill: none;
-    }
-
-    /* === QUEST RUNNER === */
-    .runner {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-    }
-
-    .story-text {
-      flex: 1;
-      padding: 20px;
-      background: var(--panel);
-      border-radius: 8px;
-      margin-bottom: 15px;
-      white-space: pre-wrap;
-      overflow-y: auto;
-    }
-
-    .choices {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .choice {
+    .choice-btn {
       padding: 12px;
-      background: var(--panel);
+      background: #111;
       border: 1px solid var(--border);
       border-radius: 6px;
       cursor: pointer;
+      transition: all 0.2s;
     }
-
-    .choice:hover {
-      border-color: var(--accent);
+    .choice-btn:hover {
+      background: #222;
+      box-shadow: 0 0 8px var(--neon-blue);
     }
-
-    /* === EVO СИСТЕМА === */
-    .evo-system {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
-
-    .evo-display {
-      font-size: 28px;
-      color: var(--accent-purple);
-      text-shadow: 0 0 10px var(--accent-purple);
-      text-align: center;
-    }
-
-    .modules {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 15px;
-    }
-
-    .module {
-      background: var(--panel);
-      padding: 15px;
-      border-radius: 8px;
+    .back-btn {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.7);
       border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      z-index: 20;
     }
-
-    .module h3 {
-      color: var(--accent-green);
+    .back-btn:hover {
+      background: #222;
     }
-
-    /* === VOXEL ENGINE === */
-    .voxel-container {
-      width: 100%;
-      height: 300px;
-      perspective: 1000px;
-      margin: 20px 0;
-    }
-
-    .voxel-scene {
-      width: 100%;
-      height: 100%;
-      position: relative;
-      transform-style: preserve-3d;
-      transition: transform 0.5s ease;
-    }
-
-    .voxel {
+    #layer-selector {
       position: absolute;
-      width: 40px;
-      height: 40px;
-      transform-style: preserve-3d;
+      top: 10px;
+      right: 10px;
+      z-index: 20;
+      background: rgba(0, 0, 0, 0.7);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 6px;
+      border-radius: 4px;
     }
-
-    .voxel-face {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      border: 1px solid #333;
-      opacity: 0.9;
+    #layer-selector select {
+      margin: 0;
+      width: auto;
     }
-
-    .front  { transform: translateZ(20px); }
-    .back   { transform: rotateY(180deg) translateZ(20px); }
-    .right  { transform: rotateY(90deg) translateZ(20px); }
-    .left   { transform: rotateY(-90deg) translateZ(20px); }
-    .top    { transform: rotateX(90deg) translateZ(20px); }
-    .bottom { transform: rotateX(-90deg) translateZ(20px); }
-
-    /* === ДОДАТКОВІ КЛАСИ === */
     .hidden {
-      display: none;
-    }
-
-    .error {
-      color: var(--accent-red);
-      font-size: 14px;
-    }
-
-    .success-msg {
-      color: var(--accent-green);
-      font-size: 14px;
-    }
-
-    .flex {
-      display: flex;
-      gap: 10px;
-    }
-
-    .full-width {
-      width: 100%;
-    }
-
-    .center {
-      text-align: center;
-    }
-
-    .mt-10 {
-      margin-top: 10px;
-    }
-
-    .mb-10 {
-      margin-bottom: 10px;
-    }
-
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .scroll {
-      overflow-y: auto;
-      max-height: 300px;
-    }
-
-    /* === АНІМАЦІЇ === */
-    @keyframes pulse {
-      0% { opacity: 1; }
-      50% { opacity: 0.7; }
-      100% { opacity: 1; }
-    }
-
-    .pulse {
-      animation: pulse 1.5s infinite;
+      display: none !important;
     }
   </style>
 </head>
 <body>
+  <header>
+    <h1>Evo-Engine</h1>
+  </header>
 
-  <!-- Гравіть -->
-  <div id="play" class="container active">
-    <h1>🎮 Грати</h1>
-    <div class="runner">
-      <div class="story-text" id="storyText">Ласкаво просимо до квесту! Оберіть сцену для початку.</div>
-      <div class="choices" id="choices"></div>
-    </div>
-  </div>
-
-  <!-- Створити -->
-  <div id="create" class="container">
-    <h1>🔧 Створити</h1>
-    <div class="flex">
-      <button onclick="switchTab('pixelEditor')">🎨 Спрайти</button>
-      <button onclick="switchTab('sceneEditor')">🖼 Сцени</button>
-      <button onclick="switchTab('charEditor')">👤 Персонажі</button>
-      <button onclick="switchTab('buttonEditor')">🔘 Кнопки</button>
-      <button onclick="switchTab('validator')">🔍 Перевірити</button>
-    </div>
-
-    <!-- Піксельний редактор -->
-    <div id="pixelEditor" class="pixel-editor mt-10">
-      <h2>🎨 Піксельний Редактор</h2>
-      <div class="canvas-container" id="pixelCanvas"></div>
-      <div class="palette" id="palette"></div>
-      <div class="tools">
-        <button id="brush">Кисть</button>
-        <button id="eraser">Ластик</button>
-        <button id="fill">Заливка</button>
-        <button id="saveSprite">Зберегти</button>
-        <button id="loadSprite">Завантажити</button>
+  <main>
+    <!-- Грати -->
+    <div id="play-tab" class="tab-content active">
+      <div id="text-player">
+        <div id="text-display">Ласкаво просимо до Evo-Engine. Оберіть сцену для гри.</div>
+        <div id="text-choices"></div>
       </div>
     </div>
 
-    <!-- Редактор сцен -->
-    <div id="sceneEditor" class="scene-editor mt-10 hidden">
-      <div>
-        <h2>🖼 Редактор Сцени</h2>
-        <input type="text" id="sceneName" placeholder="Назва сцени" />
-        <div class="scene-canvas" id="sceneCanvas"></div>
-        <div class="flex mt-10">
-          <button id="saveScene">Зберегти Сцену</button>
-          <button id="loadScene">Завантажити Сцену</button>
+    <!-- Створити -->
+    <div id="create-tab" class="tab-content">
+      <div class="mode-switch">
+        <button id="mode-text" class="mode-btn active">Текст</button>
+        <button id="mode-2d" class="mode-btn">2D</button>
+        <button id="mode-3d" class="mode-btn">3D</button>
+      </div>
+      <div id="editor-container">
+        <div id="scene-canvas"></div>
+        <div id="text-editor" class="hidden">
+          <h3>Текстовий Редактор</h3>
+          <div class="node-list">
+            <button class="node-btn" data-type="TextNode">TextNode</button>
+            <button class="node-btn" data-type="ChoiceNode">ChoiceNode</button>
+            <button class="node-btn" data-type="ConditionNode">ConditionNode</button>
+            <button class="node-btn" data-type="ActionNode">ActionNode</button>
+            <button class="node-btn" data-type="EventNode">EventNode</button>
+            <button class="node-btn" data-type="SceneSwitchNode">SceneSwitchNode</button>
+            <button class="node-btn" data-type="WaitNode">WaitNode</button>
+            <button class="node-btn" data-type="ImageNode">ImageNode</button>
+            <button class="node-btn" data-type="AudioNode">AudioNode</button>
+          </div>
+          <input type="text" id="node-id" placeholder="ID вузла" />
+          <textarea id="node-text" placeholder="Текст (може містити {змінні})"></textarea>
+          <div id="choices-container" class="hidden">
+            <h4>Варіанти вибору</h4>
+            <div id="choices-list"></div>
+            <button id="add-choice">+ Додати варіант</button>
+          </div>
+          <div id="condition-container" class="hidden">
+            <h4>Умови</h4>
+            <div id="conditions-list"></div>
+            <button id="add-condition">+ Додати умову</button>
+          </div>
+          <input type="text" id="node-action" placeholder="Дія (наприклад: health += 10)" class="hidden" />
+          <input type="text" id="node-event" placeholder="Назва події" class="hidden" />
+          <input type="text" id="node-target" placeholder="Ціль (ID сцени або вузла)" class="hidden" />
+          <input type="number" id="node-wait" placeholder="Час очікування (сек)" class="hidden" />
+          <input type="text" id="node-image" placeholder="URL зображення" class="hidden" />
+          <input type="text" id="node-audio" placeholder="URL аудіо" class="hidden" />
+          <div class="flex-row" style="gap: 10px;">
+            <button id="save-node">Зберегти вузол</button>
+            <button id="load-scene">Завантажити сцену</button>
+            <button id="play-scene">▶ Грати</button>
+          </div>
         </div>
-      </div>
-      <div class="scene-controls">
-        <h3>Персонаж</h3>
-        <div class="char-sprite" id="charSpritePreview"></div>
-        <select id="charSelect"></select>
-        <h3>Текст</h3>
-        <textarea id="sceneText" rows="6" placeholder="Текст сцени..."></textarea>
-        <button id="addButtonToScene">Додати Кнопку</button>
-      </div>
-    </div>
-
-    <!-- Редактор персонажів -->
-    <div id="charEditor" class="char-editor mt-10 hidden">
-      <div>
-        <h2>👤 Редактор Персонажа</h2>
-        <input type="text" id="charName" placeholder="Ім'я" />
-        <div class="char-sprite" id="charSprite"></div>
-        <div class="flex mt-10">
-          <button id="saveChar">Зберегти</button>
-          <button id="clearChar">Очистити</button>
-        </div>
-      </div>
-      <div class="char-stats">
-        <h3>Стати</h3>
-        <input type="number" id="charHP" placeholder="HP" value="100" />
-        <input type="number" id="charGold" placeholder="Gold" value="0" />
-        <div id="charVars"></div>
-        <button id="addVar">+ Змінна</button>
-      </div>
-    </div>
-
-    <!-- Редактор кнопок -->
-    <div id="buttonEditor" class="button-editor mt-10 hidden">
-      <h2>🔘 Редактор Кнопок</h2>
-      <div class="button-form">
-        <input type="text" id="buttonText" placeholder="Текст кнопки" />
-        <select id="targetScene"></select>
-        <input type="text" id="buttonCondition" placeholder="Умова (напр: gold>=10)" />
-        <input type="text" id="buttonEffect" placeholder="Ефект (напр: gold-=10)" />
-        <button id="saveButton">Зберегти Кнопку</button>
-      </div>
-      <div class="button-list" id="buttonList"></div>
-    </div>
-
-    <!-- Перевірка квесту -->
-    <div id="validator" class="validator mt-10 hidden">
-      <h2>🔍 Перевірити Квест</h2>
-      <div class="graph" id="graph"></div>
-      <button id="validateQuest">Перевірити</button>
-      <div id="validationResult"></div>
-    </div>
-  </div>
-
-  <!-- Майнери -->
-  <div id="miners" class="container">
-    <h1>⛏ Майнери</h1>
-    <div class="gold-display">Gold: <span id="goldCount">0</span></div>
-    <div class="clicker">
-      <button id="mineButton" class="accent pulse">Клацни за Gold!</button>
-    </div>
-    <div class="upgrades" id="upgrades"></div>
-  </div>
-
-  <!-- Чат -->
-  <div id="chat" class="container">
-    <h1>💬 Чат</h1>
-    <div class="messages" id="chatMessages"></div>
-    <div class="message-input">
-      <input type="text" id="messageInput" placeholder="Повідомлення..." />
-      <button id="sendButton">Надіслати</button>
-    </div>
-  </div>
-
-  <!-- Профіль -->
-  <div id="profile" class="container">
-    <h1>👤 Профіль</h1>
-    <div class="profile">
-      <div class="profile-field">
-        <label>Ім'я:</label>
-        <input type="text" id="profileName" placeholder="Ваше ім'я" />
-      </div>
-      <div class="profile-field">
-        <label>GitHub Token (XOR-coded):</label>
-        <input type="password" id="githubToken" placeholder="ghp_..." />
-        <small>Токен буде зашифровано XOR з 0xAB</small>
-      </div>
-      <button id="saveProfile">Зберегти</button>
-      <button id="syncToGithub">Синхронізувати з GitHub</button>
-      <button id="syncFromGithub">Завантажити з GitHub</button>
-      <div class="stats mt-10">
-        <div class="stat">
-          <div>Ігор зіграно</div>
-          <div id="gamesPlayed">0</div>
-        </div>
-        <div class="stat">
-          <div>EVO Бали</div>
-          <div id="evoPoints">0</div>
+        <div id="entity-editor">
+          <h3>Редактор сутностей</h3>
+          <input type="text" id="entity-id" placeholder="ID сутності" />
+          <input type="text" id="entity-name" placeholder="Назва" />
+          <div class="component-list" id="components-list">
+            <!-- Components will be added here -->
+          </div>
+          <button id="add-component">+ Додати компонент</button>
+          <button id="save-entity">Зберегти сутність</button>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Нижня навігація -->
+    <!-- Майнери -->
+    <div id="miners-tab" class="tab-content">
+      <div class="mining-area">
+        <canvas id="mining-canvas"></canvas>
+        <div class="mining-controls">
+          <button id="start-mining">▶ Почати</button>
+          <button id="stop-mining">⏹ Зупинити</button>
+          <button id="upgrade-miner">⬆ Апгрейд</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Чат -->
+    <div id="chat-tab" class="tab-content">
+      <div class="chat-messages" id="chat-messages">
+        <div>Добро пожаловать в чат Evo-Engine!</div>
+      </div>
+      <div class="chat-input">
+        <input type="text" id="chat-input" placeholder="Напишіть повідомлення..." />
+        <button id="send-chat">Надіслати</button>
+      </div>
+    </div>
+
+    <!-- Профіль -->
+    <div id="profile-tab" class="tab-content">
+      <div class="profile-card">
+        <img src="https://via.placeholder.com/80" alt="Avatar" />
+        <h3 id="username">Гравець</h3>
+        <p>Рівень: <span id="level">1</span></p>
+        <p>Досвід: <span id="xp">0</span>/100</p>
+        <button id="edit-profile">Редагувати</button>
+      </div>
+    </div>
+  </main>
+
   <div class="nav">
-    <button onclick="switchView('play')" class="active" data-view="play">🎮</button>
-    <button onclick="switchView('create')" data-view="create">🔧</button>
-    <button onclick="switchView('miners')" data-view="miners">⛏</button>
-    <button onclick="switchView('chat')" data-view="chat">💬</button>
-    <button onclick="switchView('profile')" data-view="profile">👤</button>
+    <button data-tab="play-tab">🎮 Грати</button>
+    <button data-tab="create-tab">🔧 Створити</button>
+    <button data-tab="miners-tab">⛏ Майнери</button>
+    <button data-tab="chat-tab">💬 Чат</button>
+    <button data-tab="profile-tab">👤 Профіль</button>
+  </div>
+
+  <button class="back-btn hidden" id="back-button">← Назад</button>
+  <div id="layer-selector" class="hidden">
+    <select id="layer-select">
+      <option value="0">Шар 0</option>
+      <option value="1">Шар 1</option>
+      <option value="2">Шар 2</option>
+      <option value="3">Шар 3</option>
+      <option value="4">Шар 4</option>
+    </select>
   </div>
 
   <script>
-    // === ГЛОБАЛЬНІ ЗМІННІ ===
-    let currentView = 'play';
-    let currentTool = 'brush';
-    let selectedColor = '#00ffff';
-    let gold = 0;
-    let evoPoints = 0;
-    let gamesPlayed = 0;
-    let autoMineInterval;
-    let currentSceneId = null;
-    let variables = {};
-    let sprites = JSON.parse(localStorage.getItem('sprites') || '{}');
-    let scenes = JSON.parse(localStorage.getItem('scenes') || '{}');
-    let characters = JSON.parse(localStorage.getItem('characters') || '{}');
-    let buttons = JSON.parse(localStorage.getItem('buttons') || '[]');
-    let chatMessages = JSON.parse(localStorage.getItem('chatMessages') || '[]');
-    let profile = JSON.parse(localStorage.getItem('profile') || '{}');
-    let upgrades = [
-      { id: 'autoMine', name: 'Авто-майнінг', level: 0, cost: 10, effect: 'auto', interval: 5000 }
-    ];
-
-    // === ІНІЦІАЛІЗАЦІЯ ===
-    window.onload = function() {
-      initPixelEditor();
-      initPalette();
-      initMiners();
-      initChat();
-      initProfile();
-      initSceneEditor();
-      initCharEditor();
-      initButtonEditor();
-      initValidator();
-      initRunner();
-      loadGame();
+    // State
+    const state = {
+      currentTab: 'play-tab',
+      currentMode: 'text',
+      currentNodeId: null,
+      sceneGraph: {},
+      entities: {},
+      variables: { health: 100, gold: 0, reputation: 50 },
+      chatHistory: [],
+      profile: { username: 'Гравець', level: 1, xp: 0 },
+      mining: { active: false, level: 1, progress: 0 },
+      currentScene: null,
+      dialogStack: [],
+      currentLayer: 0,
+      isPlayingScene: false
     };
 
-    function switchView(view) {
-      document.querySelectorAll('.container').forEach(el => el.classList.remove('active'));
-      document.getElementById(view).classList.add('active');
-      document.querySelectorAll('.nav button').forEach(btn => btn.classList.remove('active'));
-      document.querySelector(`.nav button[data-view="${view}"]`).classList.add('active');
-      currentView = view;
-    }
+    // DOM Elements
+    const tabs = document.querySelectorAll('.tab-content');
+    const navButtons = document.querySelectorAll('.nav button');
+    const modeButtons = document.querySelectorAll('.mode-btn');
+    const backBtn = document.getElementById('back-button');
+    const layerSelector = document.getElementById('layer-selector');
+    const sceneCanvas = document.getElementById('scene-canvas');
+    const textEditor = document.getElementById('text-editor');
+    const entityEditor = document.getElementById('entity-editor');
+    const textPlayer = document.getElementById('text-player');
+    const textDisplay = document.getElementById('text-display');
+    const textChoices = document.getElementById('text-choices');
+    const layerSelect = document.getElementById('layer-select');
 
-    function switchTab(tabId) {
-      document.querySelectorAll('.pixel-editor > div[id]').forEach(el => el.classList.add('hidden'));
-      document.getElementById(tabId).classList.remove('hidden');
-    }
-
-    // === ПІКСЕЛЬНИЙ РЕДАКТОР ===
-    function initPixelEditor() {
-      const canvas = document.getElementById('pixelCanvas');
-      canvas.innerHTML = '';
-      for (let i = 0; i < 16 * 16; i++) {
-        const pixel = document.createElement('div');
-        pixel.className = 'pixel';
-        pixel.dataset.index = i;
-        pixel.addEventListener('click', editPixel);
-        canvas.appendChild(pixel);
-      }
-
-      document.getElementById('brush').addEventListener('click', () => currentTool = 'brush');
-      document.getElementById('eraser').addEventListener('click', () => currentTool = 'eraser');
-      document.getElementById('fill').addEventListener('click', () => currentTool = 'fill');
-      document.getElementById('saveSprite').addEventListener('click', saveSprite);
-      document.getElementById('loadSprite').addEventListener('click', loadSprite);
-    }
-
-    function initPalette() {
-      const colors = ['#000', '#fff', '#f00', '#0f0', '#00f', '#ff0', '#0ff', '#f0f'];
-      const palette = document.getElementById('palette');
-      palette.innerHTML = '';
-      colors.forEach(color => {
-        const btn = document.createElement('div');
-        btn.className = 'color';
-        btn.style.backgroundColor = color;
-        btn.dataset.color = color;
-        if (color === selectedColor) btn.classList.add('selected');
-        btn.addEventListener('click', () => {
-          selectedColor = color;
-          document.querySelectorAll('.color').forEach(c => c.classList.remove('selected'));
-          btn.classList.add('selected');
-        });
-        palette.appendChild(btn);
+    // Navigation
+    navButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tabId = btn.getAttribute('data-tab');
+        openTab(tabId);
       });
+    });
+
+    function openTab(tabId) {
+      tabs.forEach(tab => {
+        tab.classList.remove('active');
+      });
+      document.getElementById(tabId).classList.add('active');
+      state.currentTab = tabId;
+      backBtn.classList.add('hidden');
+      if (tabId === 'create-tab') {
+        initSceneCanvas();
+      } else if (tabId === 'play-tab') {
+        renderTextPlayer();
+      }
     }
 
-    function editPixel(e) {
-      const index = parseInt(e.target.dataset.index);
-      const pixels = document.querySelectorAll('.pixel');
-      if (currentTool === 'fill') {
-        const targetColor = pixels[index].style.backgroundColor || 'rgb(0, 0, 0)';
-        const newColor = selectedColor;
-        floodFill(index % 16, Math.floor(index / 16), targetColor, newColor, pixels);
+    // Mode Switching
+    modeButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        modeButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.currentMode = btn.id.replace('mode-', '');
+        initSceneCanvas();
+      });
+    });
+
+    // Back Button
+    backBtn.addEventListener('click', () => {
+      if (state.currentTab === 'play-tab' && state.isPlayingScene) {
+        exitTextScene();
       } else {
-        const color = currentTool === 'eraser' ? '#000' : selectedColor;
-        pixels[index].style.backgroundColor = color;
+        openTab('create-tab');
       }
-    }
+    });
 
-    function floodFill(x, y, targetColor, replacementColor, pixels) {
-      if (targetColor === replacementColor) return;
-      if (x < 0 || x >= 16 || y < 0 || y >= 16) return;
-      const pixel = pixels[y * 16 + x];
-      if (pixel.style.backgroundColor !== targetColor) return;
-      pixel.style.backgroundColor = replacementColor;
-      floodFill(x + 1, y, targetColor, replacementColor, pixels);
-      floodFill(x - 1, y, targetColor, replacementColor, pixels);
-      floodFill(x, y + 1, targetColor, replacementColor, pixels);
-      floodFill(x, y - 1, targetColor, replacementColor, pixels);
-    }
+    // Scene Canvas
+    function initSceneCanvas() {
+      const ctx = sceneCanvas.getContext('2d');
+      sceneCanvas.width = sceneCanvas.offsetWidth;
+      sceneCanvas.height = sceneCanvas.offsetHeight;
+      ctx.fillStyle = '#111';
+      ctx.fillRect(0, 0, sceneCanvas.width, sceneCanvas.height);
+      ctx.strokeStyle = '#0f0';
+      ctx.strokeRect(0, 0, sceneCanvas.width, sceneCanvas.height);
 
-    function saveSprite() {
-      const pixels = document.querySelectorAll('.pixel');
-      const data = [];
-      pixels.forEach(p => data.push(p.style.backgroundColor || '#000'));
-      const name = prompt('Назва спрайта:', 'sprite_' + Date.now());
-      if (name) {
-        sprites[name] = data;
-        localStorage.setItem('sprites', JSON.stringify(sprites));
-        alert('Спрайт збережено!');
-        updateCharSelect();
-      }
-    }
-
-    function loadSprite() {
-      const names = Object.keys(sprites);
-      if (names.length === 0) {
-        alert('Немає збережених спрайтів');
-        return;
-      }
-      const name = prompt('Введіть назву спрайта:\n' + names.join(', '), names[0]);
-      if (name && sprites[name]) {
-        const pixels = document.querySelectorAll('.pixel');
-        sprites[name].forEach((color, i) => {
-          pixels[i].style.backgroundColor = color;
-        });
-      }
-    }
-
-    // === МАЙНЕРИ ===
-    function initMiners() {
-      document.getElementById('mineButton').addEventListener('click', () => {
-        gold++;
-        updateGold();
-        evoPoints += 0.1;
-        saveGame();
-      });
-
-      autoMineInterval = setInterval(() => {
-        gold += upgrades.find(u => u.id === 'autoMine').level;
-        updateGold();
-        saveGame();
-      }, 5000);
-
-      renderUpgrades();
-    }
-
-    function renderUpgrades() {
-      const container = document.getElementById('upgrades');
-      container.innerHTML = '';
-      upgrades.forEach(upg => {
-        const div = document.createElement('div');
-        div.className = 'upgrade';
-        div.innerHTML = `
-          <span>${upg.name} (рівень ${upg.level})</span>
-          <button class="upgrade-btn" data-id="${upg.id}">Купити за ${upg.cost}</button>
-        `;
-        container.appendChild(div);
-      });
-
-      document.querySelectorAll('.upgrade-btn').forEach(btn => {
-        btn.addEventListener('click', buyUpgrade);
-      });
-    }
-
-    function buyUpgrade(e) {
-      const id = e.target.dataset.id;
-      const upg = upgrades.find(u => u.id === id);
-      if (gold >= upg.cost) {
-        gold -= upg.cost;
-        upg.level++;
-        upg.cost = Math.floor(upg.cost * 1.5);
-        updateGold();
-        renderUpgrades();
-        saveGame();
+      if (state.currentMode === '2d') {
+        draw2DGrid(ctx);
+        setup2DInput();
+      } else if (state.currentMode === '3d') {
+        layerSelector.classList.remove('hidden');
+        draw3DLayer(ctx);
+        setup3DInput();
       } else {
-        alert('Недостатньо Gold!');
+        layerSelector.classList.add('hidden');
+        ctx.fillStyle = '#00f';
+        ctx.font = '20px monospace';
+        ctx.fillText('TEXT MODE EDITOR', 20, 40);
       }
     }
 
-    function updateGold() {
-      document.getElementById('goldCount').textContent = gold;
-    }
-
-    // === ЧАТ ===
-    function initChat() {
-      renderChat();
-      document.getElementById('sendButton').addEventListener('click', sendChat);
-      document.getElementById('messageInput').addEventListener('keypress', e => {
-        if (e.key === 'Enter') sendChat();
-      });
-    }
-
-    function sendChat() {
-      const input = document.getElementById('messageInput');
-      const text = input.value.trim();
-      if (text) {
-        const msg = {
-          user: profile.name || 'Анон',
-          text: text,
-          time: new Date().toISOString()
-        };
-        chatMessages.push(msg);
-        input.value = '';
-        renderChat();
-        saveGame();
-        syncToGitHubChat();
-      }
-    }
-
-    function renderChat() {
-      const container = document.getElementById('chatMessages');
-      container.innerHTML = '';
-      chatMessages.slice(-50).forEach(msg => {
-        const div = document.createElement('div');
-        div.className = 'message ' + (msg.user === (profile.name || 'Анон') ? 'own' : '');
-        div.textContent = `${msg.user}: ${msg.text}`;
-        container.appendChild(div);
-      });
-      container.scrollTop = container.scrollHeight;
-    }
-
-    // === ПРОФІЛЬ ===
-    function initProfile() {
-      const nameInput = document.getElementById('profileName');
-      const tokenInput = document.getElementById('githubToken');
-      nameInput.value = profile.name || '';
-      tokenInput.value = profile.ghToken ? xorCipher(profile.ghToken, 0xAB) : '';
-
-      document.getElementById('saveProfile').addEventListener('click', () => {
-        profile.name = nameInput.value;
-        profile.ghToken = xorCipher(tokenInput.value, 0xAB);
-        localStorage.setItem('profile', JSON.stringify(profile));
-        alert('Профіль збережено!');
-        updateProfileDisplay();
-      });
-
-      document.getElementById('syncToGithub').addEventListener('click', syncToGitHubAll);
-      document.getElementById('syncFromGithub').addEventListener('click', syncFromGitHubAll);
-
-      updateProfileDisplay();
-    }
-
-    function updateProfileDisplay() {
-      document.getElementById('gamesPlayed').textContent = gamesPlayed;
-      document.getElementById('evoPoints').textContent = Math.floor(evoPoints);
-    }
-
-    // === ШИФРУВАННЯ XOR ===
-    function xorCipher(str, key) {
-      return str.split('').map(c => String.fromCharCode(c.charCodeAt(0) ^ key)).join('');
-    }
-
-    // === GITHUB СИНХРОНІЗАЦІЯ ===
-    async function syncToGitHubChat() {
-      if (!profile.ghToken) return;
-      const url = `https://api.github.com/repos/${profile.repo}/contents/chat.json`;
-      const data = {
-        message: 'Update chat',
-        content: btoa(JSON.stringify(chatMessages, null, 2))
-      };
-
-      try {
-        const res = await fetch(url, {
-          method: 'PUT',
-          headers: {
-            'Authorization': 'token ' + profile.ghToken,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(data)
-        });
-        if (!res.ok) throw new Error('GitHub error');
-      } catch (err) {
-        console.error('Sync chat failed', err);
-      }
-    }
-
-    async function syncToGitHubAll() {
-      if (!profile.ghToken) {
-        alert('Спочатку введіть GitHub токен!');
-        return;
-      }
-      const files = {
-        'game.json': { game: { gold, evoPoints, gamesPlayed, variables } },
-        'sprites.json': sprites,
-        'scenes.json': scenes,
-        'characters.json': characters,
-        'buttons.json': buttons,
-        'chat.json': chatMessages
-      };
-
-      for (const [file, data] of Object.entries(files)) {
-        await putFileToGitHub(file, data);
-      }
-      alert('Синхронізовано з GitHub!');
-    }
-
-    async function syncFromGitHubAll() {
-      if (!profile.ghToken) {
-        alert('Спочатку введіть GitHub токен!');
-        return;
-      }
-      const files = ['game.json', 'sprites.json', 'scenes.json', 'characters.json', 'buttons.json', 'chat.json'];
-      for (const file of files) {
-        const data = await getFileFromGitHub(file);
-        if (data) {
-          switch (file) {
-            case 'game.json':
-              gold = data.game.gold || 0;
-              evoPoints = data.game.evoPoints || 0;
-              gamesPlayed = data.game.gamesPlayed || 0;
-              variables = data.game.variables || {};
-              break;
-            case 'sprites.json': sprites = data; break;
-            case 'scenes.json': scenes = data; break;
-            case 'characters.json': characters = data; break;
-            case 'buttons.json': buttons = data; break;
-            case 'chat.json': chatMessages = data; break;
-          }
+    function draw2DGrid(ctx) {
+      const size = 32;
+      const cols = Math.floor(sceneCanvas.width / size);
+      const rows = Math.floor(sceneCanvas.height / size);
+      ctx.clearRect(0, 0, sceneCanvas.width, sceneCanvas.height);
+      for (let x = 0; x < cols; x++) {
+        for (let y = 0; y < rows; y++) {
+          ctx.strokeRect(x * size, y * size, size, size);
         }
       }
-      saveGame();
-      renderChat();
-      renderScenes();
-      updateCharSelect();
-      updateButtonList();
-      updateProfileDisplay();
-      alert('Завантажено з GitHub!');
     }
 
-    async function putFileToGitHub(filename, data) {
-      const url = `https://api.github.com/repos/${profile.repo}/contents/${filename}`;
-      const payload = {
-        message: `Update ${filename}`,
-        content: btoa(JSON.stringify(data, null, 2))
-      };
-      try {
-        await fetch(url, {
-          method: 'PUT',
-          headers: {
-            'Authorization': 'token ' + profile.ghToken,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(payload)
-        });
-      } catch (err) {
-        console.error('Sync failed:', err);
-      }
-    }
-
-    async function getFileFromGitHub(filename) {
-      const url = `https://api.github.com/repos/${profile.repo}/contents/${filename}`;
-      try {
-        const res = await fetch(url, {
-          headers: {
-            'Authorization': 'token ' + profile.ghToken
-          }
-        });
-        if (!res.ok) return null;
-        const json = await res.json();
-        return JSON.parse(atob(json.content));
-      } catch (err) {
-        return null;
-      }
-    }
-
-    // === РЕДАКТОР СЦЕН ===
-    function initSceneEditor() {
-      const canvas = document.getElementById('sceneCanvas');
-      canvas.innerHTML = '';
-      for (let i = 0; i < 16 * 16; i++) {
-        const pixel = document.createElement('div');
-        pixel.className = 'pixel';
-        pixel.dataset.index = i;
-        pixel.addEventListener('click', editScenePixel);
-        canvas.appendChild(pixel);
-      }
-
-      document.getElementById('saveScene').addEventListener('click', saveScene);
-      document.getElementById('loadScene').addEventListener('click', loadScene);
-      document.getElementById('addButtonToScene').addEventListener('click', () => {
-        switchView('create');
-        switchTab('buttonEditor');
-      });
-
-      updateSceneList();
-      updateCharSelect();
-    }
-
-    function editScenePixel(e) {
-      const index = parseInt(e.target.dataset.index);
-      const pixels = document.querySelectorAll('#sceneCanvas .pixel');
-      const color = currentTool === 'eraser' ? '#000' : selectedColor;
-      pixels[index].style.backgroundColor = color;
-    }
-
-    function saveScene() {
-      const name = document.getElementById('sceneName').value || 'scene_' + Date.now();
-      const pixels = document.querySelectorAll('#sceneCanvas .pixel');
-      const data = [];
-      pixels.forEach(p => data.push(p.style.backgroundColor || '#000'));
-      const text = document.getElementById('sceneText').value;
-      const char = document.getElementById('charSelect').value;
-      scenes[name] = { name, data, text, char, buttons: [] };
-      localStorage.setItem('scenes', JSON.stringify(scenes));
-      alert('Сцена збережена!');
-      updateSceneList();
-    }
-
-    function loadScene() {
-      const names = Object.keys(scenes);
-      if (names.length === 0) {
-        alert('Немає сцен');
-        return;
-      }
-      const name = prompt('Назва сцени:\n' + names.join(', '), names[0]);
-      if (name && scenes[name]) {
-        const scene = scenes[name];
-        document.getElementById('sceneName').value = scene.name;
-        document.getElementById('sceneText').value = scene.text || '';
-        document.getElementById('charSelect').value = scene.char || '';
-        const pixels = document.querySelectorAll('#sceneCanvas .pixel');
-        scene.data.forEach((color, i) => {
-          pixels[i].style.backgroundColor = color;
-        });
-      }
-    }
-
-    function updateSceneList() {
-      const select = document.getElementById('targetScene');
-      select.innerHTML = '';
-      Object.keys(scenes).forEach(name => {
-        const opt = document.createElement('option');
-        opt.value = name;
-        opt.textContent = name;
-        select.appendChild(opt);
-      });
-    }
-
-    // === РЕДАКТОР ПЕРСОНАЖІВ ===
-    function initCharEditor() {
-      const canvas = document.getElementById('charSprite');
-      canvas.innerHTML = '';
-      for (let i = 0; i < 8 * 8; i++) {
-        const pixel = document.createElement('div');
-        pixel.className = 'char-pixel';
-        pixel.dataset.index = i;
-        pixel.addEventListener('click', editCharPixel);
-        canvas.appendChild(pixel);
-      }
-
-      document.getElementById('saveChar').addEventListener('click', saveChar);
-      document.getElementById('clearChar').addEventListener('click', () => {
-        document.querySelectorAll('.char-pixel').forEach(p => p.style.backgroundColor = '#000');
-      });
-      document.getElementById('addVar').addEventListener('click', addCharVar);
-
-      updateCharSelect();
-      loadChar('');
-    }
-
-    function editCharPixel(e) {
-      const index = parseInt(e.target.dataset.index);
-      const pixels = document.querySelectorAll('.char-pixel');
-      const color = currentTool === 'eraser' ? '#000' : selectedColor;
-      pixels[index].style.backgroundColor = color;
-    }
-
-    function saveChar() {
-      const name = document.getElementById('charName').value || 'char_' + Date.now();
-      const pixels = document.querySelectorAll('.char-pixel');
-      const data = [];
-      pixels.forEach(p => data.push(p.style.backgroundColor || '#000'));
-      const hp = parseInt(document.getElementById('charHP').value) || 100;
-      const gold = parseInt(document.getElementById('charGold').value) || 0;
-      const vars = {};
-      document.querySelectorAll('#charVars input').forEach(inp => {
-        if (inp.id.startsWith('var_')) {
-          const key = inp.id.replace('var_', '');
-          vars[key] = parseInt(inp.value) || 0;
+    function draw3DLayer(ctx) {
+      const size = 20;
+      const cols = Math.floor(sceneCanvas.width / size);
+      const rows = Math.floor(sceneCanvas.height / size);
+      ctx.clearRect(0, 0, sceneCanvas.width, sceneCanvas.height);
+      for (let x = 0; x < cols; x++) {
+        for (let y = 0; y < rows; y++) {
+          ctx.strokeRect(x * size, y * size, size, size);
         }
-      });
-      characters[name] = { name, data, hp, gold, vars };
-      localStorage.setItem('characters', JSON.stringify(characters));
-      alert('Персонаж збережено!');
-      updateCharSelect();
-    }
-
-    function updateCharSelect() {
-      const selects = [document.getElementById('charSelect')];
-      selects.forEach(select => {
-        if (!select) return;
-        const current = select.value;
-        select.innerHTML = '';
-        Object.keys(characters).forEach(name => {
-          const opt = document.createElement('option');
-          opt.value = name;
-          opt.textContent = name;
-          select.appendChild(opt);
-        });
-        select.value = current;
-      });
-      renderCharPreviews();
-    }
-
-    function renderCharPreviews() {
-      const preview = document.getElementById('charSpritePreview');
-      preview.innerHTML = '';
-      if (characters[document.getElementById('charSelect').value]) {
-        const char = characters[document.getElementById('charSelect').value];
-        char.data.forEach((color, i) => {
-          const p = document.createElement('div');
-          p.className = 'char-pixel';
-          p.style.backgroundColor = color;
-          preview.appendChild(p);
-        });
       }
+      ctx.fillStyle = '#f0f';
+      ctx.font = '14px monospace';
+      ctx.fillText(`Шар: ${state.currentLayer}`, 10, 20);
     }
 
-    function loadChar(name) {
-      if (!characters[name]) return;
-      const char = characters[name];
-      document.getElementById('charName').value = char.name;
-      document.getElementById('charHP').value = char.hp;
-      document.getElementById('charGold').value = char.gold;
-      document.getElementById('charVars').innerHTML = '';
-      for (const [k, v] of Object.entries(char.vars)) {
-        addVarInput(k, v);
-      }
-      const pixels = document.querySelectorAll('.char-pixel');
-      char.data.forEach((color, i) => {
-        pixels[i].style.backgroundColor = color;
+    function setup2DInput() {
+      sceneCanvas.onmousedown = (e) => {
+        const rect = sceneCanvas.getBoundingClientRect();
+        const x = Math.floor((e.clientX - rect.left) / 32);
+        const y = Math.floor((e.clientY - rect.top) / 32);
+        alert(`Тайл (${x}, ${y})`);
+      };
+    }
+
+    function setup3DInput() {
+      layerSelect.onchange = () => {
+        state.currentLayer = parseInt(layerSelect.value);
+        initSceneCanvas();
+      };
+      sceneCanvas.onmousedown = (e) => {
+        const rect = sceneCanvas.getBoundingClientRect();
+        const x = Math.floor((e.clientX - rect.left) / 20);
+        const y = Math.floor((e.clientY - rect.top) / 20);
+        alert(`Воксель (${x}, ${y}, ${state.currentLayer})`);
+      };
+    }
+
+    // Text Editor
+    document.querySelectorAll('.node-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const type = btn.getAttribute('data-type');
+        createNewNode(type);
       });
+    });
+
+    function createNewNode(type) {
+      document.querySelectorAll('#text-editor > div[id$="-container"]').forEach(el => {
+        el.classList.add('hidden');
+      });
+      document.querySelectorAll('#text-editor input, #text-editor textarea').forEach(el => {
+        el.classList.remove('hidden');
+      });
+      document.getElementById('choices-container').classList.add('hidden');
+      document.getElementById('condition-container').classList.add('hidden');
+      document.getElementById('node-action').classList.add('hidden');
+      document.getElementById('node-event').classList.add('hidden');
+      document.getElementById('node-target').classList.add('hidden');
+      document.getElementById('node-wait').classList.add('hidden');
+      document.getElementById('node-image').classList.add('hidden');
+      document.getElementById('node-audio').classList.add('hidden');
+
+      if (type === 'ChoiceNode') {
+        document.getElementById('choices-container').classList.remove('hidden');
+        addChoiceField();
+      } else if (type === 'ConditionNode') {
+        document.getElementById('condition-container').classList.remove('hidden');
+        addConditionField();
+      } else if (type === 'ActionNode') {
+        document.getElementById('node-action').classList.remove('hidden');
+        document.getElementById('node-target').classList.remove('hidden');
+      } else if (type === 'EventNode') {
+        document.getElementById('node-event').classList.remove('hidden');
+        document.getElementById('node-target').classList.remove('hidden');
+      } else if (type === 'SceneSwitchNode') {
+        document.getElementById('node-target').classList.remove('hidden');
+      } else if (type === 'WaitNode') {
+        document.getElementById('node-wait').classList.remove('hidden');
+      } else if (type === 'ImageNode') {
+        document.getElementById('node-image').classList.remove('hidden');
+      } else if (type === 'AudioNode') {
+        document.getElementById('node-audio').classList.remove('hidden');
+      }
+
+      state.currentNodeId = null;
+      document.getElementById('node-id').value = '';
+      document.getElementById('node-text').value = '';
     }
 
-    function addCharVar() {
-      addVarInput('new_var', 0);
-    }
-
-    function addVarInput(key, value) {
-      const container = document.getElementById('charVars');
+    document.getElementById('add-choice').addEventListener('click', addChoiceField);
+    function addChoiceField() {
+      const container = document.getElementById('choices-list');
       const div = document.createElement('div');
-      div.className = 'flex';
+      div.className = 'choice-item';
       div.innerHTML = `
-        <input type="text" id="var_${key}" value="${key}" style="width:100px" />
-        <input type="number" value="${value}" />
-        <button class="remove-var">❌</button>
+        <input type="text" placeholder="Текст кнопки" style="width:40%" />
+        <input type="text" placeholder="Умова (напр. gold>=10)" style="width:30%" />
+        <input type="text" placeholder="Дія" style="width:30%" />
+        <input type="text" placeholder="Ціль (ID)" style="width:30%; margin-top:5px" />
       `;
       container.appendChild(div);
-      div.querySelector('.remove-var').addEventListener('click', () => div.remove());
     }
 
-    // === РЕДАКТОР КНОПОК ===
-    function initButtonEditor() {
-      document.getElementById('saveButton').addEventListener('click', saveButton);
-      updateSceneList();
-      updateButtonList();
-    }
-
-    function saveButton() {
-      const text = document.getElementById('buttonText').value;
-      const target = document.getElementById('targetScene').value;
-      const condition = document.getElementById('buttonCondition').value;
-      const effect = document.getElementById('buttonEffect').value;
-      if (!text || !target) {
-        alert('Заповніть текст та ціль!');
-        return;
-      }
-      buttons.push({ text, target, condition, effect });
-      localStorage.setItem('buttons', JSON.stringify(buttons));
-      updateButtonList();
-      document.getElementById('buttonText').value = '';
-      document.getElementById('buttonCondition').value = '';
-      document.getElementById('buttonEffect').value = '';
-      alert('Кнопку додано!');
-    }
-
-    function updateButtonList() {
-      const container = document.getElementById('buttonList');
-      container.innerHTML = '';
-      buttons.forEach((btn, i) => {
-        const div = document.createElement('div');
-        div.className = 'button-item';
-        div.innerHTML = `
-          <span>${btn.text} → ${btn.target}</span>
-          <button class="remove-btn" data-index="${i}">❌</button>
-        `;
-        container.appendChild(div);
-      });
-      document.querySelectorAll('.remove-btn').forEach(btn => {
-        btn.addEventListener('click', e => {
-          const i = e.target.dataset.index;
-          buttons.splice(i, 1);
-          localStorage.setItem('buttons', JSON.stringify(buttons));
-          updateButtonList();
-        });
-      });
-    }
-
-    // === ПЕРЕВІРКА КВЕСТУ ===
-    function initValidator() {
-      document.getElementById('validateQuest').addEventListener('click', validateQuest);
-    }
-
-    function validateQuest() {
-      const graph = document.getElementById('graph');
-      graph.innerHTML = '';
-      const nodes = {};
-      const edges = [];
-      const sceneNames = Object.keys(scenes);
-
-      // Створюємо вузли
-      sceneNames.forEach((name, i) => {
-        const node = document.createElement('div');
-        node.className = 'node';
-        node.textContent = name;
-        node.dataset.name = name;
-        node.style.left = (100 + (i % 5) * 150) + 'px';
-        node.style.top = (50 + Math.floor(i / 5) * 80) + 'px';
-        graph.appendChild(node);
-        nodes[name] = node;
-      });
-
-      // Створюємо ребра
-      sceneNames.forEach(name => {
-        const scene = scenes[name];
-        if (scene.buttons) {
-          scene.buttons.forEach(btn => {
-            if (nodes[btn.target]) {
-              edges.push({ from: name, to: btn.target });
-            }
-          });
-        }
-      });
-
-      // Малюємо ребра
-      edges.forEach(edge => {
-        const from = nodes[edge.from].getBoundingClientRect();
-        const to = nodes[edge.to].getBoundingClientRect();
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('class', 'edge');
-        svg.setAttribute('style', 'position:absolute;top:0;left:0;width:100%;height:100%;');
-        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', from.left + from.width / 2 - graph.getBoundingClientRect().left);
-        line.setAttribute('y1', from.top + from.height / 2 - graph.getBoundingClientRect().top);
-        line.setAttribute('x2', to.left + to.width / 2 - graph.getBoundingClientRect().left);
-        line.setAttribute('y2', to.top + to.height / 2 - graph.getBoundingClientRect().top);
-        svg.appendChild(line);
-        graph.appendChild(svg);
-      });
-
-      // Знаходимо глухі кути
-      const reachable = new Set();
-      const start = sceneNames[0];
-      if (start) markReachable(start, reachable);
-
-      sceneNames.forEach(name => {
-        if (!reachable.has(name)) {
-          nodes[name].classList.add('dead');
-        }
-      });
-
-      document.getElementById('validationResult').innerHTML = `
-        <div>Досяжно: ${reachable.size}/${sceneNames.length} сцен</div>
-        <div>Глухі кути: ${sceneNames.filter(n => !reachable.has(n)).join(', ') || 'немає'}</div>
+    document.getElementById('add-condition').addEventListener('click', addConditionField);
+    function addConditionField() {
+      const container = document.getElementById('conditions-list');
+      const div = document.createElement('div');
+      div.className = 'condition-item';
+      div.innerHTML = `
+        <input type="text" placeholder="Перевірка (напр. health>50)" style="width:40%" />
+        <input type="text" placeholder="Ціль (ID)" style="width:40%" />
+        <label><input type="checkbox" /> За замовчуванням</label>
       `;
+      container.appendChild(div);
     }
 
-    function markReachable(sceneName, set) {
-      if (set.has(sceneName)) return;
-      set.add(sceneName);
-      const scene = scenes[sceneName];
-      if (scene && scene.buttons) {
-        scene.buttons.forEach(btn => {
-          if (scenes[btn.target]) {
-            markReachable(btn.target, set);
-          }
-        });
+    document.getElementById('save-node').addEventListener('click', saveNode);
+    function saveNode() {
+      const id = document.getElementById('node-id').value || `node_${Date.now()}`;
+      const type = document.querySelector('.node-btn.active')?.getAttribute('data-type') || 'TextNode';
+      const text = document.getElementById('node-text').value;
+
+      const node = { id, type };
+
+      if (type === 'TextNode' || type === 'ImageNode' || type === 'AudioNode') {
+        node.text = text;
       }
-    }
-
-    // === ПРОГРАВАЧ КВЕСТІВ ===
-    function initRunner() {
-      startQuest();
-    }
-
-    function startQuest() {
-      const sceneNames = Object.keys(scenes);
-      if (sceneNames.length > 0) {
-        goToScene(sceneNames[0]);
-      } else {
-        document.getElementById('storyText').textContent = 'Немає сцен. Створіть сцену в редакторі.';
-        document.getElementById('choices').innerHTML = '';
+      if (type === 'ImageNode') {
+        node.image = document.getElementById('node-image').value;
       }
-    }
-
-    function goToScene(sceneName) {
-      if (!scenes[sceneName]) return;
-      currentSceneId = sceneName;
-      const scene = scenes[sceneName];
-      document.getElementById('storyText').textContent = scene.text || '...';
-      renderChoices(scene.buttons || []);
-      gamesPlayed++;
-      evoPoints += 1;
-      updateProfileDisplay();
-      saveGame();
-    }
-
-    function renderChoices(buttons) {
-      const container = document.getElementById('choices');
-      container.innerHTML = '';
-      buttons
-        .filter(btn => checkCondition(btn.condition))
-        .forEach(btn => {
-          const div = document.createElement('div');
-          div.className = 'choice';
-          div.textContent = btn.text;
-          div.addEventListener('click', () => {
-            applyEffect(btn.effect);
-            goToScene(btn.target);
+      if (type === 'AudioNode') {
+        node.audio = document.getElementById('node-audio').value;
+      }
+      if (type === 'ChoiceNode') {
+        node.choices = [];
+        document.querySelectorAll('#choices-list .choice-item').forEach(item => {
+          const inputs = item.querySelectorAll('input');
+          node.choices.push({
+            label: inputs[0].value,
+            condition: inputs[1].value,
+            action: inputs[2].value,
+            target: inputs[3].value
           });
-          container.appendChild(div);
         });
+      }
+      if (type === 'ConditionNode') {
+        node.conditions = [];
+        document.querySelectorAll('#conditions-list .condition-item').forEach(item => {
+          const inputs = item.querySelectorAll('input');
+          const cond = inputs[2].checked ? { default: true } : { check: inputs[0].value };
+          cond.target = inputs[1].value;
+          node.conditions.push(cond);
+        });
+      }
+      if (['ActionNode', 'EventNode', 'SceneSwitchNode', 'WaitNode'].includes(type)) {
+        if (type === 'ActionNode') node.action = document.getElementById('node-action').value;
+        if (type === 'EventNode') node.event = document.getElementById('node-event').value;
+        node.target = document.getElementById('node-target').value;
+      }
+      if (type === 'WaitNode') {
+        node.wait = parseFloat(document.getElementById('node-wait').value) || 1;
+      }
+
+      state.sceneGraph[id] = node;
+      alert(`Вузол ${id} збережено!`);
+      saveToStorage();
     }
 
-    function checkCondition(cond) {
-      if (!cond) return true;
+    document.getElementById('load-scene').addEventListener('click', () => {
+      const id = prompt('Введіть ID початкового вузла:');
+      if (id && state.sceneGraph[id]) {
+        state.currentScene = id;
+        alert('Сцена завантажена!');
+      }
+    });
+
+    document.getElementById('play-scene').addEventListener('click', () => {
+      if (state.currentScene) {
+        state.isPlayingScene = true;
+        backBtn.classList.remove('hidden');
+        openTab('play-tab');
+        startTextScene(state.currentScene);
+      } else {
+        alert('Спочатку завантажте сцену!');
+      }
+    });
+
+    // Text Player
+    function renderTextPlayer() {
+      if (!state.isPlayingScene) {
+        textDisplay.innerHTML = '<p>Оберіть сцену для гри в редакторі.</p>';
+        textChoices.innerHTML = '';
+      }
+    }
+
+    function startTextScene(startId) {
+      state.dialogStack = [];
+      traverseNode(startId);
+    }
+
+    function exitTextScene() {
+      state.isPlayingScene = false;
+      backBtn.classList.add('hidden');
+      openTab('create-tab');
+    }
+
+    function traverseNode(id) {
+      const node = state.sceneGraph[id];
+      if (!node) return;
+
+      state.dialogStack.push(id);
+      textChoices.innerHTML = '';
+
+      if (node.type === 'TextNode') {
+        textDisplay.innerHTML = `<p>${interpolate(node.text)}</p>`;
+        if (node.next) {
+          setTimeout(() => traverseNode(node.next), 1000);
+        }
+      } else if (node.type === 'ChoiceNode') {
+        textDisplay.innerHTML = `<p>${interpolate(node.text)}</p>`;
+        node.choices.forEach(choice => {
+          if (choice.condition && !evalCondition(choice.condition)) return;
+          const btn = document.createElement('button');
+          btn.className = 'choice-btn';
+          btn.textContent = interpolate(choice.label);
+          btn.onclick = () => {
+            if (choice.action) executeAction(choice.action);
+            traverseNode(choice.target);
+          };
+          textChoices.appendChild(btn);
+        });
+      } else if (node.type === 'ConditionNode') {
+        let target = null;
+        for (const cond of node.conditions) {
+          if (cond.default) {
+            target = cond.target;
+          } else if (evalCondition(cond.check)) {
+            target = cond.target;
+            break;
+          }
+        }
+        if (target) traverseNode(target);
+      } else if (node.type === 'ActionNode') {
+        executeAction(node.action);
+        traverseNode(node.target);
+      } else if (node.type === 'EventNode') {
+        triggerEvent(node.event);
+        traverseNode(node.target);
+      } else if (node.type === 'SceneSwitchNode') {
+        // Switch mode or scene
+        traverseNode(node.target);
+      } else if (node.type === 'WaitNode') {
+        textDisplay.innerHTML = '<p>...</p>';
+        setTimeout(() => traverseNode(node.target), node.wait * 1000);
+      } else if (node.type === 'ImageNode') {
+        textDisplay.innerHTML = `<p>${interpolate(node.text)}</p><img src="${node.image}" style="max-width:100%; height:auto;" />`;
+        if (node.next) {
+          setTimeout(() => traverseNode(node.next), 1000);
+        }
+      } else if (node.type === 'AudioNode') {
+        const audio = new Audio(node.audio);
+        audio.play().catch(() => {});
+        textDisplay.innerHTML = `<p>${interpolate(node.text)}</p>`;
+        if (node.next) {
+          audio.onended = () => traverseNode(node.next);
+        }
+      }
+    }
+
+    function interpolate(str) {
+      return str.replace(/{(\w+)}/g, (match, key) => {
+        return state.variables[key] !== undefined ? state.variables[key] : match;
+      });
+    }
+
+    function evalCondition(cond) {
       try {
-        return eval(replaceVars(cond));
+        return eval(interpolate(cond));
       } catch (e) {
         return false;
       }
     }
 
-    function applyEffect(effect) {
-      if (!effect) return;
+    function executeAction(action) {
       try {
-        const expr = replaceVars(effect);
-        eval(expr);
-        // Оновлюємо змінні після eval
-        for (const key in variables) {
-          if (typeof variables[key] !== 'number') continue;
-          try {
-            variables[key] = eval(replaceVars(key));
-          } catch (e) {}
+        const match = action.match(/(\w+)\s*([+\-*\/]?=)\s*(\S+)/);
+        if (match) {
+          const varName = match[1];
+          const op = match[2];
+          let val = match[3];
+          if (val === 'true') val = true;
+          else if (val === 'false') val = false;
+          else if (!isNaN(val)) val = parseFloat(val);
+          else val = interpolate(`{${val}}`);
+
+          if (op === '=') state.variables[varName] = val;
+          else if (op === '+=') state.variables[varName] += val;
+          else if (op === '-=') state.variables[varName] -= val;
+          else if (op === '*=') state.variables[varName] *= val;
+          else if (op === '/=') state.variables[varName] /= val;
         }
-      } catch (e) {}
-    }
-
-    function replaceVars(str) {
-      let s = str;
-      for (const [k, v] of Object.entries(variables)) {
-        const re = new RegExp(`\\b${k}\\b`, 'g');
-        s = s.replace(re, v);
+      } catch (e) {
+        console.error('Action error:', e);
       }
-      return s;
+      saveToStorage();
     }
 
-    // === EVO СИСТЕМА ===
-    function initEVOSystem() {
-      document.getElementById('evoPoints').textContent = Math.floor(evoPoints);
+    function triggerEvent(event) {
+      console.log('Event triggered:', event);
     }
 
-    // === VOXEL ENGINE ===
-    function initVoxelEngine() {
-      const container = document.querySelector('.voxel-container');
-      const scene = document.createElement('div');
-      scene.className = 'voxel-scene';
-      container.appendChild(scene);
-
-      for (let x = 0; x < 3; x++) {
-        for (let y = 0; y < 3; y++) {
-          for (let z = 0; z < 3; z++) {
-            if (Math.random() > 0.7) {
-              createVoxel(scene, x, y, z);
-            }
-          }
-        }
-      }
-
-      let rotX = 0, rotY = 0;
-      container.addEventListener('mousemove', e => {
-        rotY = (e.clientX / window.innerWidth) * 360;
-        rotX = (e.clientY / window.innerHeight) * 360;
-        scene.style.transform = `rotateX(${-rotX + 30}deg) rotateY(${rotY}deg)`;
+    // Entity Editor
+    document.getElementById('add-component').addEventListener('click', addComponentField);
+    function addComponentField() {
+      const container = document.getElementById('components-list');
+      const div = document.createElement('div');
+      div.className = 'component-item';
+      div.innerHTML = `
+        <select class="comp-type">
+          <option value="TransformComponent">Transform</option>
+          <option value="SpriteComponent">Sprite</option>
+          <option value="MeshComponent">Mesh</option>
+          <option value="PhysicsComponent">Physics</option>
+          <option value="TextComponent">Text</option>
+        </select>
+        <div class="comp-props"></div>
+        <button class="remove-comp">Видалити</button>
+      `;
+      container.appendChild(div);
+      setupComponentType(div);
+      div.querySelector('.remove-comp').addEventListener('click', () => {
+        container.removeChild(div);
       });
     }
 
-    function createVoxel(parent, x, y, z) {
-      const voxel = document.createElement('div');
-      voxel.className = 'voxel';
-      voxel.style.transform = `translate(${x * 42}px, ${y * 42}px) translateZ(${z * 42}px)`;
-      const colors = ['#f00', '#0f0', '#00f', '#ff0', '#0ff', '#f0f'];
-      for (let i = 0; i < 6; i++) {
-        const face = document.createElement('div');
-        face.className = `voxel-face ${['front', 'back', 'right', 'left', 'top', 'bottom'][i]}`;
-        face.style.backgroundColor = colors[i];
-        voxel.appendChild(face);
+    function setupComponentType(container) {
+      const select = container.querySelector('.comp-type');
+      const propsDiv = container.querySelector('.comp-props');
+      select.onchange = () => {
+        const type = select.value;
+        propsDiv.innerHTML = '';
+        if (type === 'TransformComponent') {
+          propsDiv.innerHTML = `
+            <input type="number" placeholder="x" value="0" data-prop="x"/>
+            <input type="number" placeholder="y" value="0" data-prop="y"/>
+            <input type="number" placeholder="z" value="0" data-prop="z"/>
+          `;
+        } else if (type === 'SpriteComponent') {
+          propsDiv.innerHTML = `<input type="text" placeholder="image URL" data-prop="image"/>`;
+        } else if (type === 'MeshComponent') {
+          propsDiv.innerHTML = `<input type="text" placeholder="voxel type" data-prop="type"/>`;
+        } else if (type === 'PhysicsComponent') {
+          propsDiv.innerHTML = `<input type="checkbox" data-prop="collision"/> Колізія`;
+        } else if (type === 'TextComponent') {
+          propsDiv.innerHTML = `<input type="text" placeholder="text" data-prop="text"/>`;
+        }
+      };
+      select.onchange();
+    }
+
+    document.getElementById('save-entity').addEventListener('click', saveEntity);
+    function saveEntity() {
+      const id = document.getElementById('entity-id').value || `ent_${Date.now()}`;
+      const name = document.getElementById('entity-name').value;
+      const components = [];
+      document.querySelectorAll('.component-item').forEach(item => {
+        const type = item.querySelector('.comp-type').value;
+        const comp = { type };
+        item.querySelectorAll('.comp-props input').forEach(input => {
+          const prop = input.getAttribute('data-prop');
+          if (input.type === 'checkbox') {
+            comp[prop] = input.checked;
+          } else {
+            comp[prop] = input.value;
+          }
+        });
+        components.push(comp);
+      });
+      state.entities[id] = { id, name, components };
+      alert(`Сутність ${id} збережена!`);
+      saveToStorage();
+    }
+
+    // Chat
+    document.getElementById('send-chat').addEventListener('click', () => {
+      const input = document.getElementById('chat-input');
+      const msg = input.value.trim();
+      if (msg) {
+        state.chatHistory.push(`${state.profile.username}: ${msg}`);
+        renderChat();
+        input.value = '';
+        saveToStorage();
       }
-      parent.appendChild(voxel);
+    });
+
+    function renderChat() {
+      const container = document.getElementById('chat-messages');
+      container.innerHTML = '';
+      state.chatHistory.slice(-50).forEach(msg => {
+        const div = document.createElement('div');
+        div.textContent = msg;
+        container.appendChild(div);
+      });
+      container.scrollTop = container.scrollHeight;
     }
 
-    // === ЗБЕРЕЖЕННЯ ===
-    function saveGame() {
-      localStorage.setItem('gold', gold);
-      localStorage.setItem('evoPoints', evoPoints);
-      localStorage.setItem('gamesPlayed', gamesPlayed);
-      localStorage.setItem('variables', JSON.stringify(variables));
+    // Mining
+    const miningCanvas = document.getElementById('mining-canvas');
+    let miningInterval;
+    document.getElementById('start-mining').addEventListener('click', () => {
+      if (!state.mining.active) {
+        state.mining.active = true;
+        miningInterval = setInterval(() => {
+          state.mining.progress += state.mining.level;
+          if (state.mining.progress >= 100) {
+            state.mining.progress = 0;
+            state.profile.xp += 10 * state.mining.level;
+            checkLevelUp();
+            saveToStorage();
+          }
+          drawMining();
+        }, 100);
+      }
+    });
+
+    document.getElementById('stop-mining').addEventListener('click', () => {
+      clearInterval(miningInterval);
+      state.mining.active = false;
+    });
+
+    document.getElementById('upgrade-miner').addEventListener('click', () => {
+      const cost = state.mining.level * 50;
+      if (state.variables.gold >= cost) {
+        state.variables.gold -= cost;
+        state.mining.level += 1;
+        alert(`Майнер апгрейднутий до рівня ${state.mining.level}!`);
+        saveToStorage();
+      } else {
+        alert('Недостатньо золота!');
+      }
+    });
+
+    function drawMining() {
+      const ctx = miningCanvas.getContext('2d');
+      miningCanvas.width = miningCanvas.offsetWidth;
+      miningCanvas.height = miningCanvas.offsetHeight;
+      ctx.fillStyle = '#111';
+      ctx.fillRect(0, 0, miningCanvas.width, miningCanvas.height);
+      const w = (miningCanvas.width - 40) * (state.mining.progress / 100);
+      ctx.fillStyle = '#0f0';
+      ctx.fillRect(20, miningCanvas.height / 2 - 10, w, 20);
+      ctx.strokeStyle = '#0f0';
+      ctx.strokeRect(20, miningCanvas.height / 2 - 10, miningCanvas.width - 40, 20);
+      ctx.fillStyle = '#0f0';
+      ctx.font = '14px monospace';
+      ctx.fillText(`Майнінг... Рівень: ${state.mining.level}`, 20, miningCanvas.height / 2 - 20);
     }
 
-    function loadGame() {
-      gold = parseInt(localStorage.getItem('gold')) || 0;
-      evoPoints = parseFloat(localStorage.getItem('evoPoints')) || 0;
-      gamesPlayed = parseInt(localStorage.getItem('gamesPlayed')) || 0;
-      variables = JSON.parse(localStorage.getItem('variables') || '{}');
-      updateGold();
-      updateProfileDisplay();
+    function checkLevelUp() {
+      if (state.profile.xp >= state.profile.level * 100) {
+        state.profile.level++;
+        state.variables.gold += 10;
+        alert(`Рівень підвищено! Ви тепер ${state.profile.level} рівня!`);
+      }
     }
 
-    // === ІНІЦІАЛІЗАЦІЯ ДОДАТКУ ===
-    initVoxelEngine();
+    // Profile
+    document.getElementById('edit-profile').addEventListener('click', () => {
+      const name = prompt('Введіть нове ім\'я:', state.profile.username);
+      if (name) {
+        state.profile.username = name;
+        document.getElementById('username').textContent = name;
+        saveToStorage();
+      }
+    });
+
+    // Storage
+    function saveToStorage() {
+      try {
+        localStorage.setItem('evo-engine-state', JSON.stringify(state));
+      } catch (e) {
+        console.error('Save failed', e);
+      }
+    }
+
+    function loadFromStorage() {
+      const saved = localStorage.getItem('evo-engine-state');
+      if (saved) {
+        try {
+          const loaded = JSON.parse(saved);
+          Object.assign(state, loaded);
+          document.getElementById('username').textContent = state.profile.username;
+          document.getElementById('level').textContent = state.profile.level;
+          document.getElementById('xp').textContent = state.profile.xp;
+          renderChat();
+        } catch (e) {
+          console.error('Load failed', e);
+        }
+      }
+    }
+
+    // Init
+    window.addEventListener('resize', () => {
+      if (state.currentTab === 'create-tab') {
+        initSceneCanvas();
+      }
+    });
+
+    window.addEventListener('load', () => {
+      loadFromStorage();
+      initSceneCanvas();
+      renderChat();
+      drawMining();
+    });
   </script>
 </body>
 </html>
