@@ -200,9 +200,12 @@
       try { project.scenes[scIdx].worldJSON = window.world.toJSON(); } catch(e) {}
     }
     scIdx = i;
+    project.currentScene = i;  // ← FIX
     const s = project.scenes[i];
-    // Set view mode
-    const vb = document.querySelector('.pill[data-view="' + s.mode + '"]');
+    // Set view mode — map scene mode to pill
+    const modeToView = { '3d':'3d', '2d':'top', 'text':'quest', 'top':'top' };
+    const targetView = modeToView[s.mode] || '3d';
+    const vb = document.querySelector('.pill[data-view="' + targetView + '"]');
     if (vb && s.mode !== 'play') vb.click();
     // Load world
     if (window.world && s.worldJSON) {
@@ -239,10 +242,12 @@
       const v = p.dataset.view;
       document.querySelectorAll('.pill').forEach(x => x.classList.remove('active'));
       p.classList.add('active');
+      project.view = v;  // ← FIX: update project.view
       // Update scene mode
       if (project.scenes[scIdx] && ['3d','top','quest'].includes(v)) {
         project.scenes[scIdx].mode = v === 'quest' ? 'text' : v;
       }
+      project.currentScene = scIdx;  // ← FIX: save current scene index
       if (v === '3d') { if (window.renderer) renderer.setViewMode('3d'); showTools(1); }
       else if (v === 'top') { if (window.renderer) renderer.setViewMode('top'); showTools(1); }
       else if (v === 'quest') { if (window.renderer) renderer.setViewMode('top'); showTools(0); renderTriggers(); }
@@ -373,7 +378,7 @@
     const k = document.getElementById('vk').value.trim();
     const v = document.getElementById('vv').value.trim();
     if (!k) return;
-    project.globalVars[k] = isNaN(v) ? v : parseFloat(v);
+    project.globalVars[k] = v === '' ? '' : (isNaN(v) ? v : parseFloat(v));
     document.getElementById('vk').value = ''; document.getElementById('vv').value = '';
     renderVars(); saveAll();
   }
