@@ -60,35 +60,75 @@ class VoxelWorldModel {
     return false;
   }
 
-  // Serialization
+  // Serialization (Optimized for URL sharing)
   toJSON() {
-    const vList = [];
+    const palette = [];
+    const colorToIndex = new Map();
+    let vStr = "";
+
     this.voxels.forEach((val, key) => {
+      if (!colorToIndex.has(val.color)) {
+        colorToIndex.set(val.color, palette.length);
+        palette.push(val.color);
+      }
+      const cIdx = colorToIndex.get(val.color);
       const [x,y,z] = key.split(',').map(Number);
-      vList.push({x,y,z, ...val});
+      // Use Base36 encoding for each coordinate and color index (1 character per value, 4 chars per voxel)
+      // Works safely because max grid size is 16 (fits in 1 char), max palette is ~8 (fits in 1 char).
+      vStr += x.toString(36) + y.toString(36) + z.toString(36) + cIdx.toString(36);
     });
+
     return JSON.stringify({
-      meta: this.meta,
-      grid: { sizeX: this.sizeX, sizeY: this.sizeY, sizeZ: this.sizeZ, voxels: vList },
-      entities: this.entities,
-      triggers: this.triggers,
-      globalVariables: this.globalVariables
+      m: this.meta,
+      s: [this.sizeX, this.sizeY, this.sizeZ],
+      p: palette,
+      v: vStr,
+      e: this.entities,
+      t: this.triggers,
+      g: this.globalVariables
     });
   }
 
   fromJSON(jsonStr) {
     const data = JSON.parse(jsonStr);
-    this.meta = data.meta;
-    this.sizeX = data.grid.sizeX; this.sizeY = data.grid.sizeY; this.sizeZ = data.grid.sizeZ;
-    this.voxels.clear();
-    if(data.grid.voxels) {
-      data.grid.voxels.forEach(v => {
-        this.voxels.set(this.getKey(v.x, v.y, v.z), { type: v.type, color: v.color });
-      });
+    
+    // Support old unoptimized format
+    if (data.grid) {
+      this.meta = data.meta;
+      this.sizeX = data.grid.sizeX; this.sizeY = data.grid.sizeY; this.sizeZ = data.grid.sizeZ;
+      this.voxels.clear();
+      if(data.grid.voxels) {
+        data.grid.voxels.forEach(v => {
+          this.voxels.set(this.getKey(v.x, v.y, v.z), { type: v.type, color: v.color });
+        });
+      }
+      this.entities = data.entities || [];
+      this.triggers = data.triggers || [];
+      this.globalVariables = data.globalVariables || {};
+      return;
     }
-    this.entities = data.entities || [];
-    this.triggers = data.triggers || [];
-    this.globalVariables = data.globalVariables || {};
+
+    // New optimized format
+    this.meta = data.m || { id: Date.now().toString(), name: "New World", author: "Player" };
+    const size = data.s || [16, 16, 16];
+    this.sizeX = size[0]; this.sizeY = size[1]; this.sizeZ = size[2];
+    
+    this.voxels.clear();
+    if (data.v !== undefined && data.p) {
+      const palette = data.p;
+      const str = data.v;
+      for(let i = 0; i < str.length; i += 4) {
+        const x = parseInt(str[i], 36);
+        const y = parseInt(str[i+1], 36);
+        const z = parseInt(str[i+2], 36);
+        const cIdx = parseInt(str[i+3], 36);
+        this.voxels.set(this.getKey(x, y, z), { type: 'solid', color: palette[cIdx] });
+      }
+    }
+    
+    this.entities = data.e || [];
+    this.triggers = data.t || [];
+    this.globalVariables = data.g || {};
   }
 }
 
