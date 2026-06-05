@@ -996,9 +996,10 @@
     };
 
     // Ініціалізація
-    window.onload = () => {
+    (function init() {
       // Заповнити фонові пікселі
       const bgCanvas = document.getElementById('bg-canvas');
+      if (!bgCanvas) return setTimeout(init, 100);
       const bgCtx = bgCanvas.getContext('2d');
       bgCtx.fillStyle = '#000';
       bgCtx.fillRect(0, 0, 64, 64);
@@ -1023,7 +1024,7 @@
 
       // Завантажити гру
       showScene('start');
-    };
+    })();
   </script>
 </body>
 </html>
