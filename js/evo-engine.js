@@ -283,11 +283,11 @@ class RenderSystem {
     const parent = this.container.parentElement;
     const scale = window.innerWidth < 600 ? 0.4 : 0.6;
     if (mode === 'top') {
-      this.container.style.transform = `scale(${scale}) rotateX(90deg) rotateY(0deg) rotateZ(0deg)`;
-      parent.style.perspective = 'none';
+      this.container.style.transform = `scale(${scale}) rotateX(-90deg) rotateY(0deg) rotateZ(0deg)`;
+      parent.style.perspective = '2000px';
     } else if (mode === 'side') {
       this.container.style.transform = `scale(${scale}) rotateX(0deg) rotateY(0deg) rotateZ(0deg)`;
-      parent.style.perspective = 'none';
+      parent.style.perspective = '2000px';
     } else {
       parent.style.perspective = '800px';
       // Reset to default orbit
@@ -317,7 +317,7 @@ class RenderSystem {
     floor.style.width = `${this.world.sizeX * this.voxelSize}px`;
     floor.style.height = `${this.world.sizeY * this.voxelSize}px`;
     let floorZ = this.activeLayer >= 0 ? this.activeLayer : 0;
-    floor.style.transform = `translate(-50%, -50%) rotateX(90deg) translateZ(${-(floorZ * this.voxelSize - offsetZ + this.voxelSize/2)}px)`;
+    floor.style.transform = `translate(-50%, -50%) rotateX(90deg) translateZ(${floorZ * this.voxelSize - offsetZ + this.voxelSize/2}px)`;
     this.container.appendChild(floor);
 
     // Render Voxels

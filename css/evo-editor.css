@@ -108,7 +108,6 @@ header {
   transform-style: preserve-3d;
   margin-top: calc(var(--voxel-size) / -2);
   margin-left: calc(var(--voxel-size) / -2);
-  contain: layout style paint;
 }
 
 .face {
