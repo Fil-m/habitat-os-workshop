@@ -1,1574 +1,1029 @@
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uk">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Evo-Engine</title>
   <style>
-    :root {
-      --bg: #000;
-      --neon: #0f0;
-      --neon-blue: #00f;
-      --neon-pink: #f0f;
-      --text: #0f0;
-      --border: #0f0;
-      --btn-bg: #111;
-      --btn-hover: #222;
-    }
     * {
-      box-sizing: border-box;
       margin: 0;
       padding: 0;
+      box-sizing: border-box;
       font-family: 'Courier New', monospace;
-      color: var(--text);
     }
     body {
-      background: var(--bg);
+      background: #111;
+      color: #0f0;
       overflow: hidden;
       display: flex;
       flex-direction: column;
       height: 100vh;
-      position: relative;
     }
     header {
-      background: rgba(0, 0, 0, 0.8);
+      background: #222;
       padding: 10px;
       text-align: center;
-      border-bottom: 1px solid var(--border);
-      z-index: 10;
-    }
-    h1 {
-      font-size: 1.4em;
-      text-shadow: 0 0 5px var(--neon);
+      border-bottom: 1px solid #0f0;
+      font-size: 1.5em;
     }
     main {
       flex: 1;
+      display: flex;
       position: relative;
-      overflow: hidden;
     }
-    .tab-content {
+    #game-container, #editor-container, #miner-container, #chat-container, #profile-container {
       display: none;
       width: 100%;
       height: 100%;
-      position: absolute;
-      top: 0;
-      left: 0;
+      padding: 10px;
+      overflow: auto;
     }
-    .tab-content.active {
-      display: flex;
+    .active {
+      display: block;
     }
-    .nav {
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      background: rgba(0, 0, 0, 0.9);
-      padding: 10px 0;
-      border-top: 1px solid var(--border);
-      position: absolute;
+    nav {
+      position: fixed;
       bottom: 0;
       width: 100%;
-      z-index: 10;
-    }
-    .nav button {
-      background: var(--btn-bg);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 8px 12px;
-      border-radius: 6px;
-      font-size: 0.9em;
-      cursor: pointer;
-      transition: all 0.3s;
-      width: 20%;
-    }
-    .nav button:hover {
-      background: var(--btn-hover);
-      box-shadow: 0 0 8px var(--neon);
-    }
-    .mode-switch {
+      background: #222;
       display: flex;
-      justify-content: center;
-      margin: 10px 0;
+      border-top: 1px solid #0f0;
+    }
+    nav button {
+      flex: 1;
+      padding: 12px;
+      background: #333;
+      color: #0f0;
+      border: none;
+      font-size: 1.2em;
+      cursor: pointer;
+    }
+    nav button:hover {
+      background: #444;
+    }
+    nav button.active {
+      background: #0f0;
+      color: #111;
+    }
+
+    /* Quest Editor */
+    .quest-editor {
+      display: flex;
       gap: 10px;
-    }
-    .mode-switch button {
-      background: var(--btn-bg);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 6px 10px;
-      border-radius: 4px;
-      font-size: 0.8em;
-      cursor: pointer;
-    }
-    .mode-switch button.active {
-      background: var(--neon);
-      color: #000;
-    }
-    #editor-container {
-      display: flex;
-      flex-direction: column;
       height: 100%;
     }
-    #scene-canvas {
-      flex: 1;
-      background: #111;
-      border: 1px solid var(--border);
-      margin: 10px;
-      position: relative;
-    }
-    #text-editor, #entity-editor {
+    .quest-sidebar {
+      width: 300px;
+      background: #222;
       padding: 10px;
-      background: #111;
-      border: 1px solid var(--border);
-      margin: 10px;
-      border-radius: 4px;
+      border: 1px solid #0f0;
       overflow-y: auto;
+    }
+    .quest-canvas-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .canvas-pair {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    canvas {
+      border: 1px solid #0f0;
+      image-rendering: pixelated;
+    }
+    .pixel-grid {
+      position: relative;
+      cursor: crosshair;
+    }
+    .pixel {
+      width: 8px;
+      height: 8px;
+      border: 1px solid rgba(0,255,0,0.1);
+      display: inline-block;
+    }
+    textarea, input, select {
+      width: 100%;
+      background: #333;
+      color: #0f0;
+      border: 1px solid #0f0;
+      padding: 5px;
+      margin: 5px 0;
+    }
+    button.btn {
+      background: #0f0;
+      color: #111;
+      border: none;
+      padding: 5px 10px;
+      margin: 5px 0;
+      cursor: pointer;
+    }
+    button.btn:hover {
+      background: #0f0a;
+    }
+    .list-item {
+      padding: 8px;
+      margin: 5px 0;
+      background: #333;
+      border: 1px solid #0f0;
+    }
+    .condition, .effect {
+      display: flex;
+      gap: 5px;
+      margin: 3px 0;
+    }
+    .condition input, .effect select, .effect input {
       flex: 1;
     }
-    .node-list {
+
+    /* 2D Arcade & Platformer */
+    #arcade-grid {
+      display: grid;
+      grid-template-columns: repeat(16, 20px);
+      grid-template-rows: repeat(16, 20px);
+      gap: 0;
+      margin: 10px auto;
+      border: 1px solid #0f0;
+    }
+    .grid-cell {
+      width: 20px;
+      height: 20px;
+      background: #222;
+      border: 1px solid #333;
+      cursor: pointer;
+    }
+    .grid-cell.wall { background: #555; }
+    .grid-cell.collectible { background: #ff0; }
+    .grid-cell.triggers { background: #f0f; }
+    .grid-cell.door { background: #844; }
+    .grid-cell.key { background: #ff8; }
+    .grid-cell.enemy { background: #f00; }
+    .grid-cell.npc { background: #08f; }
+    .grid-cell.player { background: #0f0; }
+
+    .palette {
+      margin: 10px 0;
       display: flex;
       flex-wrap: wrap;
       gap: 5px;
-      margin: 10px 0;
     }
-    .node-btn {
-      padding: 6px 10px;
-      background: var(--btn-bg);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      font-size: 0.8em;
+    .palette-item {
+      padding: 8px 12px;
+      background: #333;
+      border: 1px solid #555;
       cursor: pointer;
     }
-    .node-btn:hover {
-      box-shadow: 0 0 5px var(--neon-blue);
+    .palette-item.selected {
+      border-color: #0f0;
+      background: #0f0;
+      color: #111;
     }
-    input, textarea, select {
+
+    /* 3D Voxel */
+    #voxel-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+    }
+    #voxel-layer-slider {
+      margin: 10px 0;
+      width: 80%;
+    }
+    #voxel-grid-3d {
+      display: grid;
+      grid-template-columns: repeat(8, 20px);
+      grid-template-rows: repeat(8, 20px);
+      gap: 0;
+      margin: 10px;
+    }
+    .voxel-cell {
+      width: 20px;
+      height: 20px;
       background: #222;
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 8px;
-      margin: 5px 0;
-      width: 100%;
-      border-radius: 4px;
+      border: 1px solid #333;
+      cursor: pointer;
     }
-    textarea {
-      height: 80px;
-      resize: vertical;
+    .voxel-cell.solid { background: #888; }
+    .voxel-cell.transparent { background: #88f; opacity: 0.6; }
+    .voxel-cell.active { background: #f88; }
+
+    #voxel-canvas {
+      width: 320px;
+      height: 320px;
+      border: 1px solid #0f0;
+      margin: 10px;
     }
-    .component-list {
+
+    /* Miner */
+    .miner-game {
+      text-align: center;
+      padding: 20px;
+    }
+    .resource {
+      font-size: 1.5em;
+      margin: 10px;
+    }
+    .miner-btn {
+      font-size: 2em;
+      padding: 20px;
+      background: #0f0;
+      color: #111;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      margin: 10px;
+    }
+
+    /* Chat */
+    #chat-box {
+      height: 300px;
+      overflow-y: auto;
+      border: 1px solid #0f0;
+      padding: 10px;
       margin: 10px 0;
     }
-    .component-item {
+    .chat-message {
       margin: 5px 0;
-      padding: 8px;
-      background: #222;
-      border: 1px solid var(--border);
-      border-radius: 4px;
+      padding: 5px;
+      background: #333;
     }
-    .chat-messages {
-      flex: 1;
-      overflow-y: auto;
-      padding: 10px;
-      background: #111;
-      margin: 10px;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-    }
-    .chat-input {
-      display: flex;
-      padding: 10px;
-    }
-    .chat-input input {
-      flex: 1;
-      margin-right: 5px;
-    }
-    .chat-input button {
-      width: 60px;
-    }
-    .profile-card {
+
+    /* Profile */
+    .profile-form {
+      max-width: 500px;
       margin: 20px auto;
       padding: 20px;
-      background: #111;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      max-width: 300px;
-      text-align: center;
-    }
-    .profile-card img {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      border: 2px solid var(--neon);
-      margin-bottom: 10px;
-    }
-    .mining-area {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-    }
-    #mining-canvas {
-      flex: 1;
-      background: #000;
-      margin: 10px;
-      border: 1px solid var(--border);
-    }
-    .mining-controls {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      padding: 10px;
-    }
-    .mining-controls button {
-      padding: 8px 16px;
-      background: var(--btn-bg);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .mining-controls button:hover {
-      box-shadow: 0 0 8px var(--neon-pink);
-    }
-    #text-player {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-    }
-    #text-display {
-      flex: 1;
-      padding: 20px;
-      background: #000;
-      margin: 10px;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      overflow-y: auto;
-      font-size: 1.1em;
-      line-height: 1.5;
-    }
-    #text-choices {
-      display: flex;
-      flex-direction: column;
-      padding: 10px;
-      gap: 8px;
-    }
-    .choice-btn {
-      padding: 12px;
-      background: #111;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .choice-btn:hover {
       background: #222;
-      box-shadow: 0 0 8px var(--neon-blue);
-    }
-    .back-btn {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      background: rgba(0, 0, 0, 0.7);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 6px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      z-index: 20;
-    }
-    .back-btn:hover {
-      background: #222;
-    }
-    #layer-selector {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      z-index: 20;
-      background: rgba(0, 0, 0, 0.7);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 6px;
-      border-radius: 4px;
-    }
-    #layer-selector select {
-      margin: 0;
-      width: auto;
-    }
-    .hidden {
-      display: none !important;
+      border: 1px solid #0f0;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Evo-Engine</h1>
-  </header>
-
+  <header>Evo-Engine</header>
   <main>
-    <!-- Грати -->
-    <div id="play-tab" class="tab-content active">
-      <div id="text-player">
-        <div id="text-display">Ласкаво просимо до Evo-Engine. Оберіть сцену для гри.</div>
-        <div id="text-choices"></div>
+    <!-- Режим 1: Текстовий квест -->
+    <div id="game-container" class="active">
+      <div id="quest-game-view">
+        <h2 id="scene-title">Початок</h2>
+        <div id="scene-image-container">
+          <canvas id="scene-bg-canvas" width="64" height="64"></canvas>
+          <canvas id="scene-char-canvas" width="64" height="64"></canvas>
+        </div>
+        <p id="scene-text">Ласкаво просимо до квесту!</p>
+        <div id="scene-buttons"></div>
       </div>
     </div>
 
-    <!-- Створити -->
-    <div id="create-tab" class="tab-content">
-      <div class="mode-switch">
-        <button id="mode-text" class="mode-btn active">Текст</button>
-        <button id="mode-2d" class="mode-btn">2D</button>
-        <button id="mode-3d" class="mode-btn">3D</button>
-      </div>
-      <div id="editor-container">
-        <div id="scene-canvas"></div>
-        <div id="text-editor" class="hidden">
-          <h3>Текстовий Редактор</h3>
-          <div class="node-list">
-            <button class="node-btn" data-type="TextNode">TextNode</button>
-            <button class="node-btn" data-type="ChoiceNode">ChoiceNode</button>
-            <button class="node-btn" data-type="ConditionNode">ConditionNode</button>
-            <button class="node-btn" data-type="ActionNode">ActionNode</button>
-            <button class="node-btn" data-type="EventNode">EventNode</button>
-            <button class="node-btn" data-type="SceneSwitchNode">SceneSwitchNode</button>
-            <button class="node-btn" data-type="WaitNode">WaitNode</button>
-            <button class="node-btn" data-type="ImageNode">ImageNode</button>
-            <button class="node-btn" data-type="AudioNode">AudioNode</button>
-          </div>
-          <input type="text" id="node-id" placeholder="ID вузла" />
-          <textarea id="node-text" placeholder="Текст (може містити {змінні})"></textarea>
-          <div id="choices-container" class="hidden">
-            <h4>Варіанти вибору</h4>
-            <div id="choices-list"></div>
-            <button id="add-choice">+ Додати варіант</button>
-          </div>
-          <div id="condition-container" class="hidden">
-            <h4>Умови</h4>
-            <div id="conditions-list"></div>
-            <button id="add-condition">+ Додати умову</button>
-          </div>
-          <input type="text" id="node-action" placeholder="Дія (наприклад: health += 10)" class="hidden" />
-          <input type="text" id="node-event" placeholder="Назва події" class="hidden" />
-          <input type="text" id="node-target" placeholder="Ціль (ID сцени або вузла)" class="hidden" />
-          <input type="number" id="node-wait" placeholder="Час очікування (сек)" class="hidden" />
-          <input type="text" id="node-image" placeholder="URL зображення" class="hidden" />
-          <input type="text" id="node-audio" placeholder="URL аудіо" class="hidden" />
-          <div class="flex-row" style="gap: 10px;">
-            <button id="save-node">Зберегти вузол</button>
-            <button id="load-scene">Завантажити сцену</button>
-            <button id="play-scene">▶ Грати</button>
-          </div>
+    <!-- Режим 2/3: Редактор -->
+    <div id="editor-container">
+      <div class="quest-editor">
+        <div class="quest-sidebar">
+          <h3>Редактор сцени</h3>
+          <label>Назва сцени</label>
+          <input type="text" id="scene-name" value="Сцена 1"/>
+
+          <label>Текст сцени</label>
+          <textarea id="scene-text-input" rows="4">Ви в темній кімнаті.</textarea>
+
+          <h4>Фон (64x64)</h4>
+          <div class="pixel-grid" id="bg-pixel-grid"></div>
+
+          <h4>Персонаж (64x64)</h4>
+          <div class="pixel-grid" id="char-pixel-grid"></div>
+
+          <h4>Кнопки</h4>
+          <div id="button-list"></div>
+          <button class="btn" id="add-button">+ Додати кнопку</button>
+
+          <h4>Змінні</h4>
+          <div id="variable-list"></div>
+          <button class="btn" id="add-variable">+ Додати змінну</button>
+
+          <button class="btn" id="save-scene">Зберегти сцену</button>
+          <button class="btn" id="validate-quest">Перевірити квест</button>
         </div>
-        <div id="entity-editor">
-          <h3>Редактор сутностей</h3>
-          <input type="text" id="entity-id" placeholder="ID сутності" />
-          <input type="text" id="entity-name" placeholder="Назва" />
-          <div class="component-list" id="components-list">
-            <!-- Components will be added here -->
+
+        <div class="quest-canvas-area">
+          <canvas id="bg-canvas" width="64" height="64"></canvas>
+          <canvas id="char-canvas" width="64" height="64"></canvas>
+
+          <!-- 2D Arcade Grid -->
+          <div id="arcade-tools" style="display:none">
+            <div class="palette">
+              <div class="palette-item" data-type="empty">Пусто</div>
+              <div class="palette-item" data-type="wall">Стіна</div>
+              <div class="palette-item" data-type="collectible">Збірний</div>
+              <div class="palette-item" data-type="triggers">Тригер</div>
+              <div class="palette-item" data-type="door">Двері</div>
+              <div class="palette-item" data-type="key">Ключ</div>
+              <div class="palette-item" data-type="enemy">Ворог</div>
+              <div class="palette-item" data-type="npc">NPC</div>
+              <div class="palette-item" data-type="player">Гравець</div>
+            </div>
+            <div id="arcade-grid"></div>
           </div>
-          <button id="add-component">+ Додати компонент</button>
-          <button id="save-entity">Зберегти сутність</button>
+
+          <!-- Platformer Physics Toggle -->
+          <div id="platformer-tools" style="display:none">
+            <h4>Фізика</h4>
+            <label>Сила стрибка <input type="number" id="jump-force" value="12" /></label>
+            <label>Швидкість <input type="number" id="player-speed" value="3" /></label>
+            <label>Гравітація <input type="number" id="gravity" value="0.6" /></label>
+          </div>
+
+          <!-- 3D Voxel -->
+          <div id="voxel-tools" style="display:none">
+            <h4>Шар: <span id="layer-label">4</span></h4>
+            <input type="range" id="voxel-layer-slider" min="0" max="7" value="4" />
+            <div class="palette">
+              <div class="palette-item" data-voxel="air">Повітря</div>
+              <div class="palette-item" data-voxel="solid">Твердий</div>
+              <div class="palette-item" data-voxel="transparent">Прозорий</div>
+              <div class="palette-item" data-voxel="active">Активний</div>
+            </div>
+            <div id="voxel-grid-3d"></div>
+            <canvas id="voxel-canvas" width="320" height="320"></canvas>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Майнери -->
-    <div id="miners-tab" class="tab-content">
-      <div class="mining-area">
-        <canvas id="mining-canvas"></canvas>
-        <div class="mining-controls">
-          <button id="start-mining">▶ Почати</button>
-          <button id="stop-mining">⏹ Зупинити</button>
-          <button id="upgrade-miner">⬆ Апгрейд</button>
-        </div>
+    <!-- Режим 3: Майнери -->
+    <div id="miner-container">
+      <div class="miner-game">
+        <h2>Майнери</h2>
+        <div class="resource">Крипта: <span id="crypto">0</span></div>
+        <button class="miner-btn" id="mine-btn">⛏</button>
+        <div class="resource">Авто-майнінг: <span id="auto-miners">0</span> (1/sec)</div>
+        <button class="btn" id="buy-miner">Купити майнер (10)</button>
       </div>
     </div>
 
-    <!-- Чат -->
-    <div id="chat-tab" class="tab-content">
-      <div class="chat-messages" id="chat-messages">
-        <div>Добро пожаловать в чат Evo-Engine!</div>
-      </div>
-      <div class="chat-input">
-        <input type="text" id="chat-input" placeholder="Напишіть повідомлення..." />
-        <button id="send-chat">Надіслати</button>
-      </div>
+    <!-- Режим 4: Чат -->
+    <div id="chat-container">
+      <h2>Чат</h2>
+      <div id="chat-box"></div>
+      <input type="text" id="chat-input" placeholder="Введіть повідомлення..." />
+      <button class="btn" id="send-chat">Надіслати</button>
     </div>
 
     <!-- Профіль -->
-    <div id="profile-tab" class="tab-content">
-      <div class="profile-card">
-        <img src="https://via.placeholder.com/80" alt="Avatar" />
-        <h3 id="username">Гравець</h3>
-        <p>Рівень: <span id="level">1</span></p>
-        <p>Досвід: <span id="xp">0</span>/100</p>
-        <button id="edit-profile">Редагувати</button>
+    <div id="profile-container">
+      <div class="profile-form">
+        <h2>Профіль</h2>
+        <label>Ім'я <input type="text" id="profile-name" /></label>
+        <label>Email <input type="email" id="profile-email" /></label>
+        <label>GitHub <input type="text" id="profile-github" placeholder="username" /></label>
+        <button class="btn" id="save-profile">Зберегти</button>
+        <button class="btn" id="sync-github">Синхронізувати з GitHub</button>
       </div>
     </div>
   </main>
 
-  <div class="nav">
-    <button data-tab="play-tab">🎮 Грати</button>
-    <button data-tab="create-tab">🔧 Створити</button>
-    <button data-tab="miners-tab">⛏ Майнери</button>
-    <button data-tab="chat-tab">💬 Чат</button>
-    <button data-tab="profile-tab">👤 Профіль</button>
-  </div>
-
-  <button class="back-btn hidden" id="back-button">← Назад</button>
-  <div id="layer-selector" class="hidden">
-    <select id="layer-select">
-      <option value="0">Шар 0</option>
-      <option value="1">Шар 1</option>
-      <option value="2">Шар 2</option>
-      <option value="3">Шар 3</option>
-      <option value="4">Шар 4</option>
-    </select>
-  </div>
+  <nav>
+    <button data-mode="game" class="active">🎮 Гра</button>
+    <button data-mode="editor">🔧 Редактор</button>
+    <button data-mode="miner">⛏ Майнери</button>
+    <button data-mode="chat">💬 Чат</button>
+    <button data-mode="profile">👤 Профіль</button>
+  </nav>
 
   <script>
-    // State
-    const state = {
-      currentTab: 'play-tab',
-      currentMode: 'text',
-      currentNodeId: null,
-      sceneGraph: {},
-      entities: {},
-      variables: { health: 100, gold: 0, reputation: 50 },
-      chatHistory: [],
-      profile: { username: 'Гравець', level: 1, xp: 0 },
-      mining: { active: false, level: 1, progress: 0 },
-      currentScene: null,
-      dialogStack: [],
-      currentLayer: 0,
-      isPlayingScene: false
+    // Глобальні дані
+    let currentMode = 'game';
+    let scenes = JSON.parse(localStorage.getItem('evo-scenes')) || {
+      'start': {
+        id: 'start',
+        title: 'Початок',
+        text: 'Ласкаво просимо! Натисни далі.',
+        bgPixels: Array(64*64).fill('#000000'),
+        charPixels: Array(64*64).fill('#000000'),
+        buttons: [{ label: 'Далі', target: 'scene2' }],
+        variables: {}
+      },
+      'scene2': {
+        id: 'scene2',
+        title: 'Сцена 2',
+        text: 'Тут нічого немає.',
+        bgPixels: Array(64*64).fill('#333333'),
+        charPixels: Array(64*64).fill('#000000'),
+        buttons: [{ label: 'Назад', target: 'start' }],
+        variables: {}
+      }
     };
+    let currentSceneId = 'start';
+    let gameVariables = {};
+    let selectedCellType = 'wall';
+    let selectedVoxelType = 'solid';
+    let currentLayer = 4;
+    let voxelWorld = Array(8).fill().map(() => Array(8).fill().map(() => Array(8).fill('air')));
+    let minerData = JSON.parse(localStorage.getItem('evo-miner')) || { crypto: 0, autoMiners: 0 };
+    let chatMessages = JSON.parse(localStorage.getItem('evo-chat')) || [];
+    let profileData = JSON.parse(localStorage.getItem('evo-profile')) || {};
 
-    // DOM Elements
-    const tabs = document.querySelectorAll('.tab-content');
-    const navButtons = document.querySelectorAll('.nav button');
-    const modeButtons = document.querySelectorAll('.mode-btn');
-    const backBtn = document.getElementById('back-button');
-    const layerSelector = document.getElementById('layer-selector');
-    const sceneCanvas = document.getElementById('scene-canvas');
-    const textEditor = document.getElementById('text-editor');
-    const entityEditor = document.getElementById('entity-editor');
-    const textPlayer = document.getElementById('text-player');
-    const textDisplay = document.getElementById('text-display');
-    const textChoices = document.getElementById('text-choices');
-    const layerSelect = document.getElementById('layer-select');
-
-    // Navigation
-    navButtons.forEach(btn => {
+    // Навігація
+    document.querySelectorAll('nav button').forEach(btn => {
       btn.addEventListener('click', () => {
-        const tabId = btn.getAttribute('data-tab');
-        openTab(tabId);
+        const mode = btn.getAttribute('data-mode');
+        setMode(mode);
       });
     });
 
-    function openTab(tabId) {
-      tabs.forEach(tab => {
-        tab.classList.remove('active');
-      });
-      document.getElementById(tabId).classList.add('active');
-      state.currentTab = tabId;
-      backBtn.classList.add('hidden');
-      if (tabId === 'create-tab') {
-        initSceneCanvas();
-      } else if (tabId === 'play-tab') {
-        renderTextPlayer();
-      }
+    function setMode(mode) {
+      document.getElementById(`${currentMode}-container`).classList.remove('active');
+      document.getElementById(`${mode}-container`).classList.add('active');
+      document.querySelector(`nav button[data-mode="${currentMode}"]`).classList.remove('active');
+      document.querySelector(`nav button[data-mode="${mode}"]`).classList.add('active');
+      currentMode = mode;
+
+      if (mode === 'game') showScene(currentSceneId);
+      if (mode === 'editor') loadSceneEditor();
+      if (mode === 'miner') updateMinerDisplay();
+      if (mode === 'chat') renderChat();
+      if (mode === 'profile') loadProfile();
     }
 
-    // Mode Switching
-    modeButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        modeButtons.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        state.currentMode = btn.id.replace('mode-', '');
-        initSceneCanvas();
-      });
-    });
+    // === РЕЖИМ 1: Текстовий квест ===
+    function showScene(id) {
+      const scene = scenes[id];
+      if (!scene) return;
+      currentSceneId = id;
+      document.getElementById('scene-title').textContent = scene.title;
+      document.getElementById('scene-text').textContent = scene.text;
+      drawCanvasFromPixels('bg-canvas', scene.bgPixels);
+      drawCanvasFromPixels('char-canvas', scene.charPixels);
 
-    // Back Button
-    backBtn.addEventListener('click', () => {
-      if (state.currentTab === 'play-tab' && state.isPlayingScene) {
-        exitTextScene();
-      } else {
-        openTab('create-tab');
-      }
-    });
-
-    // Scene Canvas
-    function initSceneCanvas() {
-      const ctx = sceneCanvas.getContext('2d');
-      sceneCanvas.width = sceneCanvas.offsetWidth;
-      sceneCanvas.height = sceneCanvas.offsetHeight;
-      ctx.fillStyle = '#111';
-      ctx.fillRect(0, 0, sceneCanvas.width, sceneCanvas.height);
-      ctx.strokeStyle = '#0f0';
-      ctx.strokeRect(0, 0, sceneCanvas.width, sceneCanvas.height);
-
-      if (state.currentMode === '2d') {
-        draw2DGrid(ctx);
-        setup2DInput();
-      } else if (state.currentMode === '3d') {
-        layerSelector.classList.remove('hidden');
-        draw3DLayer(ctx);
-        setup3DInput();
-      } else {
-        layerSelector.classList.add('hidden');
-        ctx.fillStyle = '#00f';
-        ctx.font = '20px monospace';
-        ctx.fillText('TEXT MODE EDITOR', 20, 40);
-      }
-    }
-
-    function draw2DGrid(ctx) {
-      const size = 32;
-      const cols = Math.floor(sceneCanvas.width / size);
-      const rows = Math.floor(sceneCanvas.height / size);
-      ctx.clearRect(0, 0, sceneCanvas.width, sceneCanvas.height);
-      for (let x = 0; x < cols; x++) {
-        for (let y = 0; y < rows; y++) {
-          ctx.strokeRect(x * size, y * size, size, size);
-        }
-      }
-    }
-
-    function draw3DLayer(ctx) {
-      const size = 20;
-      const cols = Math.floor(sceneCanvas.width / size);
-      const rows = Math.floor(sceneCanvas.height / size);
-      ctx.clearRect(0, 0, sceneCanvas.width, sceneCanvas.height);
-      for (let x = 0; x < cols; x++) {
-        for (let y = 0; y < rows; y++) {
-          ctx.strokeRect(x * size, y * size, size, size);
-        }
-      }
-      ctx.fillStyle = '#f0f';
-      ctx.font = '14px monospace';
-      ctx.fillText(`Шар: ${state.currentLayer}`, 10, 20);
-    }
-
-    function setup2DInput() {
-      sceneCanvas.onmousedown = (e) => {
-        const rect = sceneCanvas.getBoundingClientRect();
-        const x = Math.floor((e.clientX - rect.left) / 32);
-        const y = Math.floor((e.clientY - rect.top) / 32);
-        alert(`Тайл (${x}, ${y})`);
-      };
-    }
-
-    function setup3DInput() {
-      layerSelect.onchange = () => {
-        state.currentLayer = parseInt(layerSelect.value);
-        initSceneCanvas();
-      };
-      sceneCanvas.onmousedown = (e) => {
-        const rect = sceneCanvas.getBoundingClientRect();
-        const x = Math.floor((e.clientX - rect.left) / 20);
-        const y = Math.floor((e.clientY - rect.top) / 20);
-        alert(`Воксель (${x}, ${y}, ${state.currentLayer})`);
-      };
-    }
-
-    // Text Editor
-    document.querySelectorAll('.node-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const type = btn.getAttribute('data-type');
-        createNewNode(type);
-      });
-    });
-
-    function createNewNode(type) {
-      document.querySelectorAll('#text-editor > div[id$="-container"]').forEach(el => {
-        el.classList.add('hidden');
-      });
-      document.querySelectorAll('#text-editor input, #text-editor textarea').forEach(el => {
-        el.classList.remove('hidden');
-      });
-      document.getElementById('choices-container').classList.add('hidden');
-      document.getElementById('condition-container').classList.add('hidden');
-      document.getElementById('node-action').classList.add('hidden');
-      document.getElementById('node-event').classList.add('hidden');
-      document.getElementById('node-target').classList.add('hidden');
-      document.getElementById('node-wait').classList.add('hidden');
-      document.getElementById('node-image').classList.add('hidden');
-      document.getElementById('node-audio').classList.add('hidden');
-
-      if (type === 'ChoiceNode') {
-        document.getElementById('choices-container').classList.remove('hidden');
-        addChoiceField();
-      } else if (type === 'ConditionNode') {
-        document.getElementById('condition-container').classList.remove('hidden');
-        addConditionField();
-      } else if (type === 'ActionNode') {
-        document.getElementById('node-action').classList.remove('hidden');
-        document.getElementById('node-target').classList.remove('hidden');
-      } else if (type === 'EventNode') {
-        document.getElementById('node-event').classList.remove('hidden');
-        document.getElementById('node-target').classList.remove('hidden');
-      } else if (type === 'SceneSwitchNode') {
-        document.getElementById('node-target').classList.remove('hidden');
-      } else if (type === 'WaitNode') {
-        document.getElementById('node-wait').classList.remove('hidden');
-      } else if (type === 'ImageNode') {
-        document.getElementById('node-image').classList.remove('hidden');
-      } else if (type === 'AudioNode') {
-        document.getElementById('node-audio').classList.remove('hidden');
-      }
-
-      state.currentNodeId = null;
-      document.getElementById('node-id').value = '';
-      document.getElementById('node-text').value = '';
-    }
-
-    document.getElementById('add-choice').addEventListener('click', addChoiceField);
-    function addChoiceField() {
-      const container = document.getElementById('choices-list');
-      const div = document.createElement('div');
-      div.className = 'choice-item';
-      div.innerHTML = `
-        <input type="text" placeholder="Текст кнопки" style="width:40%" />
-        <input type="text" placeholder="Умова (напр. gold>=10)" style="width:30%" />
-        <input type="text" placeholder="Дія" style="width:30%" />
-        <input type="text" placeholder="Ціль (ID)" style="width:30%; margin-top:5px" />
-      `;
-      container.appendChild(div);
-    }
-
-    document.getElementById('add-condition').addEventListener('click', addConditionField);
-    function addConditionField() {
-      const container = document.getElementById('conditions-list');
-      const div = document.createElement('div');
-      div.className = 'condition-item';
-      div.innerHTML = `
-        <input type="text" placeholder="Перевірка (напр. health>50)" style="width:40%" />
-        <input type="text" placeholder="Ціль (ID)" style="width:40%" />
-        <label><input type="checkbox" /> За замовчуванням</label>
-      `;
-      container.appendChild(div);
-    }
-
-    document.getElementById('save-node').addEventListener('click', saveNode);
-    function saveNode() {
-      const id = document.getElementById('node-id').value || `node_${Date.now()}`;
-      const type = document.querySelector('.node-btn.active')?.getAttribute('data-type') || 'TextNode';
-      const text = document.getElementById('node-text').value;
-
-      const node = { id, type };
-
-      if (type === 'TextNode' || type === 'ImageNode' || type === 'AudioNode') {
-        node.text = text;
-      }
-      if (type === 'ImageNode') {
-        node.image = document.getElementById('node-image').value;
-      }
-      if (type === 'AudioNode') {
-        node.audio = document.getElementById('node-audio').value;
-      }
-      if (type === 'ChoiceNode') {
-        node.choices = [];
-        document.querySelectorAll('#choices-list .choice-item').forEach(item => {
-          const inputs = item.querySelectorAll('input');
-          node.choices.push({
-            label: inputs[0].value,
-            condition: inputs[1].value,
-            action: inputs[2].value,
-            target: inputs[3].value
-          });
-        });
-      }
-      if (type === 'ConditionNode') {
-        node.conditions = [];
-        document.querySelectorAll('#conditions-list .condition-item').forEach(item => {
-          const inputs = item.querySelectorAll('input');
-          const cond = inputs[2].checked ? { default: true } : { check: inputs[0].value };
-          cond.target = inputs[1].value;
-          node.conditions.push(cond);
-        });
-      }
-      if (['ActionNode', 'EventNode', 'SceneSwitchNode', 'WaitNode'].includes(type)) {
-        if (type === 'ActionNode') node.action = document.getElementById('node-action').value;
-        if (type === 'EventNode') node.event = document.getElementById('node-event').value;
-        node.target = document.getElementById('node-target').value;
-      }
-      if (type === 'WaitNode') {
-        node.wait = parseFloat(document.getElementById('node-wait').value) || 1;
-      }
-
-      state.sceneGraph[id] = node;
-      alert(`Вузол ${id} збережено!`);
-      saveToStorage();
-    }
-
-    document.getElementById('load-scene').addEventListener('click', () => {
-      const id = prompt('Введіть ID початкового вузла:');
-      if (id && state.sceneGraph[id]) {
-        state.currentScene = id;
-        alert('Сцена завантажена!');
-      }
-    });
-
-    document.getElementById('play-scene').addEventListener('click', () => {
-      if (state.currentScene) {
-        state.isPlayingScene = true;
-        backBtn.classList.remove('hidden');
-        openTab('play-tab');
-        startTextScene(state.currentScene);
-      } else {
-        alert('Спочатку завантажте сцену!');
-      }
-    });
-
-    // Text Player
-    function renderTextPlayer() {
-      if (!state.isPlayingScene) {
-        textDisplay.innerHTML = '<p>Оберіть сцену для гри в редакторі.</p>';
-        textChoices.innerHTML = '';
-      }
-    }
-
-    function startTextScene(startId) {
-      state.dialogStack = [];
-      traverseNode(startId);
-    }
-
-    function exitTextScene() {
-      state.isPlayingScene = false;
-      backBtn.classList.add('hidden');
-      openTab('create-tab');
-    }
-
-    function traverseNode(id) {
-      const node = state.sceneGraph[id];
-      if (!node) return;
-
-      state.dialogStack.push(id);
-      textChoices.innerHTML = '';
-
-      if (node.type === 'TextNode') {
-        textDisplay.innerHTML = `<p>${interpolate(node.text)}</p>`;
-        if (node.next) {
-          setTimeout(() => traverseNode(node.next), 1000);
-        }
-      } else if (node.type === 'ChoiceNode') {
-        textDisplay.innerHTML = `<p>${interpolate(node.text)}</p>`;
-        node.choices.forEach(choice => {
-          if (choice.condition && !evalCondition(choice.condition)) return;
-          const btn = document.createElement('button');
-          btn.className = 'choice-btn';
-          btn.textContent = interpolate(choice.label);
-          btn.onclick = () => {
-            if (choice.action) executeAction(choice.action);
-            traverseNode(choice.target);
-          };
-          textChoices.appendChild(btn);
-        });
-      } else if (node.type === 'ConditionNode') {
-        let target = null;
-        for (const cond of node.conditions) {
-          if (cond.default) {
-            target = cond.target;
-          } else if (evalCondition(cond.check)) {
-            target = cond.target;
-            break;
-          }
-        }
-        if (target) traverseNode(target);
-      } else if (node.type === 'ActionNode') {
-        executeAction(node.action);
-        traverseNode(node.target);
-      } else if (node.type === 'EventNode') {
-        triggerEvent(node.event);
-        traverseNode(node.target);
-      } else if (node.type === 'SceneSwitchNode') {
-        // Switch mode or scene
-        traverseNode(node.target);
-      } else if (node.type === 'WaitNode') {
-        textDisplay.innerHTML = '<p>...</p>';
-        setTimeout(() => traverseNode(node.target), node.wait * 1000);
-      } else if (node.type === 'ImageNode') {
-        textDisplay.innerHTML = `<p>${interpolate(node.text)}</p><img src="${node.image}" style="max-width:100%; height:auto;" />`;
-        if (node.next) {
-          setTimeout(() => traverseNode(node.next), 1000);
-        }
-      } else if (node.type === 'AudioNode') {
-        const audio = new Audio(node.audio);
-        audio.play().catch(() => {});
-        textDisplay.innerHTML = `<p>${interpolate(node.text)}</p>`;
-        if (node.next) {
-          audio.onended = () => traverseNode(node.next);
-        }
-      }
-    }
-
-    function interpolate(str) {
-      return str.replace(/{(\w+)}/g, (match, key) => {
-        return state.variables[key] !== undefined ? state.variables[key] : match;
+      const btnContainer = document.getElementById('scene-buttons');
+      btnContainer.innerHTML = '';
+      (scene.buttons || []).forEach(btn => {
+        if (btn.condition && !evalCondition(btn.condition)) return;
+        const b = document.createElement('button');
+        b.textContent = btn.label;
+        b.onclick = () => {
+          applyEffects(btn.effects);
+          showScene(btn.target);
+        };
+        btnContainer.appendChild(b);
       });
     }
 
     function evalCondition(cond) {
-      try {
-        return eval(interpolate(cond));
-      } catch (e) {
-        return false;
+      if (!cond) return true;
+      const parts = cond.split(' ');
+      if (parts.length !== 3) return false;
+      const [varName, op, value] = parts;
+      const actual = gameVariables[varName];
+      const val = value === 'true' ? true : value === 'false' ? false : isNaN(value) ? value : Number(value);
+      switch (op) {
+        case '==': return actual == val;
+        case '!=': return actual != val;
+        case '>': return actual > val;
+        case '<': return actual < val;
+        default: return false;
       }
     }
 
-    function executeAction(action) {
-      try {
-        const match = action.match(/(\w+)\s*([+\-*\/]?=)\s*(\S+)/);
-        if (match) {
-          const varName = match[1];
-          const op = match[2];
-          let val = match[3];
-          if (val === 'true') val = true;
-          else if (val === 'false') val = false;
-          else if (!isNaN(val)) val = parseFloat(val);
-          else val = interpolate(`{${val}}`);
-
-          if (op === '=') state.variables[varName] = val;
-          else if (op === '+=') state.variables[varName] += val;
-          else if (op === '-=') state.variables[varName] -= val;
-          else if (op === '*=') state.variables[varName] *= val;
-          else if (op === '/=') state.variables[varName] /= val;
+    function applyEffects(effects) {
+      if (!effects) return;
+      effects.forEach(eff => {
+        if (eff.type === 'set') {
+          gameVariables[eff.var] = isNaN(eff.value) ? eff.value : (eff.value === 'true' ? true : eff.value === 'false' ? false : Number(eff.value));
         }
-      } catch (e) {
-        console.error('Action error:', e);
-      }
-      saveToStorage();
-    }
-
-    function triggerEvent(event) {
-      console.log('Event triggered:', event);
-    }
-
-    // Entity Editor
-    document.getElementById('add-component').addEventListener('click', addComponentField);
-    function addComponentField() {
-      const container = document.getElementById('components-list');
-      const div = document.createElement('div');
-      div.className = 'component-item';
-      div.innerHTML = `
-        <select class="comp-type">
-          <option value="TransformComponent">Transform</option>
-          <option value="SpriteComponent">Sprite</option>
-          <option value="MeshComponent">Mesh</option>
-          <option value="PhysicsComponent">Physics</option>
-          <option value="TextComponent">Text</option>
-        </select>
-        <div class="comp-props"></div>
-        <button class="remove-comp">Видалити</button>
-      `;
-      container.appendChild(div);
-      setupComponentType(div);
-      div.querySelector('.remove-comp').addEventListener('click', () => {
-        container.removeChild(div);
+        if (eff.type === 'add') {
+          if (!gameVariables[eff.var]) gameVariables[eff.var] = 0;
+          gameVariables[eff.var] += Number(eff.value);
+        }
       });
     }
 
-    function setupComponentType(container) {
-      const select = container.querySelector('.comp-type');
-      const propsDiv = container.querySelector('.comp-props');
-      select.onchange = () => {
-        const type = select.value;
-        propsDiv.innerHTML = '';
-        if (type === 'TransformComponent') {
-          propsDiv.innerHTML = `
-            <input type="number" placeholder="x" value="0" data-prop="x"/>
-            <input type="number" placeholder="y" value="0" data-prop="y"/>
-            <input type="number" placeholder="z" value="0" data-prop="z"/>
-          `;
-        } else if (type === 'SpriteComponent') {
-          propsDiv.innerHTML = `<input type="text" placeholder="image URL" data-prop="image"/>`;
-        } else if (type === 'MeshComponent') {
-          propsDiv.innerHTML = `<input type="text" placeholder="voxel type" data-prop="type"/>`;
-        } else if (type === 'PhysicsComponent') {
-          propsDiv.innerHTML = `<input type="checkbox" data-prop="collision"/> Колізія`;
-        } else if (type === 'TextComponent') {
-          propsDiv.innerHTML = `<input type="text" placeholder="text" data-prop="text"/>`;
-        }
-      };
-      select.onchange();
+    // === Редактор сцени ===
+    function loadSceneEditor() {
+      const scene = scenes[currentSceneId];
+      document.getElementById('scene-name').value = scene.title;
+      document.getElementById('scene-text-input').value = scene.text;
+      drawPixelGrid('bg-pixel-grid', scene.bgPixels, 'bg-canvas');
+      drawPixelGrid('char-pixel-grid', scene.charPixels, 'char-canvas');
+      renderButtonList();
+      renderVariableList();
+      setupArcadeGrid();
+      setupVoxelGrid();
+      renderVoxel3D();
     }
 
-    document.getElementById('save-entity').addEventListener('click', saveEntity);
-    function saveEntity() {
-      const id = document.getElementById('entity-id').value || `ent_${Date.now()}`;
-      const name = document.getElementById('entity-name').value;
-      const components = [];
-      document.querySelectorAll('.component-item').forEach(item => {
-        const type = item.querySelector('.comp-type').value;
-        const comp = { type };
-        item.querySelectorAll('.comp-props input').forEach(input => {
-          const prop = input.getAttribute('data-prop');
-          if (input.type === 'checkbox') {
-            comp[prop] = input.checked;
-          } else {
-            comp[prop] = input.value;
+    function drawPixelGrid(containerId, pixels, canvasId) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = '';
+      for (let y = 0; y < 8; y++) {
+        for (let x = 0; x < 8; x++) {
+          const idx = y * 8 + x;
+          const div = document.createElement('div');
+          div.className = 'pixel';
+          div.style.backgroundColor = pixels[idx];
+          div.dataset.x = x;
+          div.dataset.y = y;
+          div.onclick = () => {
+            div.style.backgroundColor = '#0f0';
+            updatePixelInCanvas(canvasId, x, y, '#0f0');
+            updateScenePixels(containerId, pixels, canvasId);
+          };
+          container.appendChild(div);
+        }
+      }
+    }
+
+    function updatePixelInCanvas(canvasId, x, y, color) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = color;
+      ctx.fillRect(x * 8, y * 8, 8, 8);
+    }
+
+    function updateScenePixels(gridId, pixels, canvasId) {
+      const grid = document.querySelector(`#${gridId} .pixel`);
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext('2d');
+      const imgData = ctx.getImageData(0, 0, 64, 64);
+      for (let i = 0; i < pixels.length; i++) {
+        const x = i % 8;
+        const y = Math.floor(i / 8);
+        const px = x * 8;
+        const py = y * 8;
+        const idx = (py * 64 + px) * 4;
+        const r = imgData.data[idx];
+        const g = imgData.data[idx+1];
+        const b = imgData.data[idx+2];
+        pixels[i] = `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+      }
+    }
+
+    function drawCanvasFromPixels(canvasId, pixels) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext('2d');
+      const imgData = ctx.createImageData(64, 64);
+      for (let i = 0; i < pixels.length; i++) {
+        const x = i % 8;
+        const y = Math.floor(i / 8);
+        const px = x * 8;
+        const py = y * 8;
+        for (let dy = 0; dy < 8; dy++) {
+          for (let dx = 0; dx < 8; dx++) {
+            const idx = ((py + dy) * 64 + (px + dx)) * 4;
+            const color = pixels[i].slice(1);
+            imgData.data[idx] = parseInt(color.slice(0,2), 16);
+            imgData.data[idx+1] = parseInt(color.slice(2,4), 16);
+            imgData.data[idx+2] = parseInt(color.slice(4,6), 16);
+            imgData.data[idx+3] = 255;
+          }
+        }
+      }
+      ctx.putImageData(imgData, 0, 0);
+    }
+
+    function renderButtonList() {
+      const list = document.getElementById('button-list');
+      list.innerHTML = '';
+      const scene = scenes[currentSceneId];
+      (scene.buttons || []).forEach((btn, i) => {
+        const item = document.createElement('div');
+        item.className = 'list-item';
+        item.innerHTML = `
+          <input type="text" value="${btn.label}" placeholder="Текст кнопки"/>
+          <select class="target-scene">
+            ${Object.keys(scenes).map(id => `<option value="${id}" ${id===btn.target?'selected':''}>${scenes[id].title}</option>`).join('')}
+          </select>
+          <div class="condition">
+            <input type="text" placeholder="змінна" value="${btn.condition?.split(' ')[0] || ''}" size="8"/>
+            <select>
+              <option value="==" ${btn.condition?.includes('==')?'selected':''}>==</option>
+              <option value="!=" ${btn.condition?.includes('!=')?'selected':''}>!=</option>
+              <option value=">" ${btn.condition?.includes('>')?'selected':''}>></option>
+              <option value="<" ${btn.condition?.includes('<')?'selected':''}><</option>
+            </select>
+            <input type="text" placeholder="значення" value="${btn.condition?.split(' ')[2] || ''}" size="8"/>
+          </div>
+          <h5>Ефекти</h5>
+          <div class="effects-list"></div>
+          <button class="btn add-effect">+ Ефект</button>
+          <button class="btn remove-btn">Видалити</button>
+        `;
+        const effectsList = item.querySelector('.effects-list');
+        (btn.effects || []).forEach(eff => {
+          const effEl = document.createElement('div');
+          effEl.className = 'effect';
+          effEl.innerHTML = `
+            <select><option value="set" ${eff.type==='set'?'selected':''}>Встановити</option><option value="add" ${eff.type==='add'?'selected':''}>Додати</option></select>
+            <input type="text" placeholder="ім'я" value="${eff.var}" size="10"/>
+            <input type="text" placeholder="значення" value="${eff.value}" size="10"/>
+            <button class="btn rm-effect">x</button>
+          `;
+          effEl.querySelector('.rm-effect').onclick = () => effEl.remove();
+          effectsList.appendChild(effEl);
+        });
+        item.querySelector('.add-effect').onclick = () => {
+          const effEl = document.createElement('div');
+          effEl.className = 'effect';
+          effEl.innerHTML = `
+            <select><option value="set">Встановити</option><option value="add">Додати</option></select>
+            <input type="text" placeholder="ім'я" size="10"/>
+            <input type="text" placeholder="значення" size="10"/>
+            <button class="btn rm-effect">x</button>
+          `;
+          effEl.querySelector('.rm-effect').onclick = () => effEl.remove();
+          effectsList.appendChild(effEl);
+        };
+        item.querySelector('.remove-btn').onclick = () => item.remove();
+        list.appendChild(item);
+      });
+    }
+
+    function renderVariableList() {
+      const list = document.getElementById('variable-list');
+      list.innerHTML = '';
+      const scene = scenes[currentSceneId];
+      Object.keys(scene.variables || {}).forEach(key => {
+        const item = document.createElement('div');
+        item.className = 'list-item';
+        const val = scene.variables[key];
+        item.innerHTML = `
+          <input type="text" value="${key}" readonly/>
+          <select class="var-type">
+            <option value="number" ${typeof val === 'number' ? 'selected' : ''}>Число</option>
+            <option value="boolean" ${typeof val === 'boolean' ? 'selected' : ''}>Логічне</option>
+            <option value="string" ${typeof val === 'string' ? 'selected' : ''}>Текст</option>
+          </select>
+          <input type="text" value="${val}" class="var-value"/>
+          <button class="btn rm-var">x</button>
+        `;
+        item.querySelector('.rm-var').onclick = () => item.remove();
+        list.appendChild(item);
+      });
+    }
+
+    document.getElementById('add-button').onclick = () => {
+      const list = document.getElementById('button-list');
+      const item = document.createElement('div');
+      item.className = 'list-item';
+      item.innerHTML = `
+        <input type="text" placeholder="Текст кнопки"/>
+        <select class="target-scene">
+          ${Object.keys(scenes).map(id => `<option value="${id}">${scenes[id].title}</option>`).join('')}
+        </select>
+        <div class="condition">
+          <input type="text" placeholder="змінна" size="8"/>
+          <select>
+            <option value="==">==</option>
+            <option value="!=">!=</option>
+            <option value=">">></option>
+            <option value="<"><</option>
+          </select>
+          <input type="text" placeholder="значення" size="8"/>
+        </div>
+        <h5>Ефекти</h5>
+        <div class="effects-list"></div>
+        <button class="btn add-effect">+ Ефект</button>
+        <button class="btn remove-btn">Видалити</button>
+      `;
+      const effectsList = item.querySelector('.effects-list');
+      item.querySelector('.add-effect').onclick = () => {
+        const effEl = document.createElement('div');
+        effEl.className = 'effect';
+        effEl.innerHTML = `
+          <select><option value="set">Встановити</option><option value="add">Додати</option></select>
+          <input type="text" placeholder="ім'я" size="10"/>
+          <input type="text" placeholder="значення" size="10"/>
+          <button class="btn rm-effect">x</button>
+        `;
+        effEl.querySelector('.rm-effect').onclick = () => effEl.remove();
+        effectsList.appendChild(effEl);
+      };
+      item.querySelector('.remove-btn').onclick = () => item.remove();
+      list.appendChild(item);
+    };
+
+    document.getElementById('add-variable').onclick = () => {
+      const list = document.getElementById('variable-list');
+      const item = document.createElement('div');
+      item.className = 'list-item';
+      item.innerHTML = `
+        <input type="text" placeholder="ім'я"/>
+        <select class="var-type">
+          <option value="number">Число</option>
+          <option value="boolean">Логічне</option>
+          <option value="string">Текст</option>
+        </select>
+        <input type="text" placeholder="значення" class="var-value"/>
+        <button class="btn rm-var">x</button>
+      `;
+      item.querySelector('.rm-var').onclick = () => item.remove();
+      list.appendChild(item);
+    };
+
+    document.getElementById('save-scene').onclick = () => {
+      const scene = scenes[currentSceneId];
+      scene.title = document.getElementById('scene-name').value;
+      scene.text = document.getElementById('scene-text-input').value;
+
+      // Зберегти кнопки
+      const buttonItems = document.querySelectorAll('#button-list .list-item');
+      scene.buttons = [];
+      buttonItems.forEach(item => {
+        const inputs = item.querySelectorAll('input');
+        const selects = item.querySelectorAll('select');
+        const conditionParts = [
+          inputs[1].value,
+          selects[1].value,
+          inputs[2].value
+        ];
+        const condition = conditionParts[0] && conditionParts[2] ? conditionParts.join(' ') : null;
+        const effects = [];
+        item.querySelectorAll('.effect').forEach(ef => {
+          const efInputs = ef.querySelectorAll('input');
+          const efSelect = ef.querySelector('select');
+          effects.push({
+            type: efSelect.value,
+            var: efInputs[0].value,
+            value: efInputs[1].value
+          });
+        });
+        scene.buttons.push({
+          label: inputs[0].value,
+          target: selects[0].value,
+          condition,
+          effects
+        });
+      });
+
+      // Зберегти змінні
+      scene.variables = {};
+      document.querySelectorAll('#variable-list .list-item').forEach(item => {
+        const key = item.querySelector('input').value;
+        const val = item.querySelector('.var-value').value;
+        const type = item.querySelector('.var-type').value;
+        if (key) {
+          scene.variables[key] = type === 'number' ? Number(val) : type === 'boolean' ? (val === 'true') : val;
+        }
+      });
+
+      localStorage.setItem('evo-scenes', JSON.stringify(scenes));
+      alert('Сцену збережено!');
+    };
+
+    document.getElementById('validate-quest').onclick = () => {
+      const reachable = new Set();
+      const queue = ['start'];
+      while (queue.length) {
+        const id = queue.shift();
+        if (reachable.has(id)) continue;
+        reachable.add(id);
+        const scene = scenes[id];
+        if (!scene) continue;
+        (scene.buttons || []).forEach(btn => {
+          if (btn.target && !reachable.has(btn.target)) {
+            queue.push(btn.target);
           }
         });
-        components.push(comp);
-      });
-      state.entities[id] = { id, name, components };
-      alert(`Сутність ${id} збережена!`);
-      saveToStorage();
+      }
+      const allIds = new Set(Object.keys(scenes));
+      const unreachable = [...allIds].filter(id => !reachable.has(id));
+      if (unreachable.length) {
+        alert('Глухі кути: ' + unreachable.map(id => scenes[id].title).join(', '));
+      } else {
+        alert('Квест повний, немає глухих кутів!');
+      }
+    };
+
+    // === РЕЖИМ 2: 2D Аркада ===
+    function setupArcadeGrid() {
+      const grid = document.getElementById('arcade-grid');
+      grid.innerHTML = '';
+      for (let y = 0; y < 16; y++) {
+        for (let x = 0; x < 16; x++) {
+          const cell = document.createElement('div');
+          cell.className = 'grid-cell';
+          cell.dataset.x = x;
+          cell.dataset.y = y;
+          cell.onclick = (e) => {
+            if (e.shiftKey) {
+              cell.className = 'grid-cell';
+            } else {
+              cell.className = `grid-cell ${selectedCellType}`;
+            }
+          };
+          grid.appendChild(cell);
+        }
+      }
     }
 
-    // Chat
-    document.getElementById('send-chat').addEventListener('click', () => {
+    document.querySelectorAll('.palette-item').forEach(item => {
+      item.addEventListener('click', () => {
+        if (currentMode === 'editor') {
+          if (item.hasAttribute('data-type')) {
+            document.querySelectorAll('.palette-item[data-type]').forEach(i => i.classList.remove('selected'));
+            item.classList.add('selected');
+            selectedCellType = item.getAttribute('data-type');
+          } else if (item.hasAttribute('data-voxel')) {
+            document.querySelectorAll('.palette-item[data-voxel]').forEach(i => i.classList.remove('selected'));
+            item.classList.add('selected');
+            selectedVoxelType = item.getAttribute('data-voxel');
+          }
+        }
+      });
+    });
+
+    // === РЕЖИМ 3: Платформер ===
+    // (фізика буде в ігровому режимі, тут тільки UI)
+
+    // === РЕЖИМ 4: 3D Вокселі ===
+    function setupVoxelGrid() {
+      const grid = document.getElementById('voxel-grid-3d');
+      grid.innerHTML = '';
+      for (let y = 0; y < 8; y++) {
+        for (let x = 0; x < 8; x++) {
+          const cell = document.createElement('div');
+          cell.className = 'voxel-cell';
+          cell.dataset.x = x;
+          cell.dataset.y = y;
+          cell.onclick = () => {
+            voxelWorld[currentLayer][y][x] = selectedVoxelType;
+            renderVoxel3D();
+          };
+          grid.appendChild(cell);
+        }
+      }
+    }
+
+    document.getElementById('voxel-layer-slider').oninput = function() {
+      currentLayer = this.value;
+      document.getElementById('layer-label').textContent = this.value;
+      renderVoxel3D();
+    };
+
+    function renderVoxel3D() {
+      const grid = document.getElementById('voxel-grid-3d');
+      const cells = grid.querySelectorAll('.voxel-cell');
+      for (let i = 0; i < 64; i++) {
+        const x = i % 8;
+        const y = Math.floor(i / 8);
+        const type = voxelWorld[currentLayer][y][x];
+        const cell = cells[i];
+        cell.className = `voxel-cell ${type}`;
+      }
+      drawVoxelPerspective();
+    }
+
+    function drawVoxelPerspective() {
+      const canvas = document.getElementById('voxel-canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#111';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const size = 20;
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+
+      for (let z = 7; z >= 0; z--) {
+        for (let y = 0; y < 8; y++) {
+          for (let x = 0; x < 8; x++) {
+            if (voxelWorld[z][y][x] === 'air') continue;
+            const color = {
+              solid: '#888',
+              transparent: '#88f',
+              active: '#f88'
+            }[voxelWorld[z][y][x]];
+
+            const screenX = centerX + (x - z * 0.5) * size;
+            const screenY = centerY + (y - z * 0.5) * size;
+
+            ctx.fillStyle = color;
+            ctx.fillRect(screenX, screenY, size, size);
+            ctx.strokeStyle = '#000';
+            ctx.strokeRect(screenX, screenY, size, size);
+          }
+        }
+      }
+    }
+
+    // === Майнери ===
+    function updateMinerDisplay() {
+      document.getElementById('crypto').textContent = minerData.crypto;
+      document.getElementById('auto-miners').textContent = minerData.autoMiners;
+    }
+
+    document.getElementById('mine-btn').onclick = () => {
+      minerData.crypto++;
+      updateMinerDisplay();
+      saveMinerData();
+    };
+
+    document.getElementById('buy-miner').onclick = () => {
+      if (minerData.crypto >= 10) {
+        minerData.crypto -= 10;
+        minerData.autoMiners++;
+        updateMinerDisplay();
+        saveMinerData();
+      }
+    };
+
+    function saveMinerData() {
+      localStorage.setItem('evo-miner', JSON.stringify(minerData));
+    }
+
+    setInterval(() => {
+      if (currentMode === 'miner') {
+        minerData.crypto += minerData.autoMiners;
+        updateMinerDisplay();
+        saveMinerData();
+      }
+    }, 1000);
+
+    // === Чат ===
+    function renderChat() {
+      const box = document.getElementById('chat-box');
+      box.innerHTML = '';
+      chatMessages.slice(-50).forEach(msg => {
+        const div = document.createElement('div');
+        div.className = 'chat-message';
+        div.textContent = msg;
+        box.appendChild(div);
+      });
+      box.scrollTop = box.scrollHeight;
+    }
+
+    document.getElementById('send-chat').onclick = () => {
       const input = document.getElementById('chat-input');
       const msg = input.value.trim();
       if (msg) {
-        state.chatHistory.push(`${state.profile.username}: ${msg}`);
-        renderChat();
+        const username = profileData.name || 'Анон';
+        chatMessages.push(`${username}: ${msg}`);
         input.value = '';
-        saveToStorage();
+        renderChat();
+        localStorage.setItem('evo-chat', JSON.stringify(chatMessages));
+      }
+    };
+
+    document.getElementById('chat-input').addEventListener('keypress', e => {
+      if (e.key === 'Enter') {
+        document.getElementById('send-chat').click();
       }
     });
 
-    function renderChat() {
-      const container = document.getElementById('chat-messages');
-      container.innerHTML = '';
-      state.chatHistory.slice(-50).forEach(msg => {
-        const div = document.createElement('div');
-        div.textContent = msg;
-        container.appendChild(div);
-      });
-      container.scrollTop = container.scrollHeight;
+    // === Профіль ===
+    function loadProfile() {
+      document.getElementById('profile-name').value = profileData.name || '';
+      document.getElementById('profile-email').value = profileData.email || '';
+      document.getElementById('profile-github').value = profileData.github || '';
     }
 
-    // Mining
-    const miningCanvas = document.getElementById('mining-canvas');
-    let miningInterval;
-    document.getElementById('start-mining').addEventListener('click', () => {
-      if (!state.mining.active) {
-        state.mining.active = true;
-        miningInterval = setInterval(() => {
-          state.mining.progress += state.mining.level;
-          if (state.mining.progress >= 100) {
-            state.mining.progress = 0;
-            state.profile.xp += 10 * state.mining.level;
-            checkLevelUp();
-            saveToStorage();
-          }
-          drawMining();
-        }, 100);
+    document.getElementById('save-profile').onclick = () => {
+      profileData.name = document.getElementById('profile-name').value;
+      profileData.email = document.getElementById('profile-email').value;
+      profileData.github = document.getElementById('profile-github').value;
+      localStorage.setItem('evo-profile', JSON.stringify(profileData));
+      alert('Профіль збережено!');
+    };
+
+    document.getElementById('sync-github').onclick = () => {
+      const gh = profileData.github;
+      if (!gh) {
+        alert('Вкажіть GitHub username');
+        return;
       }
-    });
+      alert('Синхронізація з GitHub: ' + gh + ' (імітація)');
+    };
 
-    document.getElementById('stop-mining').addEventListener('click', () => {
-      clearInterval(miningInterval);
-      state.mining.active = false;
-    });
+    // Ініціалізація
+    window.onload = () => {
+      // Заповнити фонові пікселі
+      const bgCanvas = document.getElementById('bg-canvas');
+      const bgCtx = bgCanvas.getContext('2d');
+      bgCtx.fillStyle = '#000';
+      bgCtx.fillRect(0, 0, 64, 64);
 
-    document.getElementById('upgrade-miner').addEventListener('click', () => {
-      const cost = state.mining.level * 50;
-      if (state.variables.gold >= cost) {
-        state.variables.gold -= cost;
-        state.mining.level += 1;
-        alert(`Майнер апгрейднутий до рівня ${state.mining.level}!`);
-        saveToStorage();
-      } else {
-        alert('Недостатньо золота!');
-      }
-    });
+      const charCanvas = document.getElementById('char-canvas');
+      const charCtx = charCanvas.getContext('2d');
+      charCtx.fillStyle = '#000';
+      charCtx.fillRect(0, 0, 64, 64);
 
-    function drawMining() {
-      const ctx = miningCanvas.getContext('2d');
-      miningCanvas.width = miningCanvas.offsetWidth;
-      miningCanvas.height = miningCanvas.offsetHeight;
-      ctx.fillStyle = '#111';
-      ctx.fillRect(0, 0, miningCanvas.width, miningCanvas.height);
-      const w = (miningCanvas.width - 40) * (state.mining.progress / 100);
-      ctx.fillStyle = '#0f0';
-      ctx.fillRect(20, miningCanvas.height / 2 - 10, w, 20);
-      ctx.strokeStyle = '#0f0';
-      ctx.strokeRect(20, miningCanvas.height / 2 - 10, miningCanvas.width - 40, 20);
-      ctx.fillStyle = '#0f0';
-      ctx.font = '14px monospace';
-      ctx.fillText(`Майнінг... Рівень: ${state.mining.level}`, 20, miningCanvas.height / 2 - 20);
-    }
-
-    function checkLevelUp() {
-      if (state.profile.xp >= state.profile.level * 100) {
-        state.profile.level++;
-        state.variables.gold += 10;
-        alert(`Рівень підвищено! Ви тепер ${state.profile.level} рівня!`);
-      }
-    }
-
-    // Profile
-    document.getElementById('edit-profile').addEventListener('click', () => {
-      const name = prompt('Введіть нове ім\'я:', state.profile.username);
-      if (name) {
-        state.profile.username = name;
-        document.getElementById('username').textContent = name;
-        saveToStorage();
-      }
-    });
-
-    // Storage
-    function saveToStorage() {
-      try {
-        localStorage.setItem('evo-engine-state', JSON.stringify(state));
-      } catch (e) {
-        console.error('Save failed', e);
-      }
-    }
-
-    function loadFromStorage() {
-      const saved = localStorage.getItem('evo-engine-state');
-      if (saved) {
-        try {
-          const loaded = JSON.parse(saved);
-          Object.assign(state, loaded);
-          document.getElementById('username').textContent = state.profile.username;
-          document.getElementById('level').textContent = state.profile.level;
-          document.getElementById('xp').textContent = state.profile.xp;
-          renderChat();
-        } catch (e) {
-          console.error('Load failed', e);
-        }
-      }
-    }
-
-    // Init
-    window.addEventListener('resize', () => {
-      if (state.currentTab === 'create-tab') {
-        initSceneCanvas();
-      }
-    });
-
-    window.addEventListener('load', () => {
-      loadFromStorage();
-      initSceneCanvas();
-      renderChat();
-      drawMining();
-    });
-  
-// === TILE EDITOR ===
-function initTileEditor() {
-    const tileGridSize = 16;
-    const tileTypes = ['Empty', 'Solid', 'Trigger', 'Collectible', 'Spawner', 'Door', 'Hazard'];
-    const tileSize = 32; // px
-
-    const state = window.state;
-    if (!state.editor) state.editor = {};
-    if (!state.editor.tiles) {
-        state.editor.tiles = Array(tileGridSize).fill().map(() => Array(tileGridSize).fill({ type: 'Empty', props: {} }));
-    }
-
-    const container = document.getElementById('scene-canvas');
-    const tileEditor = document.createElement('div');
-    tileEditor.id = 'tile-editor';
-    tileEditor.style.cssText = `
-        display: grid;
-        grid-template-columns: repeat(${tileGridSize}, ${tileSize}px);
-        gap: 1px;
-        background: #111;
-        border: 1px solid #333;
-        margin: 10px;
-    `;
-    container.innerHTML = '';
-    container.appendChild(tileEditor);
-
-    const propsPanel = document.getElementById('entity-props') || createPropsPanel();
-    function createPropsPanel() {
-        const panel = document.createElement('div');
-        panel.id = 'entity-props';
-        panel.style.cssText = 'position: absolute; top: 10px; right: 10px; width: 200px; background: #1e1e1e; color: white; padding: 10px; border: 1px solid #444;';
-        document.body.appendChild(panel);
-        return panel;
-    }
-
-    function renderTileEditor() {
-        tileEditor.innerHTML = '';
-        state.editor.tiles.forEach((row, y) => {
-            row.forEach((tile, x) => {
-                const tileEl = document.createElement('div');
-                tileEl.dataset.x = x;
-                tileEl.dataset.y = y;
-                tileEl.style.cssText = `
-                    width: ${tileSize}px;
-                    height: ${tileSize}px;
-                    background: ${getTileColor(tile.type)};
-                    border: 1px solid #333;
-                    box-sizing: border-box;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 10px;
-                    color: rgba(255,255,255,0.6);
-                `;
-                tileEl.textContent = tile.type.charAt(0);
-                tileEl.addEventListener('click', (e) => {
-                    const x = parseInt(tileEl.dataset.x);
-                    const y = parseInt(tileEl.dataset.y);
-                    if (e.shiftKey) {
-                        state.editor.tiles[y][x] = { type: 'Empty', props: {} };
-                    } else {
-                        state.editor.tiles[y][x] = { type: 'Solid', props: {} };
-                    }
-                    renderTileEditor();
-                    showTileProps(x, y);
-                });
-                tileEl.addEventListener('dblclick', () => {
-                    const x = parseInt(tileEl.dataset.x);
-                    const y = parseInt(tileEl.dataset.y);
-                    showTileProps(x, y);
-                });
-                tileEditor.appendChild(tileEl);
-            });
-        });
-    }
-
-    function getTileColor(type) {
-        const colors = {
-            Empty: '#1a1a1a',
-            Solid: '#8B4513',
-            Trigger: '#FFD700',
-            Collectible: '#32CD32',
-            Spawner: '#8A2BE2',
-            Door: '#4682B4',
-            Hazard: '#FF4500'
+      // Завантажити сцени
+      if (Object.keys(scenes).length === 0) {
+        scenes['start'] = {
+          id: 'start',
+          title: 'Початок',
+          text: 'Ласкаво просимо!',
+          bgPixels: Array(64*64).fill('#000000'),
+          charPixels: Array(64*64).fill('#000000'),
+          buttons: [],
+          variables: {}
         };
-        return colors[type] || '#1a1a1a';
-    }
+      }
 
-    function showTileProps(x, y) {
-        const tile = state.editor.tiles[y][x];
-        propsPanel.innerHTML = `
-            <h4>Tile Properties</h4>
-            <label>Type: 
-                <select id="tile-type-select">
-                    ${tileTypes.map(t => `<option value="${t}" ${t === tile.type ? 'selected' : ''}>${t}</option>`).join('')}
-                </select>
-            </label>
-            <div id="tile-specific-props"></div>
-            <button onclick="window.saveTileProps(${x}, ${y})">Save</button>
-        `;
-
-        const select = propsPanel.querySelector('#tile-type-select');
-        select.addEventListener('change', () => {
-            const extraProps = document.getElementById('tile-specific-props');
-            extraProps.innerHTML = '';
-            const type = select.value;
-            if (type === 'Collectible') {
-                extraProps.innerHTML = `<input type="text" id="collectible-id" placeholder="Item ID" value="${tile.props.itemId || ''}">`;
-            } else if (type === 'Trigger') {
-                extraProps.innerHTML = `<input type="text" id="trigger-event" placeholder="Event" value="${tile.props.event || ''}">`;
-            } else if (type === 'Door') {
-                extraProps.innerHTML = `<input type="text" id="door-id" placeholder="Door ID" value="${tile.props.doorId || ''}">`;
-            }
-        });
-        select.dispatchEvent(new Event('change'));
-    }
-
-    window.saveTileProps = function(x, y) {
-        const select = propsPanel.querySelector('#tile-type-select');
-        const type = select.value;
-        const tile = state.editor.tiles[y][x];
-        tile.type = type;
-        if (type === 'Collectible') {
-            tile.props.itemId = document.getElementById('collectible-id').value;
-        } else if (type === 'Trigger') {
-            tile.props.event = document.getElementById('trigger-event').value;
-        } else if (type === 'Door') {
-            tile.props.doorId = document.getElementById('door-id').value;
-        }
-        renderTileEditor();
+      // Завантажити гру
+      showScene('start');
     };
-
-    window.saveTileMap = function() {
-        localStorage.setItem('evo-tilemap', JSON.stringify(state.editor.tiles));
-        alert('Map saved!');
-    };
-
-    window.loadTileMap = function() {
-        const saved = localStorage.getItem('evo-tilemap');
-        if (saved) {
-            state.editor.tiles = JSON.parse(saved);
-            renderTileEditor();
-        }
-    };
-
-    renderTileEditor();
-}
-
-// === VOXEL EDITOR ===
-function initVoxelEditor() {
-    const voxelGridSize = 8;
-    const voxelTypes = ['Solid', 'Transparent', 'Liquid', 'Light', 'Destructible'];
-    const state = window.state;
-    if (!state.editor.voxels) {
-        state.editor.voxels = Array(voxelGridSize).fill().map(() =>
-            Array(voxelGridSize).fill().map(() =>
-                Array(voxelGridSize).fill({ type: 'Empty', color: '#ffffff' })
-            )
-        );
-    }
-
-    const container = document.getElementById('scene-canvas');
-    container.innerHTML = `
-        <div id="voxel-container" style="position: relative; width: 500px; height: 500px; margin: 10px auto; perspective: 1000px;">
-            <div id="voxel-scene" style="position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.1s;">
-            </div>
-        </div>
-        <input type="range" id="z-layer-slider" min="0" max="${voxelGridSize-1}" value="0" style="width: 80%; margin: 10px;">
-        <div id="color-palette" style="display: flex; gap: 5px; margin: 10px; flex-wrap: wrap;">
-            ${['#ffffff','#ff0000','#00ff00','#0000ff','#ffff00','#ff00ff','#00ffff','#888888'].map(c =>
-                `<div class="color-swatch" data-color="${c}" style="width: 20px; height: 20px; background: ${c}; border: 1px solid #333; cursor: pointer;"></div>`
-            ).join('')}
-        </div>
-    `;
-
-    const scene = document.getElementById('voxel-scene');
-    const slider = document.getElementById('z-layer-slider');
-    const swatches = document.querySelectorAll('.color-swatch');
-    let selectedColor = '#ffffff';
-    let camera = { rotX: 30, rotY: 45, distance: 200 };
-
-    swatches.forEach(swatch => {
-        swatch.addEventListener('click', () => {
-            selectedColor = swatch.dataset.color;
-            document.querySelectorAll('.color-swatch').forEach(s => s.style.border = '1px solid #333');
-            swatch.style.border = '2px solid white';
-        });
-    });
-
-    function renderVoxelLayer(z) {
-        scene.innerHTML = '';
-        scene.style.transform = `rotateX(${-camera.rotX}deg) rotateY(${-camera.rotY}deg) translateZ(${-camera.distance}px)`;
-
-        for (let x = 0; x < voxelGridSize; x++) {
-            for (let y = 0; y < voxelGridSize; y++) {
-                const voxel = state.editor.voxels[z][y][x];
-                if (voxel.type === 'Empty') continue;
-
-                const voxelEl = document.createElement('div');
-                voxelEl.style.cssText = `
-                    position: absolute;
-                    width: 40px; height: 40px;
-                    transform-style: preserve-3d;
-                    transform: translate3d(${x * 42}px, ${y * 42}px, ${z * 42}px);
-                `;
-
-                // 6 faces
-                const faces = [
-                    { rot: `rotateY(0deg) translateZ(20px)`, vis: 'visible' },
-                    { rot: `rotateY(180deg) translateZ(20px)`, vis: voxelGridSize - 1 - x > 0 ? state.editor.voxels[z][y][x + 1]?.type === 'Empty' : true },
-                    { rot: `rotateY(90deg) translateZ(20px)`, vis: y > 0 ? state.editor.voxels[z][y - 1][x]?.type === 'Empty' : true },
-                    { rot: `rotateY(-90deg) translateZ(20px)`, vis: y < voxelGridSize - 1 ? state.editor.voxels[z][y + 1][x]?.type === 'Empty' : true },
-                    { rot: `rotateX(90deg) translateZ(20px)`, vis: z > 0 ? state.editor.voxels[z - 1][y][x]?.type === 'Empty' : true },
-                    { rot: `rotateX(-90deg) translateZ(20px)`, vis: z < voxelGridSize - 1 ? state.editor.voxels[z + 1][y][x]?.type === 'Empty' : true }
-                ];
-
-                faces.forEach((face, i) => {
-                    if (!face.vis) return;
-                    const faceEl = document.createElement('div');
-                    faceEl.style.cssText = `
-                        position: absolute;
-                        width: 40px; height: 40px;
-                        background: ${voxel.color};
-                        border: 1px solid rgba(0,0,0,0.2);
-                        box-sizing: border-box;
-                        transform: ${face.rot};
-                        opacity: ${voxel.type === 'Transparent' ? 0.5 : 1};
-                        ${voxel.type === 'Liquid' ? 'animation: move 2s infinite alternate;' : ''}
-                    `;
-                    voxelEl.appendChild(faceEl);
-                });
-
-                voxelEl.addEventListener('click', () => {
-                    state.editor.voxels[z][y][x] = {
-                        type: state.editor.voxels[z][y][x].type === 'Solid' ? 'Empty' : 'Solid',
-                        color: selectedColor
-                    };
-                    renderVoxelLayer(parseInt(slider.value));
-                });
-
-                scene.appendChild(voxelEl);
-            }
-        }
-    }
-
-    slider.addEventListener('input', () => renderVoxelLayer(parseInt(slider.value)));
-
-    // Camera controls
-    let isDragging = false;
-    let lastMouse = { x: 0, y: 0 };
-    container.addEventListener('mousedown', (e) => { isDragging = true; lastMouse = { x: e.clientX, y: e.clientY }; });
-    container.addEventListener('mousemove', (e) => {
-        if (isDragging) {
-            camera.rotY += (e.clientX - lastMouse.x) * 0.5;
-            camera.rotX += (e.clientY - lastMouse.y) * 0.5;
-            camera.rotX = Math.max(-90, Math.min(90, camera.rotX));
-            lastMouse = { x: e.clientX, y: e.clientY };
-            renderVoxelLayer(parseInt(slider.value));
-        }
-    });
-    container.addEventListener('mouseup', () => isDragging = false);
-    container.addEventListener('wheel', (e) => {
-        e.preventDefault();
-        camera.distance += e.deltaY * 0.5;
-        camera.distance = Math.max(100, Math.min(500, camera.distance));
-        renderVoxelLayer(parseInt(slider.value));
-    });
-
-    renderVoxelLayer(0);
-
-    window.saveVoxelMap = () => {
-        localStorage.setItem('evo-voxelmap', JSON.stringify(state.editor.voxels));
-        alert('Voxel map saved!');
-    };
-
-    window.loadVoxelMap = () => {
-        const saved = localStorage.getItem('evo-voxelmap');
-        if (saved) {
-            state.editor.voxels = JSON.parse(saved);
-            renderVoxelLayer(parseInt(slider.value));
-        }
-    };
-}
-
-// === QUEST VALIDATOR ===
-function initQuestValidator() {
-    const state = window.state;
-    if (!state.scenes) state.scenes = [];
-
-    const container = document.getElementById('scene-canvas');
-    container.innerHTML = '<canvas id="quest-graph" width="800" height="600"></canvas>';
-    const canvas = document.getElementById('quest-graph');
-    const ctx = canvas.getContext('2d');
-
-    function drawGraph() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const nodes = state.scenes.map((scene, i) => ({
-            id: scene.id,
-            x: 100 + (i % 5) * 150,
-            y: 100 + Math.floor(i / 5) * 150
-        }));
-
-        // Draw edges
-        ctx.strokeStyle = '#666';
-        ctx.lineWidth = 2;
-        state.scenes.forEach(scene => {
-            if (scene.links) {
-                scene.links.forEach(link => {
-                    const from = nodes.find(n => n.id === scene.id);
-                    const to = nodes.find(n => n.id === link.target);
-                    if (from && to) {
-                        ctx.beginPath();
-                        ctx.moveTo(from.x, from.y);
-                        ctx.lineTo(to.x, to.y);
-                        ctx.stroke();
-                    }
-                });
-            }
-        });
-
-        // Validate reachability
-        const reachable = new Set();
-        const queue = ['start'];
-        while (queue.length) {
-            const id = queue.shift();
-            if (reachable.has(id)) continue;
-            reachable.add(id);
-            const scene = state.scenes.find(s => s.id === id);
-            if (scene?.links) {
-                scene.links.forEach(link => queue.push(link.target));
-            }
-        }
-
-        // Draw nodes
-        nodes.forEach(node => {
-            const scene = state.scenes.find(s => s.id === node.id);
-            const isReachable = reachable.has(node.id);
-            const hasLinks = scene?.links?.length > 0;
-
-            ctx.fillStyle = !isReachable ? '#ff4444' : !hasLinks ? '#ffcc00' : '#44cc44';
-            ctx.beginPath();
-            ctx.arc(node.x, node.y, 30, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillStyle = 'white';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(node.id, node.x, node.y);
-        });
-    }
-
-    drawGraph();
-    window.validateQuest = drawGraph; // For manual revalidate
-}
-
-// === GAME RUNNER ===
-function initGameRunner() {
-    const state = window.state;
-    const container = document.getElementById('scene-canvas');
-    container.innerHTML = '<div id="game-runner"></div>';
-    const runner = document.getElementById('game-runner');
-
-    let currentPlayerPos = { x: 0, y: 0 };
-    let currentZ = 0; // for 3D layer
-    let currentSceneId = 'start';
-
-    function runGame() {
-        const mode = state.currentMode || 'text';
-        runner.innerHTML = '';
-
-        if (mode === 'text') {
-            const scene = state.scenes?.find(s => s.id === currentSceneId);
-            if (scene) {
-                runner.innerHTML = `<div class="text-mode">
-                    <h3>${scene.title || 'Scene'}</h3>
-                    <p>${scene.text || 'No text.'}</p>
-                </div>`;
-                if (scene.links && scene.links.length > 0) {
-                    scene.links.forEach(link => {
-                        const btn = document.createElement('button');
-                        btn.textContent = link.label || 'Continue';
-                        btn.onclick = () => {
-                            currentSceneId = link.target;
-                            runGame();
-                        };
-                        runner.appendChild(btn);
-                    });
-                } else {
-                    runner.innerHTML += '<p><i>This is an ending.</i></p>';
-                }
-            } else {
-                runner.innerHTML = '<p>Scene not found!</p>';
-            }
-        }
-
-        else if (mode === '2d') {
-            const tileGridSize = 16;
-            const tileSize = 32;
-            const mapEl = document.createElement('div');
-            mapEl.style.cssText = `display: grid; grid-template-columns: repeat(${tileGridSize}, ${tileSize}px); gap: 1px; background: #111; margin: 10px;`;
-
-            state.editor.tiles?.forEach((row, y) => {
-                row.forEach((tile, x) => {
-                    const tileEl = document.createElement('div');
-                    tileEl.style.cssText = `
-                        width: ${tileSize}px; height: ${tileSize}px;
-                        background: ${getTileColor(tile.type)};
-                        border: 1px solid #333;
-                        box-sizing: border-box;
-                        position: relative;
-                    `;
-                    if (x === currentPlayerPos.x && y === currentPlayerPos.y) {
-                        tileEl.innerHTML = '<div style="width:20px;height:20px;background:cyan; border-radius:50%; margin:6px;"></div>';
-                    }
-                    mapEl.appendChild(tileEl);
-                });
-            });
-
-            runner.appendChild(mapEl);
-
-            // Controls
-            const controls = document.createElement('div');
-            controls.innerHTML = `
-                <button onclick="window.movePlayer('up')">↑</button><br>
-                <button onclick="window.movePlayer('left')">←</button>
-                <button onclick="window.movePlayer('down')">↓</button>
-                <button onclick="window.movePlayer('right')">→</button>
-            `;
-            runner.appendChild(controls);
-        }
-
-        else if (mode === '3d') {
-            const voxelGridSize = 8;
-            const sceneEl = document.createElement('div');
-            sceneEl.style.cssText = `position: relative; width: 400px; height: 400px; margin: 10px auto; perspective: 800px;`;
-            const inner = document.createElement('div');
-            inner.style.cssText = 'position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transform: rotateX(30deg) rotateY(45deg);';
-
-            for (let z = 0; z < voxelGridSize; z++) {
-                for (let y = 0; y < voxelGridSize; y++) {
-                    for (let x = 0; x < voxelGridSize; x++) {
-                        const voxel = state.editor.voxels?.[z]?.[y]?.[x];
-                        if (voxel?.type !== 'Empty') {
-                            const voxelEl = document.createElement('div');
-                            voxelEl.style.cssText = `
-                                position: absolute;
-                                width: 40px; height: 40px;
-                                transform-style: preserve-3d;
-                                transform: translate3d(${x * 42}px, ${y * 42}px, ${z * 42}px);
-                            `;
-                            // Render faces with culling
-                            const faces = [
-                                { rot: `rotateY(0deg) translateZ(20px)` },
-                                { rot: `rotateY(180deg) translateZ(20px)` },
-                                { rot: `rotateY(90deg) translateZ(20px)` },
-                                { rot: `rotateY(-90deg) translateZ(20px)` },
-                                { rot: `rotateX(90deg) translateZ(20px)` },
-                                { rot: `rotateX(-90deg) translateZ(20px)` }
-                            ];
-                            faces.forEach(face => {
-                                const faceEl = document.createElement('div');
-                                faceEl.style.cssText = `
-                                    position: absolute;
-                                    width: 40px; height: 40px;
-                                    background: ${voxel.color};
-                                    border: 1px solid #000;
-                                    transform: ${face.rot};
-                                    opacity: ${voxel.type === 'Transparent' ? 0.5 : 1};
-                                `;
-                                voxelEl.appendChild(faceEl);
-                            });
-                            inner.appendChild(voxelEl);
-                        }
-                    }
-                }
-            }
-
-            // Player indicator
-            const playerEl = document.createElement('div');
-            playerEl.style.cssText = `
-                position: absolute;
-                width: 40px; height: 40px;
-                transform: translate3d(${currentPlayerPos.x * 42}px, ${currentPlayerPos.y * 42}px, ${currentZ * 42 + 60}px);
-            `;
-            playerEl.innerHTML = '<div style="width:100%;height:100%;background:orange; border-radius:50%;"></div>';
-            inner.appendChild(playerEl);
-
-            sceneEl.appendChild(inner);
-            runner.appendChild(sceneEl);
-        }
-    }
-
-    window.movePlayer = function(dir) {
-        const max = 15;
-        switch (dir) {
-            case 'up': if (currentPlayerPos.y > 0) currentPlayerPos.y--; break;
-            case 'down': if (currentPlayerPos.y < max) currentPlayerPos.y++; break;
-            case 'left': if (currentPlayerPos.x > 0) currentPlayerPos.x--; break;
-            case 'right': if (currentPlayerPos.x < max) currentPlayerPos.x++; break;
-        }
-        runGame();
-    };
-
-    runGame();
-    window.runGame = runGame; // For external refresh
-}
-
-function getTileColor(type) {
-    const colors = {
-        Empty: '#1a1a1a',
-        Solid: '#8B4513',
-        Trigger: '#FFD700',
-        Collectible: '#32CD32',
-        Spawner: '#8A2BE2',
-        Door: '#4682B4',
-        Hazard: '#FF4500'
-    };
-    return colors[type] || '#1a1a1a';
-}
-
-</script>
+  </script>
 </body>
 </html>
