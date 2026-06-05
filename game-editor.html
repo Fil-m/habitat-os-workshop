@@ -3,592 +3,501 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Evo-Engine — Game Creator</title>
+  <title>Evo-Engine — Creator</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/evo-editor.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
   <style>
-    .app-layout { display: flex; flex: 1; overflow: hidden; }
-    #sidebar { width: 280px; background: var(--bg2); border-right: 1px solid var(--surface2); display: flex; flex-direction: column; overflow-y: auto; flex-shrink: 0; }
-    #viewport-wrap { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-    @media (max-width: 600px) { #sidebar { width: 100%; max-height: 40vh; border-right: none; border-bottom: 1px solid var(--surface2); } .app-layout { flex-direction: column; } }
-    .mode-pills { display: flex; gap: 6px; padding: 8px 12px; background: var(--bg); border-bottom: 1px solid var(--surface2); flex-shrink: 0; }
-    .pill { padding: 8px 14px; background: var(--surface); border: 1px solid var(--surface2); border-radius: 50px; color: var(--text2); cursor: pointer; font-size: 13px; white-space: nowrap; min-height: 40px; display: flex; align-items: center; gap: 4px; transition: all .2s; }
-    .pill.active { background: var(--neon); color: #000; border-color: var(--neon); font-weight: 600; }
-    .side-section { padding: 12px; border-bottom: 1px solid var(--surface2); }
-    .side-section h3 { font-size: 14px; color: var(--neon); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
-    .scene-item { padding: 8px; background: var(--surface); border-radius: var(--radius); margin-bottom: 4px; cursor: pointer; font-size: 13px; display: flex; justify-content: space-between; }
-    .scene-item.active { border: 1px solid var(--neon); }
-    .trigger-item { padding: 8px; background: var(--surface); border-radius: var(--radius); margin-bottom: 6px; cursor: pointer; font-size: 13px; display: flex; justify-content: space-between; }
-    .trigger-item.active { border: 1px solid var(--neon); }
-    .trigger-item .del { color: #f44; cursor: pointer; }
-    .action-row { display: flex; gap: 6px; margin: 4px 0; flex-wrap: wrap; }
-    .action-row select, .action-row input { flex: 1; min-width: 60px; padding: 6px 8px; background: var(--surface2); border: 1px solid #333; border-radius: 4px; color: var(--text); font-size: 12px; }
-    .action-row button { min-height: 32px; padding: 4px 10px; background: var(--surface2); border: 1px solid #333; border-radius: 4px; color: var(--text); cursor: pointer; }
-    .var-row { display: flex; gap: 6px; margin: 4px 0; }
-    .var-row input { flex: 1; padding: 6px 8px; background: var(--surface2); border: 1px solid #333; border-radius: 4px; color: var(--text); font-size: 12px; }
-    .var-row button { min-height: 32px; padding: 4px 10px; background: var(--surface2); border: 1px solid #333; border-radius: 4px; color: var(--text); cursor: pointer; }
-    .var-display { font-size: 12px; padding: 4px 0; color: var(--text2); }
-    .header-btns { display: flex; gap: 6px; }
-    .header-btns button { min-height: 36px; padding: 6px 12px; background: var(--surface2); border: 1px solid var(--surface2); border-radius: var(--radius); color: var(--text); cursor: pointer; font-size: 12px; }
-    .header-btns button.neon { border-color: var(--neon); color: var(--neon); }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+    :root { --bg: #0b0d19; --bg2: #121526; --surface: #1e2240; --surface2: #262b50; --neon: #00f0ff; --text: #e0e4f0; --text2: #8890b0; --radius: 8px; }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--bg2); border-bottom: 1px solid var(--surface2); flex-shrink: 0; }
+    .logo { font-size: 16px; font-weight: 600; color: var(--neon); }
+    .hdr-btns { display: flex; gap: 6px; }
+    .hdr-btns button { min-height: 36px; padding: 6px 12px; background: var(--surface2); border: 1px solid var(--surface2); border-radius: var(--radius); color: var(--text); cursor: pointer; font-size: 12px; }
+    .hdr-btns button.neon { border-color: var(--neon); color: var(--neon); }
+    .mode-row { display: flex; gap: 6px; padding: 6px 12px; background: var(--bg); border-bottom: 1px solid var(--surface2); flex-shrink: 0; overflow-x: auto; }
+    .mode-btn { padding: 6px 14px; background: var(--surface); border: 1px solid var(--surface2); border-radius: 50px; color: var(--text2); cursor: pointer; font-size: 12px; white-space: nowrap; min-height: 36px; display: flex; align-items: center; gap: 4px; }
+    .mode-btn.active { background: var(--neon); color: #000; border-color: var(--neon); font-weight: 600; }
+    .app { display: flex; flex: 1; overflow: hidden; }
+    #sidebar { width: 260px; background: var(--bg2); border-right: 1px solid var(--surface2); display: flex; flex-direction: column; overflow-y: auto; flex-shrink: 0; }
+    #viewport { flex: 1; position: relative; overflow: hidden; }
+    #scene { width: 100%; height: 100%; position: relative; }
+    .side-sec { padding: 10px; border-bottom: 1px solid var(--surface2); }
+    .side-sec h3 { font-size: 13px; color: var(--neon); margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+    .sc-item { padding: 6px; background: var(--surface); border-radius: 4px; margin-bottom: 4px; cursor: pointer; font-size: 12px; display: flex; justify-content: space-between; }
+    .sc-item.active { border: 1px solid var(--neon); }
+    .tr-item { padding: 6px; background: var(--surface); border-radius: 4px; margin-bottom: 4px; cursor: pointer; font-size: 12px; display: flex; justify-content: space-between; }
+    .tr-item.active { border: 1px solid var(--neon); }
+    .tr-item .del { color: #f44; cursor: pointer; }
+    .f-row { display: flex; gap: 4px; margin: 4px 0; flex-wrap: wrap; }
+    .f-row input, .f-row select, .f-row textarea { flex: 1; min-width: 50px; padding: 5px; background: var(--surface2); border: 1px solid #333; border-radius: 4px; color: var(--text); font-size: 11px; }
+    .f-row button { min-height: 28px; padding: 4px 8px; background: var(--surface2); border: 1px solid #333; border-radius: 4px; color: var(--text); cursor: pointer; font-size: 11px; }
+    .var-display { font-size: 11px; padding: 3px 0; color: var(--text2); }
+    .pal-bar { display: flex; gap: 3px; flex-wrap: wrap; }
+    .pal-item { width: 28px; height: 28px; border-radius: 4px; cursor: pointer; border: 2px solid transparent; }
+    .pal-item.active { border-color: var(--neon); }
+    .debug { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.7); padding: 4px 8px; border-radius: 4px; font-size: 11px; z-index: 5; }
+    .tbar { display: flex; gap: 4px; padding: 6px 10px; background: var(--bg2); border-top: 1px solid var(--surface2); flex-shrink: 0; flex-wrap: wrap; }
+    .tbtn { min-height: 32px; padding: 4px 10px; background: var(--surface2); border: 1px solid var(--surface2); border-radius: 4px; color: var(--text); cursor: pointer; font-size: 12px; }
+    .tbtn.active { background: var(--neon); color: #000; }
     .dialog-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 100; justify-content: center; align-items: center; }
     .dialog-overlay.show { display: flex; }
     .dialog-box { background: var(--surface); border: 1px solid var(--surface2); border-radius: 12px; padding: 24px; max-width: 400px; width: 90%; }
     .dialog-box h3 { color: var(--neon); margin-bottom: 12px; }
     .dialog-box p { margin-bottom: 16px; line-height: 1.5; }
     .dialog-box button { min-height: 44px; padding: 10px 20px; background: var(--neon); color: #000; border: none; border-radius: var(--radius); cursor: pointer; font-weight: 600; margin: 4px; }
+    @media (max-width: 600px) { #sidebar { width: 100%; max-height: 35vh; border-right: none; border-bottom: 1px solid var(--surface2); } .app { flex-direction: column; } }
   </style>
 </head>
 <body>
   <header>
-    <div class="title">⬡ Evo-Engine</div>
-    <div class="header-btns">
-      <button onclick="saveProject()">💾 Save</button>
-      <button class="neon" onclick="exportAll()">📤</button>
-      <button onclick="importAll()">📥</button>
+    <div class="logo">⬡ Evo-Engine</div>
+    <div class="hdr-btns">
+      <button onclick="saveProject()">💾</button>
+      <button class="neon" onclick="exportProject()">📤</button>
+      <button onclick="document.getElementById('import-file').click()">📥</button>
       <input type="file" id="import-file" style="display:none" accept=".json">
     </div>
   </header>
-
-  <div class="mode-pills" id="mode-pills">
-    <div class="pill active" data-view="3d">🧊 3D</div>
-    <div class="pill" data-view="top">🗺️ Карта</div>
-    <div class="pill" data-view="quest">📜 Квест</div>
+  <div class="mode-row" id="mode-row">
+    <div class="mode-btn" data-view="text">📜 Текст</div>
+    <div class="mode-btn active" data-view="3d">🧊 3D</div>
+    <div class="mode-btn" data-view="top">🗺️ Карта</div>
+    <div class="mode-btn" data-view="play">▶ Грати</div>
   </div>
-
-  <div class="app-layout">
+  <div class="app">
     <div id="sidebar">
-      <!-- Scenes -->
-      <div class="side-section">
-        <h3>🎬 Сцени <button style="font-size:11px;padding:2px 8px;background:var(--surface2);border:1px solid #333;border-radius:4px;color:var(--text);cursor:pointer" onclick="addScene()">+</button></h3>
-        <div id="scene-list"></div>
+      <div class="side-sec"><h3>🎬 Сцени <button style="font-size:10px;padding:2px 6px;background:var(--surface2);border:1px solid #333;border-radius:3px;color:var(--text);cursor:pointer" onclick="addScene()">+</button></h3><div id="scene-list"></div></div>
+      <div class="side-sec"><h3>⚡ Тригери <button style="font-size:10px;padding:2px 6px;background:var(--surface2);border:1px solid #333;border-radius:3px;color:var(--text);cursor:pointer" onclick="addTrigger()">+</button></h3><div id="tr-list"></div></div>
+      <div class="side-sec" id="act-editor" style="display:none;"><h3 id="act-title">✏️ Дія</h3>
+        <div class="f-row"><select id="act-type" onchange="updateActUI()"><option value="dialog">📝 Діалог</option><option value="setVar">🔢 Змінна</option><option value="teleport">🌀 Телепорт</option></select></div>
+        <div id="act-params"></div>
+        <div class="f-row"><button onclick="saveTrigger()" style="background:var(--neon);color:#000;font-weight:600;">💾</button><button onclick="clearTrigger()">✕</button></div>
       </div>
-      <!-- Triggers -->
-      <div class="side-section">
-        <h3>⚡ Тригери <button style="font-size:11px;padding:2px 8px;background:var(--surface2);border:1px solid #333;border-radius:4px;color:var(--text);cursor:pointer" onclick="addTriggerAtPlayer()">+ На позиції</button></h3>
-        <div id="trigger-list"></div>
+      <div class="side-sec"><h3>📊 Змінні</h3><div id="vars-disp"></div>
+        <div class="f-row"><input id="vk" placeholder="Ключ"><input id="vv" placeholder="Значення"><button onclick="addVar()">+</button></div>
       </div>
-      <!-- Action editor -->
-      <div class="side-section" id="action-editor" style="display:none;">
-        <h3 id="action-title">✏️ Дії</h3>
-        <div class="action-row">
-          <select id="action-type" onchange="updateActionType()">
-            <option value="dialog">📝 Діалог</option>
-            <option value="setVar">🔢 Змінна</option>
-            <option value="teleport">🌀 Телепорт</option>
-          </select>
-        </div>
-        <div id="action-params"></div>
-        <div class="action-row"><button onclick="saveTriggerAction()" style="background:var(--neon);color:#000;font-weight:600;">💾</button><button onclick="clearSelectedTrigger()">✕</button></div>
-      </div>
-      <!-- Variables -->
-      <div class="side-section">
-        <h3>📊 Змінні</h3>
-        <div id="vars-display"></div>
-        <div class="var-row"><input type="text" id="var-key" placeholder="Ключ"><input type="text" id="var-val" placeholder="Значення"><button onclick="addVariable()">+</button></div>
-      </div>
-      <!-- Palette -->
-      <div class="side-section" id="palette-section">
-        <h3>🎨 Палітра</h3>
-        <div id="palette-bar" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
-      </div>
+      <div class="side-sec" id="pal-sec"><h3>🎨 Типи</h3><div class="pal-bar" id="pal-bar"></div></div>
     </div>
-    <div id="viewport-wrap">
-      <div class="viewport" id="viewport">
-        <div class="debug-info" id="debug-info">Loading...</div>
-        <div class="scene" id="scene"></div>
-        <div id="test-controls" style="display:none;position:absolute;bottom:20px;left:20px;right:20px;justify-content:space-between;pointer-events:none;">
-          <div style="color:yellow;font-weight:bold;background:rgba(0,0,0,0.5);padding:10px;border-radius:8px;">TEST<br><span style="font-size:12px;">WASD + Space</span></div>
-          <button id="btn-test-stop" style="pointer-events:auto;background:red;color:white;border:none;padding:10px 15px;border-radius:8px;cursor:pointer;">Stop ⏹</button>
-        </div>
-      </div>
-      <div style="display:flex;gap:6px;padding:8px 12px;background:var(--bg2);border-top:1px solid var(--surface2);flex-shrink:0;flex-wrap:wrap;">
-        <button class="tool-btn" data-tool="add" style="background:var(--neon);color:#000;">✏️</button>
-        <button class="tool-btn" data-tool="erase">🧹</button>
-        <button class="tool-btn" data-tool="fill">🪣</button>
-        <button class="tool-btn" id="btn-undo">↩️</button>
-        <button class="tool-btn" id="btn-redo">↪️</button>
-        <button class="tool-btn" id="btn-copy">📄</button>
-        <button class="tool-btn" data-tool="entity" style="border-color:var(--neon);">🧍</button>
-        <button class="tool-btn" id="btn-test" style="border-color:#00ff88;color:#00ff88;">▶ Test</button>
+    <div id="viewport">
+      <div class="debug" id="debug">⬡ Evo-Engine</div>
+      <div id="scene"></div>
+      <div id="play-ctrl" style="display:none;position:absolute;bottom:16px;left:16px;right:16px;justify-content:space-between;pointer-events:none;">
+        <div style="color:yellow;font-weight:bold;background:rgba(0,0,0,0.5);padding:8px 12px;border-radius:6px;font-size:12px;">▶ WASD + Space</div>
+        <button id="btn-stop" style="pointer-events:auto;background:red;color:white;border:none;padding:8px 14px;border-radius:6px;cursor:pointer;">⏹</button>
       </div>
     </div>
   </div>
-
-  <div class="dialog-overlay" id="dialog-overlay">
-    <div class="dialog-box" id="dialog-box"></div>
+  <div class="tbar" id="tbar">
+    <button class="tbtn" data-tool="add" style="background:var(--neon);color:#000;">✏️</button>
+    <button class="tbtn" data-tool="erase">🧹</button>
+    <button class="tbtn" id="btn-undo">↩️</button>
+    <button class="tbtn" id="btn-redo">↪️</button>
+    <button class="tbtn" id="btn-copy">📄</button>
+    <button class="tbtn" id="btn-play" style="border-color:#00ff88;color:#00ff88;">▶</button>
   </div>
-
+  <div class="dialog-overlay" id="dlg-overlay"><div class="dialog-box" id="dlg-box"></div></div>
   <script src="js/evo-engine.js"></script>
   <script>
-  // ============================================================
-  // PROJECT — multiple scenes
-  // ============================================================
-  const PROJECT_KEY = 'evo_project';
-  let currentView = '3d';
-  let selectedTrigger = null;
-  let currentSceneIdx = 0;
+  // EVO-ENGINE HOOKS
+  let engineReady = false;
+  const waitE = setInterval(()=>{ if(window.world && window.renderer) { clearInterval(waitE); engineReady = true; initEditor(); } }, 100);
 
+  // ============================================================
+  // PROJECT DATA
+  // ============================================================
+  const PROJECT_KEY = 'evo_game';
+  const TILE_TYPES = ['empty','wall','player_start','goal','collectible','enemy','npc','door','key','hazard','trigger','platform'];
   const TILE_COLORS = {
-    'empty': 'transparent', 'wall': '#555', 'collect': '#ffcc00', 'trigger': '#9c27b0',
-    'door': '#8b4513', 'key': '#ffd700', 'enemy': '#f44336', 'npc': '#2196f3',
-    'grass': '#4caf50', 'water': '#2196f3', 'lava': '#ff5722', 'spike': '#795548',
-    'finish': '#4caf50', 'platform': '#8d6e63'
+    empty:'transparent', wall:'#555', player_start:'#44f', goal:'#4caf50',
+    collectible:'#ffcc00', enemy:'#f44336', npc:'#2196f3', door:'#8b4513',
+    key:'#ffd700', hazard:'#ff5722', trigger:'#9c27b0', platform:'#8d6e63'
   };
-  const TILE_TYPES = Object.keys(TILE_COLORS);
-  let selectedTileType = 'wall';
+  let selTile = 'wall';
+  let selTrigger = null;
 
-  // Project data
   let project = {
     scenes: [],
     currentScene: 0,
-    globalVariables: {}
+    globalVars: {},
+    view: '3d'
   };
 
+  function defaultScene(name) {
+    return {
+      id: Date.now(), name, mode: '3d',
+      text: '', bgCanvas: null, charCanvas: null,
+      tiles: [], triggers: [], buttons: [],
+      physics: { gravity: false, jumpForce: 10, speed: 3, lives: 3 }
+    };
+  }
+
   // ============================================================
-  // SCENE SYSTEM
+  // SCENES
   // ============================================================
   function addScene() {
-    const id = project.scenes.length;
-    const name = 'Рівень ' + (id + 1);
-    // Create a default world JSON (empty 16x16x16)
-    const defaultWorld = JSON.stringify({
-      m: { id: Date.now(), name },
-      s: [16, 16, 16],
-      p: [], v: '', e: [], t: [], g: {}
-    });
-    project.scenes.push({ id, name, world: defaultWorld, triggers: [] });
-    switchScene(id);
-    renderSceneList();
-    saveProject();
+    const s = defaultScene('Рівень ' + (project.scenes.length+1));
+    project.scenes.push(s);
+    switchScene(project.scenes.length-1);
+    renderScenes(); saveProject();
   }
-
   function switchScene(idx) {
-    if (idx < 0 || idx >= project.scenes.length) return;
-    // Save current world state
-    if (window.world && project.scenes[currentSceneIdx]) {
-      project.scenes[currentSceneIdx].world = window.world.toJSON();
-      project.scenes[currentSceneIdx].triggers = JSON.parse(JSON.stringify(window.world.triggers));
+    if (idx<0 || idx>=project.scenes.length) return;
+    // Save current
+    if (engineReady && window.world && project.scenes[project.currentScene]) {
+      project.scenes[project.currentScene].triggers = JSON.parse(JSON.stringify(window.world.triggers || []));
+      try { project.scenes[project.currentScene].worldJSON = window.world.toJSON(); } catch(e) {}
     }
-    currentSceneIdx = idx;
-    // Load new scene
-    const scene = project.scenes[idx];
-    if (window.world) {
-      window.world.fromJSON(scene.world);
-      window.world.triggers = scene.triggers || [];
+    project.currentScene = idx;
+    const s = project.scenes[idx];
+    // Apply scene mode to view
+    const viewBtn = document.querySelector('.mode-btn[data-view="'+s.mode+'"]');
+    if (viewBtn) viewBtn.click();
+    else document.querySelector('.mode-btn[data-view="3d"]').click();
+    // Load world
+    if (engineReady && window.world && s.worldJSON) {
+      try { window.world.fromJSON(s.worldJSON); } catch(e) {}
+      window.world.triggers = s.triggers || [];
       if (window.renderer) window.renderer.render();
     }
-    renderSceneList();
-    renderTriggerList();
-    renderVariables();
+    renderScenes(); renderTriggers();
   }
-
   function deleteScene(idx) {
-    if (project.scenes.length <= 1) return;
-    project.scenes.splice(idx, 1);
-    if (currentSceneIdx >= project.scenes.length) currentSceneIdx = project.scenes.length - 1;
-    switchScene(currentSceneIdx);
-    saveProject();
+    if (project.scenes.length<=1) return;
+    project.scenes.splice(idx,1);
+    if (project.currentScene>=project.scenes.length) project.currentScene=project.scenes.length-1;
+    switchScene(project.currentScene); saveProject();
   }
-
-  function renderSceneList() {
+  function renderScenes() {
     const list = document.getElementById('scene-list');
     list.innerHTML = '';
-    project.scenes.forEach((s, i) => {
-      const div = document.createElement('div');
-      div.className = 'scene-item' + (i === currentSceneIdx ? ' active' : '');
-      div.innerHTML = '<span>' + s.name + '</span><span style="color:#f44;cursor:pointer" onclick="event.stopPropagation();deleteScene(' + i + ')">✕</span>';
-      div.onclick = () => switchScene(i);
-      list.appendChild(div);
+    project.scenes.forEach((s,i)=>{
+      const d = document.createElement('div');
+      d.className = 'sc-item'+(i===project.currentScene?' active':'');
+      const modeIcon = s.mode==='text'?'📜':s.mode==='2d'?'🎮':'🧊';
+      d.innerHTML = '<span>'+modeIcon+' '+s.name+'</span><span style="color:#f44;cursor:pointer" onclick="event.stopPropagation();deleteScene('+i+')">✕</span>';
+      d.onclick = ()=>switchScene(i);
+      list.appendChild(d);
     });
   }
 
   // ============================================================
-  // TRIGGER SYSTEM
+  // VIEW SWITCHING
+  // ============================================================
+  document.querySelectorAll('.mode-btn').forEach(b=>{
+    b.addEventListener('click',()=>{
+      const v = b.dataset.view;
+      document.querySelectorAll('.mode-btn').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      project.view = v;
+      // Update current scene mode
+      const sc = project.scenes[project.currentScene];
+      if (sc && ['text','2d','3d'].includes(v)) sc.mode = v;
+      if (v==='3d' && window.renderer) { renderer.setViewMode('3d'); showTools(true); }
+      else if (v==='top' && window.renderer) { renderer.setViewMode('top'); showTools(true); }
+      else if (v==='text') { if(window.renderer) renderer.setViewMode('top'); showTools(false); renderTriggers(); }
+      else if (v==='play') { startGame(); }
+    });
+  });
+  function showTools(s) {
+    document.querySelectorAll('.tbtn').forEach(b=>b.style.display=s?'':'none');
+    document.getElementById('btn-play').style.display='';
+  }
+
+  // ============================================================
+  // TRIGGERS
   // ============================================================
   function getTriggers() { return window.world ? window.world.triggers : []; }
-
-  function addTriggerAtPlayer() {
+  function addTrigger() {
     if (!window.world) return;
-    const p = window.world.entities.find(e => e.type === 'player_start');
-    const pos = p ? p.position : { x: 8, y: 8, z: 0 };
-    window.world.triggers.push({
-      id: 'trg_' + Date.now(), tile: { x: Math.round(pos.x), y: Math.round(pos.y), z: 0 },
-      event: 'onEnter', conditions: [], actions: [{ type: 'dialog', text: '...' }]
-    });
-    renderTriggerList(); saveWorld();
+    const p = window.world.entities.find(e=>e.type==='player_start');
+    const pos = p ? p.position : {x:8,y:8,z:0};
+    window.world.triggers.push({id:'trg_'+Date.now(), tile:{x:Math.round(pos.x),y:Math.round(pos.y),z:0}, event:'onEnter', conditions:[], actions:[{type:'dialog',text:'...'}]});
+    renderTriggers(); saveWorld();
   }
-
-  function renderTriggerList() {
-    const list = document.getElementById('trigger-list');
+  function renderTriggers() {
+    const list = document.getElementById('tr-list');
     list.innerHTML = '';
-    getTriggers().forEach((t, i) => {
-      const div = document.createElement('div');
-      div.className = 'trigger-item' + (selectedTrigger === i ? ' active' : '');
-      const desc = t.actions && t.actions[0] ? t.actions[0].text || t.actions[0].type : 'empty';
-      const conds = t.conditions && t.conditions.length ? '⚠' : '';
-      div.innerHTML = '<span><b>#' + i + '</b> @' + t.tile.x + ',' + t.tile.y + ' ' + conds + '<br><span style="font-size:11px;color:var(--text2)">' + desc + '</span></span>' +
-        '<span class="del" onclick="event.stopPropagation();deleteTrigger(' + i + ')">✕</span>';
-      div.onclick = () => selectTrigger(i);
-      list.appendChild(div);
+    getTriggers().forEach((t,i)=>{
+      const d = document.createElement('div');
+      d.className = 'tr-item'+(selTrigger===i?' active':'');
+      const desc = t.actions&&t.actions[0] ? t.actions[0].text||t.actions[0].type : 'empty';
+      d.innerHTML = '<span><b>#'+i+'</b> @'+t.tile.x+','+t.tile.y+'<br><span style="font-size:10px;color:var(--text2)">'+desc+'</span></span><span class="del" onclick="event.stopPropagation();delTrigger('+i+')">✕</span>';
+      d.onclick = ()=>selectTrigger(i);
+      list.appendChild(d);
     });
   }
-
   function selectTrigger(idx) {
-    selectedTrigger = idx;
-    renderTriggerList();
-    const t = getTriggers()[idx];
-    if (!t) return;
-    document.getElementById('action-editor').style.display = 'block';
-    document.getElementById('action-title').textContent = '✏️ Тригер #' + idx;
-    const act = t.actions && t.actions[0] ? t.actions[0] : { type: 'dialog', text: '' };
-    document.getElementById('action-type').value = act.type || 'dialog';
-    updateActionType();
-    // Fill values
-    if (act.type === 'dialog') {
-      const ta = document.getElementById('act-dialog');
-      if (ta) ta.value = act.text || '';
-    } else if (act.type === 'setVar') {
-      const k = document.getElementById('act-varkey');
-      const v = document.getElementById('act-varval');
-      if (k) k.value = act.key || '';
-      if (v) v.value = act.value !== undefined ? act.value : '';
-    } else if (act.type === 'teleport') {
-      const sx = document.getElementById('act-scene');
-      const tx = document.getElementById('act-tpx');
-      const ty = document.getElementById('act-tpy');
-      const tz = document.getElementById('act-tpz');
-      if (sx) sx.value = act.sceneId !== undefined ? act.sceneId : currentSceneIdx;
-      if (tx) tx.value = act.to ? act.to.x : 8;
-      if (ty) ty.value = act.to ? act.to.y : 8;
-      if (tz) tz.value = act.to ? act.to.z : 0;
+    selTrigger = idx;
+    renderTriggers();
+    const t = getTriggers()[idx]; if(!t) return;
+    document.getElementById('act-editor').style.display = 'block';
+    document.getElementById('act-title').textContent = '✏️ Тригер #'+idx;
+    const a = t.actions&&t.actions[0] ? t.actions[0] : {type:'dialog',text:''};
+    document.getElementById('act-type').value = a.type||'dialog';
+    updateActUI();
+    setTimeout(()=>{
+      if (a.type==='dialog') { const ta = document.getElementById('ad'); if(ta) ta.value = a.text||''; }
+      else if (a.type==='setVar') { const k=document.getElementById('avk'), v=document.getElementById('avv'); if(k)k.value=a.key||''; if(v)v.value=a.value!==undefined?a.value:''; }
+      else if (a.type==='teleport') {
+        const sx=document.getElementById('asc'), tx=document.getElementById('atx'), ty=document.getElementById('aty'), tz=document.getElementById('atz');
+        if(sx) sx.value=a.sceneId!==undefined?a.sceneId:project.currentScene;
+        if(tx) tx.value=a.to?a.to.x:8; if(ty) ty.value=a.to?a.to.y:8; if(tz) tz.value=a.to?a.to.z:0;
+      }
+    }, 50);
+  }
+  function clearTrigger() { selTrigger=null; document.getElementById('act-editor').style.display='none'; renderTriggers(); }
+  function updateActUI() {
+    const type = document.getElementById('act-type').value;
+    const div = document.getElementById('act-params');
+    if (type==='dialog') div.innerHTML = '<textarea id="ad" rows="3" placeholder="Текст" style="width:100%;padding:6px;background:var(--surface2);border:1px solid #333;border-radius:4px;color:var(--text);font-size:12px;"></textarea>';
+    else if (type==='setVar') div.innerHTML = '<div class="f-row"><input id="avk" placeholder="Ключ"><input id="avv" placeholder="Значення"></div>';
+    else if (type==='teleport') {
+      const opts = project.scenes.map((s,i)=>'<option value="'+i+'" '+(i===project.currentScene?'selected':'')+'>'+s.name+'</option>').join('');
+      div.innerHTML = '<div class="f-row"><select id="asc">'+opts+'</select></div><div class="f-row"><input id="atx" type="number" placeholder="X" value="8" min="0" max="15"><input id="aty" type="number" placeholder="Y" value="8" min="0" max="15"><input id="atz" type="number" placeholder="Z" value="0" min="0" max="15"></div>';
     }
   }
-
-  function clearSelectedTrigger() {
-    selectedTrigger = null;
-    document.getElementById('action-editor').style.display = 'none';
-    renderTriggerList();
-  }
-
-  function updateActionType() {
-    const type = document.getElementById('action-type').value;
-    const div = document.getElementById('action-params');
-    if (type === 'dialog') {
-      div.innerHTML = '<textarea id="act-dialog" rows="3" placeholder="Текст діалогу" style="width:100%;padding:8px;background:var(--surface2);border:1px solid #333;border-radius:4px;color:var(--text);font-size:13px;"></textarea>';
-    } else if (type === 'setVar') {
-      div.innerHTML = '<div class="var-row"><input id="act-varkey" placeholder="Ключ"><input id="act-varval" placeholder="Значення"></div>';
-    } else if (type === 'teleport') {
-      let sceneOpts = project.scenes.map((s, i) => '<option value="' + i + '" ' + (i === currentSceneIdx ? 'selected' : '') + '>' + s.name + '</option>').join('');
-      div.innerHTML = '<div class="var-row"><select id="act-scene">' + sceneOpts + '</select></div>' +
-        '<div class="var-row"><input id="act-tpx" type="number" placeholder="X" value="8" min="0" max="15"><input id="act-tpy" type="number" placeholder="Y" value="8" min="0" max="15"><input id="act-tpz" type="number" placeholder="Z" value="0" min="0" max="15"></div>';
+  function saveTrigger() {
+    if (selTrigger===null) return;
+    const t = getTriggers()[selTrigger]; if(!t) return;
+    const type = document.getElementById('act-type').value;
+    let a = {type};
+    if (type==='dialog') a.text = document.getElementById('ad').value;
+    else if (type==='setVar') { a.key=document.getElementById('avk').value; a.value=document.getElementById('avv').value; }
+    else if (type==='teleport') {
+      a.sceneId = parseInt(document.getElementById('asc').value)||0;
+      a.to = {x:parseInt(document.getElementById('atx').value)||8, y:parseInt(document.getElementById('aty').value)||8, z:parseInt(document.getElementById('atz').value)||0};
     }
+    t.actions = [a];
+    saveWorld(); renderTriggers();
   }
-
-  function saveTriggerAction() {
-    if (selectedTrigger === null) return;
-    const t = getTriggers()[selectedTrigger];
-    if (!t) return;
-    const type = document.getElementById('action-type').value;
-    let action = { type };
-    if (type === 'dialog') action.text = document.getElementById('act-dialog').value;
-    else if (type === 'setVar') { action.key = document.getElementById('act-varkey').value; action.value = document.getElementById('act-varval').value; }
-    else if (type === 'teleport') {
-      action.sceneId = parseInt(document.getElementById('act-scene').value) || 0;
-      action.to = { x: parseInt(document.getElementById('act-tpx').value)||8, y: parseInt(document.getElementById('act-tpy').value)||8, z: parseInt(document.getElementById('act-tpz').value)||0 };
-    }
-    t.actions = [action];
-    saveWorld(); renderTriggerList();
-  }
-
-  function deleteTrigger(idx) {
-    getTriggers().splice(idx, 1);
-    if (selectedTrigger === idx) clearSelectedTrigger();
-    else renderTriggerList();
+  function delTrigger(idx) {
+    getTriggers().splice(idx,1);
+    if (selTrigger===idx) clearTrigger(); else renderTriggers();
     saveWorld();
   }
-
-  function checkTriggerConditions(t) {
-    if (!t.conditions || t.conditions.length === 0) return true;
-    return t.conditions.every(c => {
-      const val = project.globalVariables[c.key];
-      if (c.op === '==') return val == c.value;
-      if (c.op === '!=') return val != c.value;
-      if (c.op === '>') return parseFloat(val) > parseFloat(c.value);
-      if (c.op === '<') return parseFloat(val) < parseFloat(c.value);
+  function checkConds(t) {
+    if (!t.conditions||!t.conditions.length) return true;
+    return t.conditions.every(c=>{
+      const val = project.globalVars[c.key];
+      if (c.op==='==') return val==c.value;
+      if (c.op==='!=') return val!=c.value;
+      if (c.op==='>') return parseFloat(val)>parseFloat(c.value);
+      if (c.op==='<') return parseFloat(val)<parseFloat(c.value);
       return true;
     });
   }
 
   // ============================================================
-  // VARIABLES (global — shared across scenes)
+  // VARIABLES
   // ============================================================
-  function renderVariables() {
-    const display = document.getElementById('vars-display');
-    display.innerHTML = '';
-    const keys = Object.keys(project.globalVariables);
-    if (keys.length === 0) { display.innerHTML = '<div class="var-display">(порожньо)</div>'; return; }
-    keys.forEach(k => {
+  function renderVars() {
+    const d = document.getElementById('vars-disp');
+    d.innerHTML = '';
+    const keys = Object.keys(project.globalVars);
+    if (!keys.length) { d.innerHTML='<div class="var-display">(порожньо)</div>'; return; }
+    keys.forEach(k=>{
       const div = document.createElement('div');
-      div.className = 'var-display';
-      div.innerHTML = '<b>' + k + '</b> = ' + JSON.stringify(project.globalVariables[k]) +
-        ' <span style="color:#f44;cursor:pointer" onclick="deleteVariable(\'' + k + '\')">✕</span>';
-      display.appendChild(div);
+      div.className='var-display';
+      div.innerHTML = '<b>'+k+'</b> = '+JSON.stringify(project.globalVars[k])+' <span style="color:#f44;cursor:pointer" onclick="delVar(\''+k+'\')">✕</span>';
+      d.appendChild(div);
     });
   }
-
-  function addVariable() {
-    const key = document.getElementById('var-key').value.trim();
-    const val = document.getElementById('var-val').value.trim();
-    if (!key) return;
-    project.globalVariables[key] = isNaN(val) ? val : parseFloat(val);
-    document.getElementById('var-key').value = '';
-    document.getElementById('var-val').value = '';
-    renderVariables(); saveProject();
+  function addVar() {
+    const k = document.getElementById('vk').value.trim();
+    const v = document.getElementById('vv').value.trim();
+    if (!k) return;
+    project.globalVars[k] = isNaN(v) ? v : parseFloat(v);
+    document.getElementById('vk').value=''; document.getElementById('vv').value='';
+    renderVars(); saveProject();
   }
-
-  function deleteVariable(key) {
-    delete project.globalVariables[key];
-    renderVariables(); saveProject();
-  }
+  function delVar(k) { delete project.globalVars[k]; renderVars(); saveProject(); }
 
   // ============================================================
   // PALETTE
   // ============================================================
-  function renderPalette() {
-    const bar = document.getElementById('palette-bar');
+  function renderPal() {
+    const bar = document.getElementById('pal-bar');
     bar.innerHTML = '';
-    TILE_TYPES.forEach(type => {
-      const btn = document.createElement('div');
-      btn.style.cssText = 'width:32px;height:32px;border-radius:4px;cursor:pointer;background:' + TILE_COLORS[type] + ';border:2px solid transparent;';
-      if (type === 'empty') btn.style.border = '2px dashed #555';
-      if (type === selectedTileType) btn.style.borderColor = 'var(--neon)';
-      btn.title = type;
-      btn.onclick = () => { selectedTileType = type; renderPalette(); };
-      bar.appendChild(btn);
+    TILE_TYPES.forEach(t=>{
+      const b = document.createElement('div');
+      b.className = 'pal-item'+(t===selTile?' active':'');
+      b.style.background = TILE_COLORS[t];
+      if (t==='empty') b.style.border='2px dashed #555';
+      b.title = t;
+      b.onclick = ()=>{ selTile=t; renderPal(); };
+      bar.appendChild(b);
     });
   }
 
   // ============================================================
   // TOP VIEW EDITING
   // ============================================================
-  function setupTopViewEditing() {
-    const scene = document.getElementById('scene');
-    if (!scene) return;
-    scene.addEventListener('mousedown', function(e) {
-      if (currentView === '3d') return;
-      if (window.physics && window.physics.isRunning) return;
-      handleTopViewClick(e);
+  function setupTopEdit() {
+    const sc = document.getElementById('scene');
+    if (!sc) return;
+    sc.addEventListener('mousedown', e=>{
+      if (project.view==='3d'||project.view==='play') return;
+      if (window.physics&&window.physics.isRunning) return;
+      topClick(e);
     });
-    scene.addEventListener('touchstart', function(e) {
-      if (currentView === '3d') return;
-      if (window.physics && window.physics.isRunning) return;
-      if (e.touches.length > 1) return;
-      const touch = e.touches[0];
-      const target = document.elementFromPoint(touch.clientX, touch.clientY);
-      if (target) handleTopViewClick({ target, clientX: touch.clientX, clientY: touch.clientY });
-    }, {passive: true});
+    sc.addEventListener('touchstart', e=>{
+      if (project.view==='3d'||project.view==='play') return;
+      if (window.physics&&window.physics.isRunning) return;
+      if (e.touches.length>1) return;
+      const t = e.touches[0], tg = document.elementFromPoint(t.clientX,t.clientY);
+      if (tg) topClick({target:tg, clientX:t.clientX, clientY:t.clientY});
+    }, {passive:true});
   }
-
-  function handleTopViewClick(e) {
+  function topClick(e) {
     if (!window.world) return;
-    const target = e.target;
-    if (!target) return;
-    let x, y, z;
-    if (target.classList.contains('face')) {
-      const voxelEl = target.parentElement;
-      x = parseInt(voxelEl.dataset.x); y = parseInt(voxelEl.dataset.y); z = parseInt(voxelEl.dataset.z);
-      const dir = target.dataset.dir;
-      if (dir === 'top') z++; else if (dir === 'bottom') z--;
-      else if (dir === 'front') y++; else if (dir === 'back') y--;
-      else if (dir === 'right') x++; else if (dir === 'left') x--;
-    } else if (target.classList.contains('voxel')) {
-      x = parseInt(target.dataset.x); y = parseInt(target.dataset.y); z = parseInt(target.dataset.z);
-      window.world.deleteVoxel(x, y, z);
-      if (window.renderer) window.renderer.render();
+    const t = e.target; if(!t) return;
+    let x,y,z;
+    if (t.classList.contains('face')) {
+      const p = t.parentElement;
+      x=parseInt(p.dataset.x); y=parseInt(p.dataset.y); z=parseInt(p.dataset.z);
+      const d = t.dataset.dir;
+      if (d==='top') z++; else if (d==='bottom') z--;
+      else if (d==='front') y++; else if (d==='back') y--;
+      else if (d==='right') x++; else if (d==='left') x--;
+    } else if (t.classList.contains('voxel')) {
+      x=parseInt(t.dataset.x); y=parseInt(t.dataset.y); z=parseInt(t.dataset.z);
+      window.world.deleteVoxel(x,y,z);
+      if(window.renderer) renderer.render();
       return;
-    } else if (target.classList.contains('grid-floor')) {
-      if (e.clientX === undefined) return;
-      const rect = target.getBoundingClientRect();
-      const ox = e.clientX - rect.left; const oy = e.clientY - rect.top;
-      const s = window.innerWidth < 600 ? 0.4 : 0.6;
-      x = Math.floor(ox / (40 * s)); y = Math.floor(oy / (40 * s)); z = 0;
-    } else { return; }
-    if (x < 0 || x >= 16 || y < 0 || y >= 16 || z < 0 || z >= 16) return;
-    if (selectedTileType === 'empty') {
-      if (window.world.hasVoxel(x, y, z)) {
-        const tidx = window.world.triggers.findIndex(t => t.tile.x===x && t.tile.y===y && t.tile.z===z);
-        if (tidx >= 0) window.world.triggers.splice(tidx, 1);
-        window.world.deleteVoxel(x, y, z);
-        if (window.renderer) window.renderer.render();
-        renderTriggerList();
+    } else if (t.classList.contains('grid-floor')) {
+      if (e.clientX===undefined) return;
+      const r = t.getBoundingClientRect();
+      const ox=e.clientX-r.left, oy=e.clientY-r.top;
+      const s = window.innerWidth<600 ? 0.4 : 0.6;
+      x=Math.floor(ox/(40*s)); y=Math.floor(oy/(40*s)); z=0;
+    } else return;
+    if (x<0||x>=16||y<0||y>=16||z<0||z>=16) return;
+    if (selTile==='empty') {
+      if (window.world.hasVoxel(x,y,z)) {
+        const ti = window.world.triggers.findIndex(t=>t.tile.x===x&&t.tile.y===y&&t.tile.z===z);
+        if (ti>=0) window.world.triggers.splice(ti,1);
+        window.world.deleteVoxel(x,y,z);
+        if(window.renderer) renderer.render();
+        renderTriggers();
       }
     } else {
-      window.world.setVoxel(x, y, z, { type: 'solid', color: TILE_COLORS[selectedTileType] || '#555' });
-      if (selectedTileType === 'trigger') {
-        window.world.triggers.push({
-          id: 'trg_' + Date.now(), tile: { x, y, z }, event: 'onEnter',
-          conditions: [], actions: [{ type: 'dialog', text: '...' }]
-        });
-        renderTriggerList();
+      window.world.setVoxel(x,y,z,{type:'solid',color:TILE_COLORS[selTile]||'#555'});
+      if (selTile==='trigger') {
+        window.world.triggers.push({id:'trg_'+Date.now(),tile:{x,y,z},event:'onEnter',conditions:[],actions:[{type:'dialog',text:'...'}]});
+        renderTriggers();
       }
-      if (window.renderer) window.renderer.render();
+      if(window.renderer) renderer.render();
     }
     saveWorld();
   }
 
   // ============================================================
-  // MODE SWITCHING
+  // GAME / PLAY MODE
   // ============================================================
-  document.querySelectorAll('.pill').forEach(p => {
-    p.addEventListener('click', () => {
-      currentView = p.dataset.view;
-      document.querySelectorAll('.pill').forEach(x => x.classList.remove('active'));
-      p.classList.add('active');
-      if (currentView === '3d') { if (window.renderer) renderer.setViewMode('3d'); showVoxelTools(true); }
-      else if (currentView === 'top') { if (window.renderer) renderer.setViewMode('top'); showVoxelTools(true); }
-      else if (currentView === 'quest') { if (window.renderer) renderer.setViewMode('top'); showVoxelTools(false); renderTriggerList(); }
-    });
-  });
-
-  function showVoxelTools(show) {
-    document.querySelectorAll('.tool-btn').forEach(b => b.style.display = show ? '' : 'none');
-    document.getElementById('btn-test').style.display = '';
-    document.getElementById('btn-undo').style.display = '';
-    document.getElementById('btn-redo').style.display = '';
+  function startGame() {
+    if (!window.physics) return;
+    // Set physics mode based on scene
+    const sc = project.scenes[project.currentScene];
+    if (sc && sc.physics) {
+      // Adjust physics based on mode
+    }
+    if (window.renderer) renderer.setViewMode('3d');
+    document.getElementById('play-ctrl').style.display = 'flex';
+    window.physics.start();
   }
+  document.getElementById('btn-stop').addEventListener('click', ()=>{
+    if (window.physics) window.physics.stop();
+    document.getElementById('play-ctrl').style.display = 'none';
+  });
+  document.getElementById('btn-play').addEventListener('click', startGame);
+
+  function showDlg(text, btns) {
+    const ov = document.getElementById('dlg-overlay');
+    const bx = document.getElementById('dlg-box');
+    bx.innerHTML = '<h3>💬</h3><p>'+text+'</p>';
+    if (btns) btns.forEach(b=>{ bx.innerHTML += '<button onclick="closeDlg();'+(b.action||'')+'">'+b.label+'</button>'; });
+    else bx.innerHTML += '<button onclick="closeDlg()">OK</button>';
+    ov.classList.add('show');
+  }
+  function closeDlg() { document.getElementById('dlg-overlay').classList.remove('show'); }
 
   // ============================================================
   // SAVE / LOAD
   // ============================================================
   function saveWorld() {
-    if (!window.world) return;
-    if (project.scenes[currentSceneIdx]) {
-      project.scenes[currentSceneIdx].world = window.world.toJSON();
-      project.scenes[currentSceneIdx].triggers = JSON.parse(JSON.stringify(window.world.triggers));
-    }
+    if (!engineReady||!window.world||!project.scenes[project.currentScene]) return;
+    project.scenes[project.currentScene].triggers = JSON.parse(JSON.stringify(window.world.triggers||[]));
+    try { project.scenes[project.currentScene].worldJSON = window.world.toJSON(); } catch(e) {}
   }
-
   function saveProject() {
     saveWorld();
     localStorage.setItem(PROJECT_KEY, JSON.stringify(project));
-    // Also save current scene's world compressed for quick resume
     if (window.world) {
-      const compressed = window.LZString ? LZString.compressToUTF16(window.world.toJSON()) : window.world.toJSON();
-      localStorage.setItem('evo_scene_latest', compressed);
+      const c = window.LZString ? LZString.compressToUTF16(window.world.toJSON()) : window.world.toJSON();
+      localStorage.setItem('evo_last', c);
     }
   }
-
-  function exportAll() {
+  function exportProject() {
     saveWorld();
-    const blob = new Blob([JSON.stringify(project, null, 2)], {type:'application/json'});
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'evo-game.json'; a.click();
+    const b = new Blob([JSON.stringify(project,null,2)], {type:'application/json'});
+    const a = document.createElement('a'); a.href=URL.createObjectURL(b); a.download='evo-game.json'; a.click();
   }
-
-  function importAll() { document.getElementById('import-file').click(); }
   document.getElementById('import-file').addEventListener('change', function(e) {
-    const file = e.target.files[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(ev) {
+    const f = e.target.files[0]; if(!f) return;
+    new FileReader().onload = function(ev) {
       try {
-        const data = JSON.parse(ev.target.result);
-        project = data;
-        if (!project.scenes) project.scenes = [];
-        if (project.scenes.length === 0) addDefaultScene();
-        renderSceneList();
-        switchScene(0);
-        renderVariables();
-        saveProject();
+        project = JSON.parse(ev.target.result);
+        if (!project.scenes||!project.scenes.length) project.scenes=[defaultScene('Рівень 1')];
+        renderScenes(); renderVars(); switchScene(0); saveProject();
         alert('Імпортовано!');
-      } catch(err) { alert('Помилка: ' + err.message); }
-    };
-    reader.readAsText(file);
+      } catch(err) { alert('Помилка: '+err.message); }
+    }.bind(this);
+    (new FileReader()).readAsText(f);
   });
 
-  function addDefaultScene() {
-    project.scenes.push({
-      id: 0, name: 'Рівень 1',
-      world: JSON.stringify({ m: { id: Date.now(), name: 'Рівень 1' }, s: [16,16,16], p: [], v: '', e: [], t: [], g: {} }),
-      triggers: []
-    });
-  }
-
-  // ============================================================
-  // DIALOG
-  // ============================================================
-  function showDialog(text, buttons) {
-    const overlay = document.getElementById('dialog-overlay');
-    const box = document.getElementById('dialog-box');
-    box.innerHTML = '<h3>💬</h3><p>' + text + '</p>';
-    if (buttons) {
-      buttons.forEach(b => {
-        box.innerHTML += '<button onclick="closeDialog();' + (b.action || '') + '">' + b.label + '</button>';
-      });
-    } else {
-      box.innerHTML += '<button onclick="closeDialog()">OK</button>';
-    }
-    overlay.classList.add('show');
-  }
-  function closeDialog() { document.getElementById('dialog-overlay').classList.remove('show'); }
-
-  // ============================================================
-  // PHYSICS TRIGGER HOOK
-  // ============================================================
   // ============================================================
   // INIT
   // ============================================================
-  renderPalette();
-  renderVariables();
+  function initEditor() {
+    renderPal(); renderVars();
+    const saved = localStorage.getItem(PROJECT_KEY);
+    if (saved) { try { project = JSON.parse(saved); } catch(e) {} }
+    if (!project.scenes||!project.scenes.length) project.scenes=[defaultScene('Рівень 1')];
+    renderScenes(); switchScene(project.currentScene||0); renderVars();
+    setupTopEdit();
 
-  const waitForWorld = setInterval(() => {
-    if (window.world) {
-      clearInterval(waitForWorld);
-      // Load project
-      const saved = localStorage.getItem(PROJECT_KEY);
-      if (saved) {
-        try {
-          project = JSON.parse(saved);
-        } catch(e) {}
-      }
-      if (!project.scenes || project.scenes.length === 0) addDefaultScene();
-      renderSceneList();
-      switchScene(project.currentScene || 0);
-      renderVariables();
-      setupTopViewEditing();
-
-      // Hook physics trigger checker
-      const waitForPhysics = setInterval(() => {
-        if (window.physics && window.physics.checkTriggers === undefined) {
-          clearInterval(waitForPhysics);
-          window.physics.checkTriggers = function() {
-            if (!this.isRunning || !this.player) return;
-            const px = Math.round(this.player.x), py = Math.round(this.player.y), pz = Math.round(this.player.z);
-            (window.world.triggers || []).forEach(t => {
-              if (t.tile.x === px && t.tile.y === py && t.tile.z === pz && t.event === 'onEnter') {
-                if (!checkTriggerConditions(t)) return;
-                if (t.actions && t.actions[0]) {
-                  const a = t.actions[0];
-                  if (a.type === 'dialog') showDialog(a.text);
-                  else if (a.type === 'setVar') { project.globalVariables[a.key] = a.value; renderVariables(); }
-                  else if (a.type === 'teleport') {
-                    if (a.sceneId !== undefined && a.sceneId !== currentSceneIdx) {
-                      // Save current, switch scene
-                      saveWorld();
-                      switchScene(a.sceneId);
-                    }
-                    if (a.to) { this.player.x = a.to.x; this.player.y = a.to.y; this.player.z = a.to.z; }
-                  }
+    // Physics trigger hook
+    const wp = setInterval(()=>{
+      if (window.physics && !window.physics._hooked) {
+        window.physics._hooked = true;
+        window.physics._checkTriggers = function() {
+          if (!this.isRunning||!this.player) return;
+          const px=Math.round(this.player.x), py=Math.round(this.player.y), pz=Math.round(this.player.z);
+          (window.world.triggers||[]).forEach(t=>{
+            if (t.tile.x===px&&t.tile.y===py&&t.tile.z===pz&&t.event==='onEnter') {
+              if (!checkConds(t)) return;
+              if (t.actions&&t.actions[0]) {
+                const a = t.actions[0];
+                if (a.type==='dialog') showDlg(a.text);
+                else if (a.type==='setVar') { project.globalVars[a.key]=a.value; renderVars(); }
+                else if (a.type==='teleport') {
+                  if (a.sceneId!==undefined&&a.sceneId!==project.currentScene) { saveWorld(); switchScene(a.sceneId); }
+                  if (a.to) { this.player.x=a.to.x; this.player.y=a.to.y; this.player.z=a.to.z; }
                 }
-                t.event = 'used';
               }
-            });
-          };
-          setInterval(() => { if (window.physics) window.physics.checkTriggers(); }, 200);
-        }
-      }, 200);
-    }
-  }, 100);
+              t.event='used';
+            }
+          });
+        };
+        setInterval(()=>{ if(window.physics) window.physics._checkTriggers(); }, 200);
+      }
+    }, 200);
+
+    // Auto-save
+    setInterval(saveProject, 30000);
+  }
   </script>
 </body>
 </html>
