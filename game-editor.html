@@ -923,7 +923,12 @@
     }
 
     // Запуск
-    window.addEventListener('load', init);
+    window.addEventListener('load', function() {
+      try { init(); } catch(e) {
+        console.error('INIT_ERR:', e.message);
+        document.getElementById('debug-info').textContent = 'Error: ' + e.message;
+      }
+    });
   </script>
 </body>
 </html>
