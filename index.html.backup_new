@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Evo-Engine</title>
+  <style>
+    :root {
+      --bg: #000;
+      --neon: #0f0;
+      --neon-dim: #0a0;
+      --text: #0f0;
+      --text-dim: #0c0;
+      --card: #0a0a0a;
+      --border: #0f03;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Courier New', monospace;
+      color: var(--text);
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      position: relative;
+    }
+
+    h1, h2, h3 {
+      text-shadow: 0 0 5px var(--neon);
+    }
+
+    button, input, select {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px;
+      border-radius: 4px;
+      font-family: 'Courier New';
+      outline: none;
+    }
+
+    button:hover {
+      background: var(--neon-dim);
+      box-shadow: 0 0 8px var(--neon);
+      cursor: pointer;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--neon);
+      box-shadow: 0 0 5px var(--neon);
+    }
+
+    .container {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: none;
+    }
+
+    .active {
+      display: block;
+    }
+
+    .nav {
+      display: flex;
+      justify-content: space-around;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      padding: 10px 0;
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      z-index: 1000;
+    }
+
+    .nav button {
+      background: none;
+      border: none;
+      font-size: 1.4em;
+      color: var(--text-dim);
+      padding: 5px 10px;
+    }
+
+    .nav button.active {
+      color: var(--neon);
+      text-shadow: 0 0 5px var(--neon);
+    }
+
+    canvas {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    .grid-16 {
+      width: 160px;
+      height: 160px;
+      border: 1px solid var(--neon-dim);
+    }
+
+    .flex {
+      display: flex;
+      gap: 10px;
+      margin: 10px 0;
+      flex-wrap: wrap;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 10px;
+      border-radius: 6px;
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      display: none;
+    }
+
+    .modal-content {
+      background: var(--card);
+      border: 1px solid var(--neon);
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 0 20px var(--neon);
+    }
+
+    .close {
+      float: right;
+      color: var(--neon);
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 10px;
+    }
+
+    .tab {
+      padding: 8px 16px;
+      cursor: pointer;
+      opacity: 0.7;
+    }
+
+    .tab.active {
+      opacity: 1;
+      border-bottom: 2px solid var(--neon);
+      color: var(--neon);
+    }
+
+    .tab-content {
+      display: none;
+      padding: 10px 0;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .quest-node {
+      position: absolute;
+      width: 100px;
+      height: 60px;
+      background: var(--card);
+      border: 1px solid var(--neon);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8em;
+      cursor: move;
+      box-shadow: 0 0 5px var(--neon);
+    }
+
+    .button-list {
+      margin: 10px 0;
+    }
+
+    .button-item {
+      display: flex;
+      gap: 5px;
+      margin: 5px 0;
+      align-items: center;
+    }
+
+    .voxel {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      transform-style: preserve-3d;
+      transform: rotateX(60deg) rotateZ(45deg);
+      margin: 20px auto;
+    }
+
+    .voxel div {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: var(--neon);
+      border: 1px solid #000;
+      box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Containers -->
+  <div id="play" class="container active">
+    <h1>🎮 Грати</h1>
+    <p>Каталог ігор від спільноти</p>
+    <div class="card">
+      <h3>Заглушка гри</h3>
+      <p>Натисни, щоб грати</p>
+      <button onclick="startQuest()">Запустити квест</button>
+    </div>
+    <div class="card">
+      <h3>Пошир свій квест</h3>
+      <input id="share-url" type="text" placeholder="URL квесту" />
+      <button onclick="copyUrl()">Копіювати</button>
+    </div>
+  </div>
+
+  <div id="create" class="container">
+    <h1>🔧 Створити</h1>
+    <div class="tabs">
+      <div class="tab active" data-tab="scene">Сцена</div>
+      <div class="tab" data-tab="character">Персонаж</div>
+      <div class="tab" data-tab="buttons">Кнопки</div>
+      <div class="tab" data-tab="graph">Граф</div>
+    </div>
+
+    <div id="scene" class="tab-content active">
+      <h3>Редагувати сцену</h3>
+      <input id="scene-title" type="text" placeholder="Назва сцени" />
+      <textarea id="scene-text" placeholder="Текст сцени"></textarea>
+      <div class="flex">
+        <div>
+          <h4>Фон</h4>
+          <canvas id="bg-canvas" class="grid-16"></canvas>
+          <button onclick="openSpriteEditor('bg')">Редагувати</button>
+        </div>
+        <div>
+          <h4>Спрайт</h4>
+          <canvas id="char-canvas" class="grid-16"></canvas>
+          <button onclick="openSpriteEditor('char')">Редагувати</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="character" class="tab-content">
+      <h3>Персонаж</h3>
+      <input id="char-name" type="text" placeholder="Ім'я" />
+      <input id="char-hp" type="number" placeholder="HP" />
+      <input id="char-gold" type="number" placeholder="Золото" />
+      <div>
+        <h4>Змінні</h4>
+        <div id="vars-container"></div>
+        <button onclick="addVar()">+ Додати змінну</button>
+      </div>
+      <canvas id="player-sprite" class="grid-16"></canvas>
+      <button onclick="openSpriteEditor('player')">Редагувати спрайт</button>
+    </div>
+
+    <div id="buttons" class="tab-content">
+      <h3>Кнопки</h3>
+      <div class="button-list" id="button-list"></div>
+      <button onclick="addButton()">+ Додати кнопку</button>
+    </div>
+
+    <div id="graph" class="tab-content">
+      <h3>Граф квесту</h3>
+      <div id="quest-graph" style="width:100%;height:400px;position:relative;background:#0a0a0a;border:1px solid var(--neon);overflow:auto;">
+        <!-- Nodes will be added here -->
+      </div>
+      <button onclick="validateGraph()">Перевірити граф</button>
+    </div>
+
+    <button onclick="saveQuest()">Зберегти квест</button>
+  </div>
+
+  <div id="miners" class="container">
+    <h1>⛏ Майнери</h1>
+    <div class="card">
+      <h3>Заробіток EVO</h3>
+      <p>Баланс: <span id="evo-balance">0</span> EVO</p>
+      <button id="mine-btn">Майнути</button>
+    </div>
+    <div class="card">
+      <h3>Активність</h3>
+      <ul id="mining-log"></ul>
+    </div>
+  </div>
+
+  <div id="chat" class="container">
+    <h1>💬 Чат</h1>
+    <div id="chat-messages" style="height:300px;overflow-y:auto;border:1px solid var(--border);padding:10px;margin-bottom:10px;"></div>
+    <div class="flex">
+      <input id="chat-input" type="text" placeholder="Повідомлення" />
+      <button onclick="sendChat()">Надіслати</button>
+    </div>
+  </div>
+
+  <div id="profile" class="container">
+    <h1>👤 Профіль</h1>
+    <div class="card">
+      <h3>Статистика</h3>
+      <p>Створено ігор: <span id="games-created">0</span></p>
+      <p>Пройдено ігор: <span id="games-played">0</span></p>
+      <p>Рівень: <span id="level">1</span></p>
+    </div>
+    <div class="card">
+      <h3>GitHub</h3>
+      <input id="gh-token" type="password" placeholder="XOR-кодований токен" />
+      <button onclick="connectGitHub()">Підключити</button>
+      <p id="gh-status">Не підключено</p>
+    </div>
+  </div>
+
+  <div id="quest-runner" class="container">
+    <h1>🎮 Квест</h1>
+    <div id="quest-content">
+      <p id="quest-text">Текст квесту</p>
+      <div id="quest-buttons"></div>
+      <div id="quest-vars" style="margin-top:10px;font-size:0.9em;color:var(--text-dim);"></div>
+    </div>
+    <button onclick="exitQuest()">Назад</button>
+  </div>
+
+  <div id="evolution" class="container">
+    <h1>🌱 Еволюція</h1>
+    <div class="card">
+      <h3>Система EVO</h3>
+      <p>Ваш прогрес: <span id="evo-progress">0</span>/1000 EVO</p>
+      <div style="width:100%;background:#0a0a0a;height:20px;border:1px solid var(--neon);">
+        <div id="evo-bar" style="height:100%;width:0%;background:var(--neon);"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Модулі</h3>
+      <div id="module-tree" style="font-size:0.9em;">
+        <!-- Tree will be generated -->
+      </div>
+    </div>
+    <div class="voxel" id="voxel-engine"></div>
+  </div>
+
+  <!-- Sprite Editor Modal -->
+  <div id="sprite-modal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeSpriteEditor()">&times;</span>
+      <h2>Піксель-редактор</h2>
+      <canvas id="sprite-canvas" width="160" height="160" class="grid-16"></canvas>
+      <div class="flex" id="color-palette">
+        <div class="color" data-color="#000" style="background:#000;width:20px;height:20px;cursor:pointer;border:1px solid #fff;"></div>
+        <div class="color" data-color="#0f0" style="background:#0f0;width:20px;height:20px;cursor:pointer;"></div>
+        <div class="color" data-color="#f00" style="background:#f00;width:20px;height:20px;cursor:pointer;"></div>
+        <div class="color" data-color="#00f" style="background:#00f;width:20px;height:20px;cursor:pointer;"></div>
+        <div class="color" data-color="#fff" style="background:#fff;width:20px;height:20px;cursor:pointer;"></div>
+      </div>
+      <button onclick="applySprite()">Застосувати</button>
+    </div>
+  </div>
+
+  <script>
+    // State
+    const state = {
+      currentSpriteTarget: '',
+      pixels: Array(16).fill().map(() => Array(16).fill('#000')),
+      selectedColor: '#0f0',
+      quest: { scenes: {}, start: null, player: {}, buttons: {} },
+      currentScene: null,
+      variables: {},
+      evo: 0,
+      githubToken: '',
+      chatMessages: [],
+      modules: [
+        { id: 1, name: 'Базовий редактор', unlocked: true, deps: [] },
+        { id: 2, name: 'Графовий редактор', unlocked: false, deps: [1] },
+        { id: 3, name: 'Мережа ігор', unlocked: false, deps: [2] }
+      ]
+    };
+
+    // Navigation
+    document.querySelectorAll('.nav button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
+        document.getElementById(btn.dataset.page).classList.add('active');
+        document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+
+    // Tabs
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+      });
+    });
+
+    // Pixel Editor
+    const spriteCanvas = document.getElementById('sprite-canvas');
+    const ctx = spriteCanvas.getContext('2d');
+    const pixelSize = 10;
+
+    function drawGrid() {
+      ctx.clearRect(0, 0, 160, 160);
+      for (let y = 0; y < 16; y++) {
+        for (let x = 0; x < 16; x++) {
+          ctx.fillStyle = state.pixels[y][x];
+          ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+          ctx.strokeStyle = '#0a03';
+          ctx.strokeRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+        }
+      }
+    }
+
+    spriteCanvas.addEventListener('click', (e) => {
+      const rect = spriteCanvas.getBoundingClientRect();
+      const x = Math.floor((e.clientX - rect.left) / pixelSize);
+      const y = Math.floor((e.clientY - rect.top) / pixelSize);
+      if (x >= 0 && x < 16 && y >= 0 && y < 16) {
+        state.pixels[y][x] = state.selectedColor;
+        drawGrid();
+      }
+    });
+
+    document.querySelectorAll('.color').forEach(el => {
+      el.addEventListener('click', () => {
+        state.selectedColor = el.dataset.color;
+      });
+    });
+
+    function openSpriteEditor(target) {
+      state.currentSpriteTarget = target;
+      // Load current canvas
+      const srcCanvas = document.getElementById(target + '-canvas');
+      const srcCtx = srcCanvas.getContext('2d');
+      const imgData = srcCtx.getImageData(0, 0, 16, 16).data;
+      for (let y = 0; y < 16; y++) {
+        for (let x = 0; x < 16; x++) {
+          const i = (y * 16 + x) * 4;
+          const r = imgData[i], g = imgData[i+1], b = imgData[i+2];
+          state.pixels[y][x] = `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+        }
+      }
+      drawGrid();
+      document.getElementById('sprite-modal').style.display = 'flex';
+    }
+
+    function closeSpriteEditor() {
+      document.getElementById('sprite-modal').style.display = 'none';
+    }
+
+    function applySprite() {
+      const targetCanvas = document.getElementById(state.currentSpriteTarget + '-canvas');
+      const tCtx = targetCanvas.getContext('2d');
+      const imgData = tCtx.createImageData(16, 16);
+      for (let y = 0; y < 16; y++) {
+        for (let x = 0; x < 16; x++) {
+          const i = (y * 16 + x) * 4;
+          const color = state.pixels[y][x].slice(1);
+          imgData.data[i] = parseInt(color.slice(0,2), 16);
+          imgData.data[i+1] = parseInt(color.slice(2,4), 16);
+          imgData.data[i+2] = parseInt(color.slice(4,6), 16);
+          imgData.data[i+3] = 255;
+        }
+      }
+      tCtx.putImageData(imgData, 0, 0);
+      closeSpriteEditor();
+    }
+
+    // Miners
+    document.getElementById('mine-btn').addEventListener('click', () => {
+      state.evo += 10;
+      document.getElementById('evo-balance').textContent = state.evo;
+      const log = document.getElementById('mining-log');
+      const item = document.createElement('li');
+      item.textContent = `+10 EVO — ${new Date().toLocaleTimeString()}`;
+      log.prepend(item);
+      updateEvoProgress();
+    });
+
+    function updateEvoProgress() {
+      const progress = state.evo % 1000;
+      document.getElementById('evo-progress').textContent = progress;
+      document.getElementById('evo-bar').style.width = (progress / 10) + '%';
+    }
+
+    // GitHub Sync (XOR)
+    function xorEncrypt(data, token) {
+      let enc = '';
+      for (let i = 0; i < data.length; i++) {
+        enc += String.fromCharCode(data.charCodeAt(i) ^ token.charCodeAt(i % token.length));
+      }
+      return btoa(enc);
+    }
+
+    function xorDecrypt(data, token) {
+      const text = atob(data);
+      let dec = '';
+      for (let i = 0; i < text.length; i++) {
+        dec += String.fromCharCode(text.charCodeAt(i) ^ token.charCodeAt(i % token.length));
+      }
+      return dec;
+    }
+
+    function connectGitHub() {
+      const token = document.getElementById('gh-token').value;
+      if (token) {
+        state.githubToken = token;
+        document.getElementById('gh-status').textContent = 'Підключено';
+        loadFromGitHub();
+      }
+    }
+
+    function loadFromGitHub() {
+      // Simulate fetch
+      try {
+        const saved = localStorage.getItem('evo-save');
+        if (saved) {
+          const decrypted = xorDecrypt(saved, state.githubToken);
+          const data = JSON.parse(decrypted);
+          state.evo = data.evo || 0;
+          state.chatMessages = data.chat || [];
+          state.quest = data.quest || { scenes: {}, start: null, player: {}, buttons: {} };
+          document.getElementById('evo-balance').textContent = state.evo;
+          renderChat();
+          document.getElementById('games-created').textContent = Object.keys(state.quest.scenes).length;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function saveToGitHub() {
+      if (!state.githubToken) return;
+      const data = JSON.stringify({
+        evo: state.evo,
+        chat: state.chatMessages,
+        quest: state.quest
+      });
+      const encrypted = xorEncrypt(data, state.githubToken);
+      localStorage.setItem('evo-save', encrypted);
+    }
+
+    // Chat
+    function sendChat() {
+      const input = document.getElementById('chat-input');
+      const msg = input.value.trim();
+      if (msg) {
+        state.chatMessages.unshift(`Гравець: ${msg}`);
+        input.value = '';
+        renderChat();
+        saveToGitHub();
+      }
+    }
+
+    function renderChat() {
+      const el = document.getElementById('chat-messages');
+      el.innerHTML = '';
+      state.chatMessages.slice(0, 50).forEach(m => {
+        const p = document.createElement('p');
+        p.textContent = m;
+        el.appendChild(p);
+      });
+    }
+
+    // Profile
+    document.getElementById('games-played').textContent = '0';
+
+    // Create System
+    function addVar() {
+      const container = document.getElementById('vars-container');
+      const div = document.createElement('div');
+      div.className = 'flex';
+      div.innerHTML = `
+        <input type="text" placeholder="Назва" />
+        <input type="number" placeholder="Значення" />
+        <button onclick="this.parentNode.remove()">Видалити</button>
+      `;
+      container.appendChild(div);
+    }
+
+    function addButton() {
+      const list = document.getElementById('button-list');
+      const div = document.createElement('div');
+      div.className = 'button-item';
+      div.innerHTML = `
+        <input type="text" placeholder="Текст" />
+        <select><option>scene1</option></select>
+        <input type="text" placeholder="Умова (змінна>5)" />
+        <input type="text" placeholder="Ефект (hp-1)" />
+        <button onclick="this.parentNode.remove()">✕</button>
+      `;
+      list.appendChild(div);
+    }
+
+    function saveQuest() {
+      const title = document.getElementById('scene-title').value;
+      const text = document.getElementById('scene-text').value;
+      if (!title) return;
+
+      const sceneId = 'scene1'; // Simplified
+      state.quest.scenes[sceneId] = { title, text, bg: canvasToData('bg-canvas'), char: canvasToData('char-canvas') };
+      state.quest.start = sceneId;
+
+      // Player
+      state.quest.player = {
+        name: document.getElementById('char-name').value,
+        hp: parseInt(document.getElementById('char-hp').value) || 10,
+        gold: parseInt(document.getElementById('char-gold').value) || 0,
+        sprite: canvasToData('player-sprite')
+      };
+
+      // Variables
+      const vars = {};
+      document.querySelectorAll('#vars-container input[type="text"]').forEach((el, i) => {
+        const valEl = document.querySelectorAll('#vars-container input[type="number"]')[i];
+        if (el.value) vars[el.value] = parseInt(valEl.value) || 0;
+      });
+      state.variables = vars;
+
+      // Buttons
+      const buttons = {};
+      document.querySelectorAll('#button-list .button-item').forEach((item, i) => {
+        const text = item.querySelector('input[type="text"]').value;
+        const scene = item.querySelector('select').value;
+        const cond = item.querySelector('input[placeholder="Умова (змінна>5)"]').value;
+        const effect = item.querySelector('input[placeholder="Ефект (hp-1)"]').value;
+        buttons[`btn${i}`] = { text, scene, cond, effect };
+      });
+      state.quest.buttons = buttons;
+
+      alert('Квест збережено!');
+      updateScenesInSelect();
+      saveToGitHub();
+    }
+
+    function updateScenesInSelect() {
+      const selects = document.querySelectorAll('#button-list select');
+      selects.forEach(select => {
+        select.innerHTML = '';
+        Object.keys(state.quest.scenes).forEach(id => {
+          const opt = document.createElement('option');
+          opt.value = id;
+          opt.textContent = state.quest.scenes[id].title;
+          select.appendChild(opt);
+        });
+      });
+    }
+
+    function canvasToData(id) {
+      const canvas = document.getElementById(id);
+      return canvas.toDataURL();
+    }
+
+    // Quest Graph
+    function validateGraph() {
+      const scenes = Object.keys(state.quest.scenes);
+      if (!scenes.length) {
+        alert('Немає сцен');
+        return;
+      }
+      if (!state.quest.start) {
+        alert('Немає стартової сцени');
+        return;
+      }
+      alert('Граф валідний!');
+    }
+
+    // Quest Runner
+    function startQuest() {
+      if (!state.quest.start) {
+        alert('Немає квесту');
+        return;
+      }
+      state.currentScene = state.quest.start;
+      document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
+      document.getElementById('quest-runner').classList.add('active');
+      runScene(state.currentScene);
+    }
+
+    function runScene(id) {
+      const scene = state.quest.scenes[id];
+      if (!scene) return;
+
+      document.getElementById('quest-text').textContent = scene.text;
+
+      const btnContainer = document.getElementById('quest-buttons');
+      btnContainer.innerHTML = '';
+
+      Object.values(state.quest.buttons).filter(btn => {
+        if (!btn.cond) return true;
+        try {
+          const [varName, op, val] = btn.cond.split(/([<>])/);
+          const current = state.variables[varName] || 0;
+          if (op === '>' && current > parseInt(val)) return true;
+          if (op === '<' && current < parseInt(val)) return true;
+          return false;
+        } catch {
+          return false;
+        }
+      }).forEach(btn => {
+        const b = document.createElement('button');
+        b.textContent = btn.text;
+        b.onclick = () => {
+          // Apply effect
+          if (btn.effect) {
+            const match = btn.effect.match(/([a-z]+)([+\-])(\d+)/i);
+            if (match) {
+              const [, varName, op, val] = match;
+              if (varName === 'hp') {
+                state.quest.player.hp += op === '+' ? parseInt(val) : -parseInt(val);
+              } else {
+                state.variables[varName] = (state.variables[varName] || 0) + (op === '+' ? parseInt(val) : -parseInt(val));
+              }
+            }
+          }
+          runScene(btn.scene);
+        };
+        btnContainer.appendChild(b);
+      });
+
+      // Show variables
+      const varsEl = document.getElementById('quest-vars');
+      varsEl.innerHTML = `HP: ${state.quest.player.hp}, Gold: ${state.quest.player.gold}`;
+      Object.entries(state.variables).forEach(([k, v]) => {
+        varsEl.innerHTML += `, ${k}: ${v}`;
+      });
+    }
+
+    function exitQuest() {
+      document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
+      document.getElementById('play').classList.add('active');
+    }
+
+    // Evolution
+    function renderModuleTree() {
+      const el = document.getElementById('module-tree');
+      el.innerHTML = '';
+      state.modules.forEach(mod => {
+        const item = document.createElement('div');
+        item.style.marginLeft = '20px';
+        if (mod.unlocked) {
+          item.innerHTML = `<span style="color:var(--neon)">${mod.name} ✅</span>`;
+        } else {
+          const unlocked = mod.deps.every(id => state.modules.find(m => m.id === id).unlocked);
+          if (unlocked) {
+            mod.unlocked = true;
+            item.innerHTML = `<span style="color:var(--neon)">${mod.name} 🔓</span>`;
+          } else {
+            item.innerHTML = `<span style="color:#555">${mod.name} 🔒</span>`;
+          }
+        }
+        el.appendChild(item);
+      });
+    }
+
+    // Voxel Engine (CSS 3D)
+    function createVoxel() {
+      const container = document.getElementById('voxel-engine');
+      container.innerHTML = '';
+      for (let x = 0; x < 3; x++) {
+        for (let y = 0; y < 3; y++) {
+          for (let z = 0; z < 3; z++) {
+            const voxel = document.createElement('div');
+            voxel.style.transform = `translate(${x * 22}px, ${y * 22}px) translateZ(${z * 22}px)`;
+            container.appendChild(voxel);
+          }
+        }
+      }
+    }
+
+    // Share
+    function copyUrl() {
+      const url = 'https://evo.example.com?quest=' + btoa(JSON.stringify(state.quest));
+      document.getElementById('share-url').value = url;
+      document.getElementById('share-url').select();
+      document.execCommand('copy');
+      alert('URL скопійовано!');
+    }
+
+    // Init
+    window.onload = () => {
+      drawGrid();
+      updateEvoProgress();
+      renderChat();
+      renderModuleTree();
+      createVoxel();
+      updateScenesInSelect();
+    };
+  </script>
+</body>
+</html>
