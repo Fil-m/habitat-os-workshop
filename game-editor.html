@@ -1,1292 +1,688 @@
-
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Редактор ігор</title>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Evo-Engine — Редактор ігор</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/evo-editor.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
   <style>
-    :root {
-      --bg: #0d0f1f;
-      --surface: #15182e;
-      --surface2: #262b50;
-      --neon: #00f0ff;
-      --text: #e0e4f0;
-      --text2: #8890b0;
-      --radius: 12px;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: 'Outfit', sans-serif;
-      background-color: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-      height: 100vh;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-
-    header {
-      background-color: var(--surface);
-      padding: 12px 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid var(--surface2);
-    }
-
-    .logo {
-      font-size: 18px;
-      font-weight: 600;
-      color: var(--neon);
-    }
-
-    .header-buttons {
-      display: flex;
-      gap: 8px;
-    }
-
-    button {
-      background-color: var(--surface2);
-      color: var(--text);
-      border: none;
-      padding: 8px 12px;
-      border-radius: var(--radius);
-      font-size: 14px;
-      cursor: pointer;
-      min-height: 44px;
-      min-width: 44px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    button:hover {
-      background-color: #2d3360;
-    }
-
-    button.neon {
-      color: var(--neon);
-      border: 1px solid var(--neon);
-    }
-
+    /* Pill tabs */
     .mode-pills {
       display: flex;
-      overflow-x: auto;
-      background-color: var(--surface);
-      padding: 8px 16px;
       gap: 8px;
+      padding: 8px 16px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--surface2);
+      overflow-x: auto;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
+      flex-shrink: 0;
     }
-
-    .mode-pills::-webkit-scrollbar {
-      display: none;
-    }
-
+    .mode-pills::-webkit-scrollbar { display: none; }
     .pill {
-      padding: 8px 16px;
-      background-color: var(--surface2);
-      border-radius: var(--radius);
-      font-size: 14px;
-      white-space: nowrap;
+      padding: 10px 20px;
+      background: var(--surface);
+      border: 1px solid var(--surface2);
+      border-radius: 50px;
+      color: var(--text2);
       cursor: pointer;
+      font-weight: 500;
+      white-space: nowrap;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      transition: all 0.2s;
     }
-
     .pill.active {
-      background-color: var(--neon);
-      color: var(--bg);
+      background: var(--neon);
+      color: #000;
+      border-color: var(--neon);
       font-weight: 600;
     }
+    /* Mode containers */
+    .mode-container { display: none; height: 100%; flex-direction: column; }
+    .mode-container.active { display: flex; }
 
-    .content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .accordion-section {
-      background-color: var(--surface);
+    /* Quest mode */
+    #mode-quest { overflow-y: auto; padding: 16px; gap: 12px; }
+    #mode-quest .section {
+      background: var(--surface);
       border-radius: var(--radius);
-      overflow: hidden;
-    }
-
-    .accordion-header {
       padding: 16px;
-      background-color: var(--surface2);
-      font-size: 16px;
-      font-weight: 500;
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      margin-bottom: 12px;
     }
-
-    .accordion-header::after {
-      content: "▼";
-      font-size: 12px;
-    }
-
-    .accordion-header.open::after {
-      transform: rotate(180deg);
-    }
-
-    .accordion-body {
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.3s ease-out;
-      padding: 0 16px;
-    }
-
-    .accordion-body.open {
-      max-height: 1000px;
-      padding: 16px;
-    }
-
-    input, textarea, select {
+    #mode-quest h3 { font-size: 16px; margin-bottom: 12px; color: var(--neon); }
+    #mode-quest input, #mode-quest textarea, #mode-quest select {
       width: 100%;
-      background-color: var(--surface2);
+      background: var(--surface2);
       border: 1px solid #333;
       border-radius: var(--radius);
       padding: 12px;
       color: var(--text);
-      font-family: 'Outfit', sans-serif;
       margin-bottom: 12px;
     }
-
-    textarea {
-      min-height: 100px;
-      resize: vertical;
-    }
-
-    .list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      max-height: 200px;
-      overflow-y: auto;
-      margin-bottom: 12px;
-      padding: 8px 0;
-    }
-
-    .list-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px;
-      background-color: var(--surface2);
+    #mode-quest textarea { min-height: 80px; resize: vertical; }
+    #mode-quest button {
+      background: var(--surface2);
+      border: 1px solid var(--surface2);
+      color: var(--text);
+      padding: 10px 16px;
       border-radius: var(--radius);
       cursor: pointer;
+      min-height: 44px;
     }
-
-    .list-item.active {
-      border: 1px solid var(--neon);
-    }
-
-    .list-item button {
-      min-height: auto;
-      min-width: auto;
-      padding: 4px 8px;
-      font-size: 12px;
-    }
-
-    .grid-20x15 {
-      display: grid;
-      grid-template-columns: repeat(20, 1fr);
-      grid-template-rows: repeat(15, 1fr);
-      gap: 1px;
-      width: 100%;
-      max-width: 343px;
-      margin: 0 auto;
-      aspect-ratio: 4 / 3;
-      background-color: #333;
-      border-radius: var(--radius);
-      overflow: hidden;
-    }
-
-    .grid-cell {
-      background-color: var(--surface);
+    #mode-quest button.neon { border-color: var(--neon); color: var(--neon); }
+    #mode-quest .list-item {
+      padding: 10px;
+      border-bottom: 1px solid var(--surface2);
       cursor: pointer;
     }
-
-    .grid-cell.wall { background-color: #555; }
-    .grid-cell.collectible { background-color: #ffcc00; }
-    .grid-cell.trigger { background-color: #9c27b0; }
-    .grid-cell.door { background-color: #8b4513; }
-    .grid-cell.key { background-color: #ffd700; }
-    .grid-cell.enemy { background-color: #f44336; }
-    .grid-cell.npc { background-color: #2196f3; }
-    .grid-cell.grass { background-color: #4caf50; }
-    .grid-cell.water { background-color: #2196f3; opacity: 0.6; }
-    .grid-cell.lava { background-color: #ff5722; }
-    .grid-cell.spikes { background-color: #795548; }
-    .grid-cell.finish { background-color: #4caf50; }
-    .grid-cell.platform { background-color: #8d6e63; }
-
-    .palette {
-      display: flex;
-      overflow-x: auto;
-      gap: 8px;
-      padding: 8px 0;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-    }
-
-    .palette::-webkit-scrollbar {
-      display: none;
-    }
-
-    .palette-item {
-      min-width: 44px;
-      height: 44px;
-      border-radius: var(--radius);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      background-color: var(--surface2);
-      color: var(--text2);
-    }
-
-    .palette-item.selected {
-      border: 2px solid var(--neon);
-    }
-
-    .palette-item.wall { background-color: #555; }
-    .palette-item.collectible { background-color: #ffcc00; color: #000; }
-    .palette-item.trigger { background-color: #9c27b0; }
-    .palette-item.door { background-color: #8b4513; }
-    .palette-item.key { background-color: #ffd700; color: #000; }
-    .palette-item.enemy { background-color: #f44336; }
-    .palette-item.npc { background-color: #2196f3; }
-    .palette-item.grass { background-color: #4caf50; }
-    .palette-item.water { background-color: #2196f3; opacity: 0.6; }
-    .palette-item.lava { background-color: #ff5722; }
-    .palette-item.spikes { background-color: #795548; }
-    .palette-item.finish { background-color: #4caf50; }
-    .palette-item.platform { background-color: #8d6e63; }
-    .palette-item.empty { background-color: var(--surface); border: 1px dashed #444; }
-
+    #mode-quest .list-item.active { background: var(--neon-dim); color: var(--neon); }
     .pixel-canvas {
       display: grid;
       grid-template-columns: repeat(8, 1fr);
-      grid-template-rows: repeat(8, 1fr);
-      width: 64px;
-      height: 64px;
-      gap: 0;
+      width: 64px; height: 64px;
       border: 1px solid #444;
-      margin: 12px 0;
+      margin: 8px 0;
     }
-
-    .pixel {
-      background-color: transparent;
-      border: 1px solid #222;
+    .pixel { width: 8px; height: 8px; cursor: pointer; }
+    .color-palette {
+      display: flex; gap: 4px; flex-wrap: wrap; margin: 8px 0;
     }
-
-    .color-palette-8 {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
-      margin: 12px 0;
-    }
-
-    .color-option {
-      width: 44px;
-      height: 44px;
-      border-radius: var(--radius);
-      cursor: pointer;
+    .color-swatch {
+      width: 28px; height: 28px; border-radius: 4px; cursor: pointer;
       border: 2px solid transparent;
     }
+    .color-swatch.active { border-color: var(--neon); }
+    .scene-buttons { margin-top: 8px; }
+    .btn-row { display: flex; gap: 8px; align-items: center; margin: 4px 0; }
 
-    .color-option.selected {
-      border-color: var(--neon);
-    }
-
-    .voxel-grid {
-      display: grid;
-      grid-template-columns: repeat(8, 1fr);
-      grid-template-rows: repeat(8, 1fr);
-      gap: 1px;
-      width: 320px;
-      height: 320px;
-      background-color: #333;
+    /* 2D Arcade mode */
+    #mode-arcade { overflow-y: auto; padding: 16px; gap: 12px; }
+    #mode-arcade .section {
+      background: var(--surface);
       border-radius: var(--radius);
-      overflow: hidden;
-    }
-
-    .voxel-cell {
-      background-color: var(--surface2);
-      cursor: pointer;
-    }
-
-    .z-controls {
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      padding: 16px;
       margin-bottom: 12px;
     }
-
-    .z-controls button {
-      min-width: 32px;
-      min-height: 32px;
-      padding: 4px;
+    #mode-arcade h3 { font-size: 16px; margin-bottom: 12px; color: var(--neon); }
+    .palette-scroll {
+      display: flex; gap: 6px; overflow-x: auto; padding: 4px 0;
+      -webkit-overflow-scrolling: touch;
     }
-
-    .tool-button {
-      background-color: var(--surface2);
-      border: 1px solid #333;
-      padding: 8px;
-      border-radius: var(--radius);
-      margin-right: 8px;
-      cursor: pointer;
+    .palette-btn {
+      min-width: 44px; height: 44px; border-radius: var(--radius);
+      border: 2px solid transparent; cursor: pointer; font-size: 11px;
+      background: var(--surface2); color: var(--text2); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
     }
-
-    .tool-button.active {
-      border-color: var(--neon);
-      color: var(--neon);
+    .palette-btn.active { border-color: var(--neon); color: var(--neon); }
+    .arcade-grid {
+      display: grid; gap: 1px; width: 100%; max-width: 343px;
+      margin: 12px auto; background: #333; border-radius: 4px; overflow: hidden;
     }
-
-    .form-row {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-
-    .form-row input {
-      flex: 1;
-    }
-
-    .form-row select {
-      flex: 1;
-    }
-
-    .form-row button {
-      flex: 0 0 44px;
-    }
-
-    .button-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .button-item {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-
-    .button-item input {
-      margin-bottom: 0;
-    }
-
-    .button-item button {
-      min-height: 44px;
-      padding: 0 8px;
-    }
-
-    .conditions-list, .effects-list {
-      margin-top: 8px;
-      padding-left: 16px;
-    }
-
-    .condition-item, .effect-item {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-
-    .condition-item select, .effect-item select {
-      flex: 1;
-    }
-
-    .condition-item input, .effect-item input {
-      flex: 1;
-      margin-bottom: 0;
-    }
-
-    .condition-item button, .effect-item button {
-      min-height: 44px;
-      padding: 0 8px;
-    }
-
-    .variable-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .variable-item {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-
-    .variable-item input, .variable-item select {
-      flex: 1;
-      margin-bottom: 0;
-    }
-
-    .variable-item button {
-      min-height: 44px;
-      padding: 0 8px;
-    }
-
-    .object-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .object-item {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-
-    .object-item input {
-      flex: 1;
-      margin-bottom: 0;
-    }
-
-    .object-item button {
-      min-height: 44px;
-      padding: 0 8px;
-    }
-
-    .dialog-input {
-      width: 100%;
-      margin-bottom: 8px;
-    }
+    .grid-cell { background: var(--surface); cursor: pointer; min-height: 16px; }
+    .grid-cell.wall { background: #555; }
+    .grid-cell.collect { background: #ffcc00; }
+    .grid-cell.trigger { background: #9c27b0; }
+    .grid-cell.door { background: #8b4513; }
+    .grid-cell.key { background: #ffd700; }
+    .grid-cell.enemy { background: #f44336; }
+    .grid-cell.npc { background: #2196f3; }
+    .grid-cell.grass { background: #4caf50; }
+    .grid-cell.water { background: #2196f3; opacity: 0.6; }
+    .grid-cell.lava { background: #ff5722; }
+    .grid-cell.spike { background: #795548; }
+    .grid-cell.finish { background: #4caf50; }
+    .grid-cell.platform { background: #8d6e63; }
+    .obj-row { display: flex; gap: 8px; align-items: center; margin: 4px 0; }
+    .obj-row input { width: 50px; }
   </style>
 </head>
 <body>
   <header>
-    <div class="logo">EvoEditor</div>
-    <div class="header-buttons">
-      <button onclick="saveToStorage()">Зберегти</button>
-      <button onclick="exportJson()" class="neon">Експорт</button>
-      <button onclick="importJson()">Імпорт</button>
+    <div class="title">⬡ Evo-Engine</div>
+    <div style="display:flex; gap: 8px;">
+      <button class="tool-btn" id="btn-save-all">💾 Save All</button>
+      <button class="tool-btn" id="btn-export">📤 Export</button>
+      <button class="tool-btn" id="btn-import">📥 Import</button>
+      <input type="file" id="import-file" style="display:none" accept=".json">
     </div>
   </header>
 
+  <!-- Mode pills -->
   <div class="mode-pills">
-    <div class="pill active" onclick="switchMode(0)">Квест</div>
-    <div class="pill" onclick="switchMode(1)">2D Гра</div>
-    <div class="pill" onclick="switchMode(2)">Платформер</div>
-    <div class="pill" onclick="switchMode(3)">3D Вокселі</div>
+    <div class="pill active" data-mode="3d">🧊 3D</div>
+    <div class="pill" data-mode="quest">📜 Квест</div>
+    <div class="pill" data-mode="arcade">🎮 2D</div>
   </div>
 
-  <div class="content">
-    <!-- === РЕЖИМ 1: КВЕСТ === -->
-    <div class="quest-mode">
-      <!-- Сцени -->
-      <div class="accordion-section">
-        <div class="accordion-header">▼ Сцени</div>
-        <div class="accordion-body">
-          <div class="list" id="scenesList"></div>
-          <button onclick="addScene()">+ Додати сцену</button>
-        </div>
+  <!-- ===== 3D MODE ===== -->
+  <div class="mode-container active" id="mode-3d">
+    <div class="toolbar" id="main-toolbar">
+      <div style="border-right:1px solid #262b50;padding-right:8px;display:flex;gap:4px;">
+        <button class="tool-btn" id="view-3d" title="3D Perspective">3D</button>
+        <button class="tool-btn" id="view-top" title="Top-Down">Top</button>
+        <button class="tool-btn" id="view-side" title="Side-Scroll">Side</button>
       </div>
-
-      <!-- Сцена -->
-      <div class="accordion-section">
-        <div class="accordion-header">▼ Поточна сцена</div>
-        <div class="accordion-body">
-          <input type="text" id="sceneName" placeholder="Назва сцени" />
-          <textarea id="sceneText" placeholder="Текст сцени"></textarea>
-          <div>Фон (8x8)</div>
-          <div class="pixel-canvas" id="backgroundCanvas"></div>
-          <div>Персонаж (8x8)</div>
-          <div class="pixel-canvas" id="characterCanvas"></div>
-          <div class="color-palette-8" id="colorPaletteBg"></div>
-        </div>
+      <button class="tool-btn active" data-tool="add" title="Pen">✏️</button>
+      <button class="tool-btn" data-tool="erase" title="Eraser">🧹</button>
+      <button class="tool-btn" data-tool="fill" title="Fill">🪣</button>
+      <button class="tool-btn" data-tool="select" title="Select">⬜</button>
+      <div style="border-left:1px solid #262b50;padding-left:8px;display:flex;gap:4px;">
+        <button class="tool-btn" id="btn-copy" title="Copy">📄</button>
+        <button class="tool-btn" data-tool="paste" title="Paste">📋</button>
       </div>
-
-      <!-- Кнопки -->
-      <div class="accordion-section">
-        <div class="accordion-header">▼ Кнопки</div>
-        <div class="accordion-body">
-          <div class="button-list" id="buttonsList"></div>
-          <button onclick="addButton()">+ Додати кнопку</button>
-        </div>
-      </div>
-
-      <!-- Змінні -->
-      <div class="accordion-section">
-        <div class="accordion-header">▼ Змінні</div>
-        <div class="accordion-body">
-          <div class="variable-list" id="variablesList"></div>
-          <button onclick="addVariable()">+ Додати змінну</button>
-        </div>
+      <div style="border-left:1px solid #262b50;padding-left:8px;display:flex;gap:4px;">
+        <button class="tool-btn" id="btn-undo" title="Undo">↩️</button>
+        <button class="tool-btn" id="btn-redo" title="Redo">↪️</button>
       </div>
     </div>
 
-    <!-- === РЕЖИМ 2: 2D === -->
-    <div class="arcade-mode" style="display:none">
-      <!-- Карта -->
-      <div class="accordion-section">
-        <div class="accordion-header">▼ Карта</div>
-        <div class="accordion-body">
-          <div class="grid-20x15" id="mapGrid"></div>
-          <div class="palette" id="tilePalette"></div>
+    <div class="viewport" id="viewport">
+      <div class="debug-info" id="debug-info">Loading...</div>
+      <div class="scene" id="scene"></div>
+      <div id="test-controls" style="display:none;position:absolute;bottom:20px;left:20px;right:20px;justify-content:space-between;pointer-events:none;">
+        <div style="color:yellow;font-weight:bold;background:rgba(0,0,0,0.5);padding:10px;border-radius:8px;">
+          TEST MODE<br><span style="font-size:12px;font-weight:normal;">WASD to move, Space to jump.</span>
         </div>
-      </div>
-
-      <!-- Об'єкти -->
-      <div class="accordion-section">
-        <div class="accordion-header">▼ Об'єкти</div>
-        <div class="accordion-body">
-          <div class="object-list">
-            <div>
-              <h4>Гравець</h4>
-              <div class="form-row">
-                <input type="number" id="playerX" placeholder="X" min="0" max="19" />
-                <input type="number" id="playerY" placeholder="Y" min="0" max="14" />
-              </div>
-            </div>
-            <div id="enemiesList"></div>
-            <button onclick="addEnemy()">+ Ворог</button>
-            <div id="npcsList"></div>
-            <button onclick="addNpc()">+ NPC</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Параметри -->
-      <div class="accordion-section">
-        <div class="accordion-header">▼ Параметри</div>
-        <div class="accordion-body">
-          <div class="form-row">
-            <input type="number" id="gridWidth" value="20" min="5" max="50" />
-            <input type="number" id="gridHeight" value="15" min="5" max="30" />
-            <button onclick="resizeGrid()">Змінити</button>
-          </div>
-        </div>
+        <button class="tool-btn" id="btn-test-stop" style="pointer-events:auto;background:red;color:white;">Stop ⏹</button>
       </div>
     </div>
 
-    <!-- === РЕЖИМ 3: ПЛАТФОРМЕР === -->
-    <div class="platformer-mode" style="display:none">
-      <!-- Карта -->
-      <div class="accordion-section">
-        <div class="accordion-header">▼ Карта</div>
-        <div class="accordion-body">
-          <div class="grid-20x15" id="platformerMapGrid"></div>
-          <div class="palette" id="platformerPalette"></div>
+    <div class="bottom-panel">
+      <div class="tabs">
+        <div class="tab active" data-target="tab-palette">Палітра</div>
+        <div class="tab" data-target="tab-layers">Шари</div>
+        <div class="tab" data-target="tab-entities">Сутності</div>
+        <div class="tab" data-target="tab-test" style="color:#00ff88;">▶ Тест</div>
+      </div>
+      <div class="tab-content active" id="tab-palette">
+        <div class="palette">
+          <div class="color-btn active" style="background:#00f0ff;" data-color="#00f0ff"></div>
+          <div class="color-btn" style="background:#ff00e5;" data-color="#ff00e5"></div>
+          <div class="color-btn" style="background:#ffcc00;" data-color="#ffcc00"></div>
+          <div class="color-btn" style="background:#00ff88;" data-color="#00ff88"></div>
+          <div class="color-btn" style="background:#ff3355;" data-color="#ff3355"></div>
+          <div class="color-btn" style="background:#e0e4f0;" data-color="#e0e4f0"></div>
+          <div class="color-btn" style="background:#505570;" data-color="#505570"></div>
+          <div class="color-btn" style="background:#262b50;" data-color="#262b50"></div>
         </div>
       </div>
-
-      <!-- Об'єкти -->
-      <div class="accordion-section">
-        <div class="accordion-header">▼ Об'єкти</div>
-        <div class="accordion-body">
-          <div class="object-list">
-            <div>
-              <h4>Гравець</h4>
-              <div class="form-row">
-                <input type="number" id="platPlayerX" placeholder="X" min="0" max="19" />
-                <input type="number" id="platPlayerY" placeholder="Y" min="0" max="14" />
-              </div>
-            </div>
-            <div id="platEnemiesList"></div>
-            <button onclick="addPlatEnemy()">+ Ворог</button>
-            <div id="platNpcsList"></div>
-            <button onclick="addPlatNpc()">+ NPC</button>
-          </div>
+      <div class="tab-content" id="tab-layers">
+        <div style="display:flex;gap:10px;align-items:center;color:var(--text2);">
+          <span>Active Layer (Z):</span>
+          <button class="tool-btn" id="layer-down">⬇️</button>
+          <input type="text" id="layer-input" value="All" disabled style="width:40px;text-align:center;background:transparent;border:none;color:white;font-family:monospace;">
+          <button class="tool-btn" id="layer-up">⬆️</button>
+          <button class="tool-btn" id="layer-all">All</button>
         </div>
       </div>
-
-      <!-- Фізика -->
-      <div class="accordion-section">
-        <div class="accordion-header">▼ Фізика</div>
-        <div class="accordion-body">
-          <div class="form-row">
-            <input type="number" id="gravity" value="0.5" step="0.1" placeholder="Гравітація" />
-          </div>
-          <div class="form-row">
-            <input type="number" id="jumpForce" value="10" step="0.5" placeholder="Сила стрибка" />
-          </div>
-          <div class="form-row">
-            <input type="number" id="moveSpeed" value="2" step="0.1" placeholder="Швидкість" />
-          </div>
-          <div class="form-row">
-            <input type="number" id="lives" value="3" min="1" placeholder="Життя" />
-          </div>
+      <div class="tab-content" id="tab-entities">
+        <div class="palette">
+          <button class="tool-btn entity-btn active" data-entity="player_start">🧍 Player Start</button>
+          <button class="tool-btn entity-btn" data-entity="enemy">👾 Enemy</button>
+          <button class="tool-btn entity-btn" data-entity="trigger">⚡ Trigger</button>
         </div>
       </div>
-
-      <!-- Параметри -->
-      <div class="accordion-section">
-        <div class="accordion-header">▼ Параметри</div>
-        <div class="accordion-body">
-          <div class="form-row">
-            <input type="number" id="platWidth" value="20" min="5" max="50" />
-            <input type="number" id="platHeight" value="15" min="5" max="30" />
-            <button onclick="resizePlatGrid()">Змінити</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- === РЕЖИМ 4: 3D ВОКСЕЛІ === -->
-    <div class="voxel-mode" style="display:none">
-      <!-- Шари -->
-      <div class="accordion-section">
-        <div class="accordion-header">▼ Шари (Z)</div>
-        <div class="accordion-body">
-          <div class="z-controls">
-            <button onclick="changeZ(-1)">-</button>
-            <span id="zDisplay">Шар: 0</span>
-            <button onclick="changeZ(1)">+</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Сітка -->
-      <div class="accordion-section">
-        <div class="accordion-header">▼ Сітка (8x8)</div>
-        <div class="accordion-body">
-          <div class="voxel-grid" id="voxelGrid"></div>
-          <div class="tool-button active" data-tool="brush">Пензель</div>
-          <div class="tool-button" data-tool="eraser">Ластик</div>
-        </div>
-      </div>
-
-      <!-- Палітра -->
-      <div class="accordion-section">
-        <div class="accordion-header">▼ Палітра кольорів</div>
-        <div class="accordion-body">
-          <div class="color-palette-8" id="voxelColors"></div>
-        </div>
+      <div class="tab-content" id="tab-test">
+        <p style="font-size:14px;margin-bottom:10px;">Place <b>Player Start</b> in Entities tab first.</p>
+        <button class="tool-btn" id="btn-test" style="background:var(--neon);color:black;font-weight:bold;padding:10px 20px;">▶ Start Game</button>
       </div>
     </div>
   </div>
 
+  <!-- ===== QUEST MODE ===== -->
+  <div class="mode-container" id="mode-quest">
+    <div class="section">
+      <h3>📜 Сцени</h3>
+      <div id="scene-list"></div>
+      <button onclick="addScene()" style="margin-top:8px;">+ Додати сцену</button>
+    </div>
+    <div class="section">
+      <h3>✏️ Редактор сцени</h3>
+      <input type="text" id="scene-name" placeholder="Назва сцени">
+      <textarea id="scene-text" placeholder="Текст сцени"></textarea>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;">
+        <div>
+          <label style="font-size:12px;color:var(--text2);">Фон (8×8)</label>
+          <canvas id="quest-bg" width="64" height="64" style="image-rendering:pixelated;cursor:crosshair;border:1px solid #444;"></canvas>
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--text2);">Персонаж (8×8)</label>
+          <canvas id="quest-char" width="64" height="64" style="image-rendering:pixelated;cursor:crosshair;border:1px solid #444;"></canvas>
+        </div>
+      </div>
+      <div class="color-palette" id="quest-palette"></div>
+    </div>
+    <div class="section">
+      <h3>🔘 Кнопки</h3>
+      <div id="buttons-list"></div>
+      <button onclick="addButton()" class="neon">+ Додати кнопку</button>
+    </div>
+    <div class="section">
+      <h3>📊 Змінні</h3>
+      <div id="variables-list"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <input type="text" id="var-name" placeholder="Ім'я" style="flex:1;min-width:80px;">
+        <select id="var-type" style="width:auto;">
+          <option value="number">Число</option>
+          <option value="boolean">Логічне</option>
+          <option value="string">Текст</option>
+        </select>
+        <input type="text" id="var-value" placeholder="Значення" style="flex:1;min-width:60px;">
+        <button onclick="addVariable()">+</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 2D ARACDE MODE ===== -->
+  <div class="mode-container" id="mode-arcade">
+    <div class="section">
+      <h3>🎨 Палітра</h3>
+      <div class="palette-scroll" id="arcade-palette"></div>
+    </div>
+    <div class="section">
+      <h3>🗺️ Карта</h3>
+      <div class="arcade-grid" id="arcade-grid"></div>
+    </div>
+    <div class="section">
+      <h3>🎯 Об'єкти</h3>
+      <div class="obj-row"><span>Гравець:</span><input type="number" id="player-x" value="1" min="0"><input type="number" id="player-y" value="1" min="0"></div>
+      <div id="enemies-list"></div>
+      <button onclick="addEnemy()" style="margin:4px 0;">+ Ворог</button>
+      <div id="npcs-list"></div>
+      <button onclick="addNpc()">+ NPC</button>
+    </div>
+    <div class="section">
+      <h3>⚙ Параметри</h3>
+      <div style="display:flex;gap:8px;">
+        <input type="number" id="map-w" value="20" min="5" max="50" style="width:80px;">
+        <span style="align-self:center;">×</span>
+        <input type="number" id="map-h" value="15" min="5" max="30" style="width:80px;">
+        <button onclick="resizeMap()">Змінити</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/evo-engine.js"></script>
   <script>
-    // Глобальні змінні
-    let state = {
-      meta: { name: 'Моя гра', version: '1.0' },
-      mode: 0,
-      quest: { scenes: [], variables: [] },
-      arcade: { width: 20, height: 15, tiles: [], player: { x: 0, y: 0 }, enemies: [], npcs: [], triggers: [] },
-      platformer: { width: 20, height: 15, tiles: [], player: { x: 0, y: 0 }, enemies: [], npcs: [], triggers: [], gravity: 0.5, jumpForce: 10, moveSpeed: 2, lives: 3 },
-      voxel: { voxels: Array(8).fill().map(() => Array(8).fill().map(() => Array(8).fill(0))) }
+    // ============================================================
+    // PROJECT DATA — shared between all modes
+    // ============================================================
+    const PROJECT_KEY = 'evo_project';
+    let projectData = {
+      mode: '3d',
+      quest: { scenes: [], variables: [], currentScene: null },
+      arcade: { width: 20, height: 15, tiles: [], player: { x: 1, y: 1 }, enemies: [], npcs: [] }
     };
 
-    let currentSceneId = null;
-    let selectedTileType = 'empty';
-    let selectedColorIndex = 0;
-    let currentZ = 0;
-    let currentTool = 'brush';
-    const colors = ['#000000', '#ffffff', '#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
-
-    // Ініціалізація
-    function init() {
-      loadFromStorage();
-      setupQuestMode();
-      setupArcadeMode();
-      setupPlatformerMode();
-      setupVoxelMode();
-
-      // Accordion click handlers
-      document.querySelectorAll('.accordion-header').forEach(h => {
-        h.addEventListener('click', () => toggleAccordion(h));
-      });
-
-      // Tool buttons
-      document.querySelectorAll('.tool-button').forEach(btn => {
-        btn.addEventListener('click', () => {
-          document.querySelectorAll('.tool-button').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          currentTool = btn.dataset.tool;
-        });
-      });
-
-      // Open first accordion section by default
-      const firstHeader = document.querySelector('.accordion-header');
-      if (firstHeader) toggleAccordion(firstHeader);
-
-      renderAll();
+    function saveProject() {
+      localStorage.setItem(PROJECT_KEY, JSON.stringify(projectData));
     }
-
-    function loadFromStorage() {
-      const saved = localStorage.getItem('evo-editor-state');
+    function loadProject() {
+      const saved = localStorage.getItem(PROJECT_KEY);
       if (saved) {
         try {
-          state = JSON.parse(saved);
-        } catch (e) {
-          console.error('Failed to parse saved state', e);
-        }
+          const parsed = JSON.parse(saved);
+          projectData = { ...projectData, ...parsed };
+          // Ensure nested objects exist
+          if (!projectData.quest) projectData.quest = { scenes: [], variables: [], currentScene: null };
+          if (!projectData.arcade) projectData.arcade = { width: 20, height: 15, tiles: [], player: { x: 1, y: 1 }, enemies: [], npcs: [] };
+        } catch(e) { console.error('Load failed', e); }
       }
     }
 
-    function saveToStorage() {
-      localStorage.setItem('evo-editor-state', JSON.stringify(state));
-      alert('Збережено!');
-    }
+    // ============================================================
+    // MODE SWITCHING
+    // ============================================================
+    document.querySelectorAll('.pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        const mode = pill.dataset.mode;
+        document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        document.querySelectorAll('.mode-container').forEach(c => c.classList.remove('active'));
+        document.getElementById('mode-' + mode).classList.add('active');
+        projectData.mode = mode;
+        saveProject();
+        if (mode === 'quest') renderQuest();
+        if (mode === 'arcade') renderArcade();
+      });
+    });
 
-    function exportJson() {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
-      const dlAnchor = document.createElement('a');
-      dlAnchor.setAttribute("href", dataStr);
-      dlAnchor.setAttribute("download", "game-data.json");
-      document.body.appendChild(dlAnchor);
-      dlAnchor.click();
-      document.body.removeChild(dlAnchor);
-    }
+    // ============================================================
+    // QUEST MODE
+    // ============================================================
+    let questColorIdx = 0;
+    const questColors = ['#000000','#ffffff','#ff0000','#00ff00','#0000ff','#ffff00','#ff00ff','#00ffff'];
 
-    function importJson() {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = '.json';
-      input.onchange = e => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = event => {
-          try {
-            const imported = JSON.parse(event.target.result);
-            state = imported;
-            renderAll();
-            alert('Імпортовано!');
-          } catch (err) {
-            alert('Помилка при імпорті: ' + err.message);
-          }
+    function setupQuestPalette() {
+      const p = document.getElementById('quest-palette');
+      p.innerHTML = '';
+      questColors.forEach((c, i) => {
+        const sw = document.createElement('div');
+        sw.className = 'color-swatch' + (i === 0 ? ' active' : '');
+        sw.style.background = c;
+        sw.onclick = () => {
+          document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+          sw.classList.add('active');
+          questColorIdx = i;
         };
-        reader.readAsText(file);
+        p.appendChild(sw);
+      });
+    }
+
+    function initPixelCanvas(canvasId, dataArr) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext('2d');
+      // Draw 8x8 grid
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, 64, 64);
+      for (let i = 0; i < 64; i++) {
+        const x = (i % 8) * 8, y = Math.floor(i / 8) * 8;
+        ctx.fillStyle = dataArr[i] !== undefined && dataArr[i] !== null ? questColors[dataArr[i]] || '#000' : '#000';
+        ctx.fillRect(x, y, 8, 8);
+      }
+      // Draw grid lines
+      ctx.strokeStyle = '#333';
+      for (let i = 0; i <= 8; i++) {
+        ctx.beginPath(); ctx.moveTo(i*8, 0); ctx.lineTo(i*8, 64); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, i*8); ctx.lineTo(64, i*8); ctx.stroke();
+      }
+      // Click handler
+      canvas.onclick = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = 64 / rect.width, scaleY = 64 / rect.height;
+        const px = Math.floor((e.clientX - rect.left) * scaleX / 8);
+        const py = Math.floor((e.clientY - rect.top) * scaleY / 8);
+        if (px < 0 || px > 7 || py < 0 || py > 7) return;
+        const idx = py * 8 + px;
+        const scene = projectData.quest.scenes[projectData.quest.currentScene];
+        if (!scene) return;
+        const arr = canvasId === 'quest-bg' ? scene.bg : scene.char;
+        arr[idx] = questColorIdx;
+        initPixelCanvas(canvasId, arr);
       };
-      input.click();
-    }
-
-    function switchMode(index) {
-      state.mode = index;
-      document.querySelectorAll('.pill').forEach((el, i) => {
-        el.classList.toggle('active', i === index);
-      });
-      document.querySelector('.quest-mode').style.display = index === 0 ? 'block' : 'none';
-      document.querySelector('.arcade-mode').style.display = index === 1 ? 'block' : 'none';
-      document.querySelector('.platformer-mode').style.display = index === 2 ? 'block' : 'none';
-      document.querySelector('.voxel-mode').style.display = index === 3 ? 'block' : 'none';
-      renderAll();
-    }
-
-    function toggleAccordion(header) {
-      const section = header.parentElement;
-      const body = section.querySelector('.accordion-body');
-      const isOpen = body.classList.contains('open');
-
-      // Закрити всі
-      document.querySelectorAll('.accordion-body').forEach(b => {
-        b.classList.remove('open');
-        b.parentElement.querySelector('.accordion-header').classList.remove('open');
-      });
-
-      // Відкрити поточний, якщо був закритий
-      if (!isOpen) {
-        body.classList.add('open');
-        header.classList.add('open');
-      }
-    }
-
-    // === КВЕСТ ===
-    function setupQuestMode() {
-      // Колірна палітра для фону
-      const palette = document.getElementById('colorPaletteBg');
-      colors.forEach((color, index) => {
-        const btn = document.createElement('div');
-        btn.className = 'color-option';
-        btn.style.backgroundColor = color;
-        btn.dataset.index = index;
-        btn.onclick = () => {
-          selectedColorIndex = index;
-          document.querySelectorAll('.color-option').forEach(b => b.classList.remove('selected'));
-          btn.classList.add('selected');
-        };
-        if (index === 0) btn.classList.add('selected');
-        palette.appendChild(btn);
-      });
-    }
-
-    function renderQuestMode() {
-      renderScenesList();
-      renderCurrentScene();
-      renderButtonsList();
-      renderVariablesList();
-    }
-
-    function renderScenesList() {
-      const list = document.getElementById('scenesList');
-      list.innerHTML = '';
-      state.quest.scenes.forEach((scene, index) => {
-        const item = document.createElement('div');
-        item.className = 'list-item';
-        if (index === currentSceneId) item.classList.add('active');
-        item.textContent = scene.name || `Сцена ${index}`;
-        item.onclick = () => {
-          currentSceneId = index;
-          renderCurrentScene();
-          document.querySelectorAll('.list-item').forEach(i => i.classList.remove('active'));
-          item.classList.add('active');
-        };
-        list.appendChild(item);
-      });
     }
 
     function addScene() {
-      state.quest.scenes.push({
-        name: `Нова сцена ${state.quest.scenes.length + 1}`,
-        text: '',
-        background: Array(64).fill(0),
-        character: Array(64).fill(0)
+      const n = projectData.quest.scenes.length + 1;
+      projectData.quest.scenes.push({
+        name: 'Сцена ' + n, text: '',
+        bg: Array(64).fill(0), char: Array(64).fill(0),
+        buttons: []
       });
-      currentSceneId = state.quest.scenes.length - 1;
-      renderScenesList();
-      renderCurrentScene();
+      projectData.quest.currentScene = projectData.quest.scenes.length - 1;
+      renderQuest();
+      saveProject();
     }
 
-    function renderCurrentScene() {
-      if (currentSceneId === null || !state.quest.scenes[currentSceneId]) return;
-      const scene = state.quest.scenes[currentSceneId];
-      document.getElementById('sceneName').value = scene.name;
-      document.getElementById('sceneText').value = scene.text;
-      renderPixelCanvas('backgroundCanvas', scene.background);
-      renderPixelCanvas('characterCanvas', scene.character);
-
-      // Auto-save on input
-      document.getElementById('sceneName').oninput = function() {
-        scene.name = this.value;
-      };
-      document.getElementById('sceneText').oninput = function() {
-        scene.text = this.value;
-      };
-    }
-
-    function renderPixelCanvas(canvasId, data) {
-      const canvas = document.getElementById(canvasId);
-      canvas.innerHTML = '';
-      data.forEach((colorIndex, i) => {
-        const pixel = document.createElement('div');
-        pixel.className = 'pixel';
-        pixel.style.backgroundColor = colors[colorIndex] || '#000';
-        pixel.dataset.index = i;
-        pixel.onclick = () => {
-          const scene = state.quest.scenes[currentSceneId];
-          const arr = canvasId === 'backgroundCanvas' ? scene.background : scene.character;
-          arr[i] = selectedColorIndex;
+    function renderQuest() {
+      // Scene list
+      const list = document.getElementById('scene-list');
+      list.innerHTML = '';
+      projectData.quest.scenes.forEach((s, i) => {
+        const item = document.createElement('div');
+        item.className = 'list-item' + (i === projectData.quest.currentScene ? ' active' : '');
+        item.textContent = s.name;
+        item.onclick = () => {
+          projectData.quest.currentScene = i;
+          renderQuest();
         };
-        canvas.appendChild(pixel);
+        list.appendChild(item);
+      });
+
+      // Current scene editor
+      const si = projectData.quest.currentScene;
+      if (si === null || !projectData.quest.scenes[si]) return;
+      const scene = projectData.quest.scenes[si];
+      document.getElementById('scene-name').value = scene.name;
+      document.getElementById('scene-text').value = scene.text;
+      document.getElementById('scene-name').oninput = function() { scene.name = this.value; };
+      document.getElementById('scene-text').oninput = function() { scene.text = this.value; };
+      initPixelCanvas('quest-bg', scene.bg);
+      initPixelCanvas('quest-char', scene.char);
+
+      // Buttons
+      renderButtons();
+      // Variables
+      renderVariables();
+    }
+
+    function renderButtons() {
+      const list = document.getElementById('buttons-list');
+      list.innerHTML = '';
+      const si = projectData.quest.currentScene;
+      if (si === null) return;
+      const scene = projectData.quest.scenes[si];
+      if (!scene.buttons) scene.buttons = [];
+      scene.buttons.forEach((btn, i) => {
+        const div = document.createElement('div');
+        div.className = 'btn-row';
+        div.innerHTML = '<input type="text" value="' + (btn.label || '') + '" placeholder="Label" style="flex:1;margin:0;" oninput="updateBtn(' + i + ',\'label\',this.value)">' +
+          '<button onclick="removeBtn(' + i + ')" style="min-height:36px;padding:4px 8px;">✕</button>';
+        list.appendChild(div);
       });
     }
 
     function addButton() {
-      if (currentSceneId === null) return;
-      const scene = state.quest.scenes[currentSceneId];
+      const si = projectData.quest.currentScene;
+      if (si === null) return;
+      const scene = projectData.quest.scenes[si];
       if (!scene.buttons) scene.buttons = [];
-      scene.buttons.push({ label: 'Нова кнопка', targetScene: 0, conditions: [], effects: [] });
-      renderButtonsList();
+      scene.buttons.push({ label: 'Нова кнопка', target: 0, conditions: [], effects: [] });
+      renderButtons();
+      saveProject();
+    }
+    function updateBtn(idx, field, val) {
+      const si = projectData.quest.currentScene;
+      if (si === null) return;
+      projectData.quest.scenes[si].buttons[idx][field] = val;
+    }
+    function removeBtn(idx) {
+      const si = projectData.quest.currentScene;
+      if (si === null) return;
+      projectData.quest.scenes[si].buttons.splice(idx, 1);
+      renderButtons();
+      saveProject();
     }
 
-    function renderButtonsList() {
-      const list = document.getElementById('buttonsList');
+    function renderVariables() {
+      const list = document.getElementById('variables-list');
       list.innerHTML = '';
-      if (currentSceneId === null) return;
-      const scene = state.quest.scenes[currentSceneId];
-      if (!scene.buttons) scene.buttons = [];
-      scene.buttons.forEach((btn, idx) => {
-        const item = document.createElement('div');
-        item.className = 'button-item';
-        item.innerHTML = `
-          <input type="text" value="${btn.label}" placeholder="Текст кнопки" oninput="updateButton(${idx}, 'label', this.value)" />
-          <select onchange="updateButton(${idx}, 'targetScene', parseInt(this.value))">
-            ${state.quest.scenes.map((s, i) => `<option value="${i}" ${i === btn.targetScene ? 'selected' : ''}>${s.name}</option>`).join('')}
-          </select>
-          <button onclick="removeButton(${idx})">✕</button>
-        `;
-        list.appendChild(item);
-
-        // Умови
-        const conditions = document.createElement('div');
-        conditions.className = 'conditions-list';
-        btn.conditions.forEach((cond, cidx) => {
-          const condEl = document.createElement('div');
-          condEl.className = 'condition-item';
-          condEl.innerHTML = `
-            <select onchange="updateCondition(${idx}, ${cidx}, 'var', this.value)">
-              ${state.quest.variables.map(v => `<option value="${v.name}" ${v.name === cond.var ? 'selected' : ''}>${v.name}</option>`).join('')}
-            </select>
-            <select onchange="updateCondition(${idx}, ${cidx}, 'op', this.value)">
-              <option value="==" ${cond.op === '==' ? 'selected' : ''}>=</option>
-              <option value="!=" ${cond.op === '!=' ? 'selected' : ''}>&#8800;</option>
-              <option value=">" ${cond.op === '>' ? 'selected' : ''}>&gt;</option>
-              <option value="<" ${cond.op === '<' ? 'selected' : ''}>&lt;</option>
-            </select>
-            <input type="text" value="${cond.val}" oninput="updateCondition(${idx}, ${cidx}, 'val', this.value)" />
-            <button onclick="removeCondition(${idx}, ${cidx})">✕</button>
-          `;
-          conditions.appendChild(condEl);
-        });
-        const addCondBtn = document.createElement('button');
-        addCondBtn.textContent = '+ Умова';
-        addCondBtn.onclick = () => addCondition(idx);
-        conditions.appendChild(addCondBtn);
-        item.appendChild(conditions);
-
-        // Ефекти
-        const effects = document.createElement('div');
-        effects.className = 'effects-list';
-        btn.effects.forEach((eff, eidx) => {
-          const effEl = document.createElement('div');
-          effEl.className = 'effect-item';
-          effEl.innerHTML = `
-            <select onchange="updateEffect(${idx}, ${eidx}, 'var', this.value)">
-              <option value="">(нова)</option>
-              ${state.quest.variables.map(v => `<option value="${v.name}" ${v.name === eff.var ? 'selected' : ''}>${v.name}</option>`).join('')}
-            </select>
-            <input type="text" value="${eff.val}" oninput="updateEffect(${idx}, ${eidx}, 'val', this.value)" placeholder="Значення" />
-            <button onclick="removeEffect(${idx}, ${eidx})">✕</button>
-          `;
-          effects.appendChild(effEl);
-        });
-        const addEffBtn = document.createElement('button');
-        addEffBtn.textContent = '+ Ефект';
-        addEffBtn.onclick = () => addEffect(idx);
-        effects.appendChild(addEffBtn);
-        item.appendChild(effects);
+      projectData.quest.variables.forEach((v, i) => {
+        const div = document.createElement('div');
+        div.className = 'btn-row';
+        div.innerHTML = '<span style="flex:1;">' + v.name + ' (' + v.type + ') = ' + v.value + '</span>' +
+          '<button onclick="removeVar(' + i + ')" style="min-height:36px;padding:4px 8px;">✕</button>';
+        list.appendChild(div);
       });
     }
-
-    function updateButton(idx, field, value) {
-      state.quest.scenes[currentSceneId].buttons[idx][field] = value;
-    }
-
-    function removeButton(idx) {
-      state.quest.scenes[currentSceneId].buttons.splice(idx, 1);
-      renderButtonsList();
-    }
-
-    function addCondition(btnIdx) {
-      state.quest.scenes[currentSceneId].buttons[btnIdx].conditions.push({ var: '', op: '==', val: '' });
-      renderButtonsList();
-    }
-
-    function updateCondition(btnIdx, condIdx, field, value) {
-      state.quest.scenes[currentSceneId].buttons[btnIdx].conditions[condIdx][field] = value;
-    }
-
-    function removeCondition(btnIdx, condIdx) {
-      state.quest.scenes[currentSceneId].buttons[btnIdx].conditions.splice(condIdx, 1);
-      renderButtonsList();
-    }
-
-    function addEffect(btnIdx) {
-      state.quest.scenes[currentSceneId].buttons[btnIdx].effects.push({ var: '', val: '' });
-      renderButtonsList();
-    }
-
-    function updateEffect(btnIdx, effIdx, field, value) {
-      state.quest.scenes[currentSceneId].buttons[btnIdx].effects[effIdx][field] = value;
-    }
-
-    function removeEffect(btnIdx, effIdx) {
-      state.quest.scenes[currentSceneId].buttons[btnIdx].effects.splice(effIdx, 1);
-      renderButtonsList();
-    }
-
     function addVariable() {
-      state.quest.variables.push({ name: `var${state.quest.variables.length}`, type: 'number', value: 0 });
-      renderVariablesList();
+      const name = document.getElementById('var-name').value.trim();
+      const type = document.getElementById('var-type').value;
+      const val = document.getElementById('var-value').value.trim();
+      if (!name) return;
+      projectData.quest.variables.push({ name, type, value: type === 'number' ? parseFloat(val)||0 : type === 'boolean' ? val === 'true' : val });
+      document.getElementById('var-name').value = '';
+      document.getElementById('var-value').value = '';
+      renderVariables();
+      saveProject();
+    }
+    function removeVar(idx) {
+      projectData.quest.variables.splice(idx, 1);
+      renderVariables();
+      saveProject();
     }
 
-    function renderVariablesList() {
-      const list = document.getElementById('variablesList');
-      list.innerHTML = '';
-      state.quest.variables.forEach((v, idx) => {
-        const item = document.createElement('div');
-        item.className = 'variable-item';
-        item.innerHTML = `
-          <input type="text" value="${v.name}" oninput="updateVariable(${idx}, 'name', this.value)" />
-          <select onchange="updateVariable(${idx}, 'type', this.value)">
-            <option value="number" ${v.type === 'number' ? 'selected' : ''}>Число</option>
-            <option value="boolean" ${v.type === 'boolean' ? 'selected' : ''}>Логічне</option>
-            <option value="string" ${v.type === 'string' ? 'selected' : ''}>Текст</option>
-          </select>
-          <input type="text" value="${v.value}" oninput="updateVariable(${idx}, 'value', this.value)" />
-          <button onclick="removeVariable(${idx})">✕</button>
-        `;
-        list.appendChild(item);
+    // ============================================================
+    // 2D ARACDE MODE
+    // ============================================================
+    const TILE_TYPES = ['empty','wall','collect','trigger','door','key','enemy','npc','grass','water','lava','spike','finish'];
+    let selectedTile = 'empty';
+
+    function renderArcade() {
+      const pal = document.getElementById('arcade-palette');
+      pal.innerHTML = '';
+      TILE_TYPES.forEach(t => {
+        const btn = document.createElement('div');
+        btn.className = 'palette-btn' + (t === selectedTile ? ' active' : '');
+        btn.textContent = t === 'empty' ? '∅' : t[0].toUpperCase() + t.slice(1,2);
+        btn.title = t;
+        btn.onclick = () => { selectedTile = t; renderArcade(); };
+        pal.appendChild(btn);
       });
+
+      // Grid
+      renderGrid();
+
+      // Objects
+      document.getElementById('player-x').value = projectData.arcade.player.x;
+      document.getElementById('player-y').value = projectData.arcade.player.y;
+      document.getElementById('player-x').oninput = function() { projectData.arcade.player.x = parseInt(this.value)||0; };
+      document.getElementById('player-y').oninput = function() { projectData.arcade.player.y = parseInt(this.value)||0; };
+      renderEnemyList();
+      renderNpcList();
+
+      // Params
+      document.getElementById('map-w').value = projectData.arcade.width;
+      document.getElementById('map-h').value = projectData.arcade.height;
     }
 
-    function updateVariable(idx, field, value) {
-      if (field === 'value') {
-        if (state.quest.variables[idx].type === 'number') value = parseFloat(value);
-        if (state.quest.variables[idx].type === 'boolean') value = value === 'true';
-      }
-      state.quest.variables[idx][field] = value;
-    }
-
-    function removeVariable(idx) {
-      state.quest.variables.splice(idx, 1);
-      renderVariablesList();
-    }
-
-    // === 2D АРКАДА ===
-    function setupArcadeMode() {
-      renderArcadeGrid();
-      renderTilePalette('tilePalette', 'arcade');
-      document.getElementById('playerX').value = state.arcade.player.x;
-      document.getElementById('playerY').value = state.arcade.player.y;
-      document.getElementById('gridWidth').value = state.arcade.width;
-      document.getElementById('gridHeight').value = state.arcade.height;
-      renderEnemiesList('enemiesList', 'arcade');
-      renderNpcsList('npcsList', 'arcade');
-
-      // Auto-save player pos
-      document.getElementById('playerX').oninput = function() { state.arcade.player.x = parseInt(this.value) || 0; };
-      document.getElementById('playerY').oninput = function() { state.arcade.player.y = parseInt(this.value) || 0; };
-    }
-
-    function renderArcadeGrid() {
-      const grid = document.getElementById('mapGrid');
+    function renderGrid() {
+      const grid = document.getElementById('arcade-grid');
+      const w = projectData.arcade.width, h = projectData.arcade.height;
+      grid.style.gridTemplateColumns = 'repeat(' + w + ', 1fr)';
+      grid.style.gridTemplateRows = 'repeat(' + h + ', 1fr)';
       grid.innerHTML = '';
-      if (!state.arcade.tiles.length) {
-        state.arcade.tiles = Array(state.arcade.height).fill().map(() => Array(state.arcade.width).fill('empty'));
+      if (!projectData.arcade.tiles.length) {
+        projectData.arcade.tiles = Array(h).fill().map(() => Array(w).fill('empty'));
       }
-      const cellSize = Math.floor(Math.min(343 / state.arcade.width, 257 / state.arcade.height));
-      state.arcade.tiles.forEach((row, y) => {
+      projectData.arcade.tiles.forEach((row, y) => {
         row.forEach((tile, x) => {
           const cell = document.createElement('div');
-          cell.className = 'grid-cell ' + tile;
-          cell.style.width = cellSize + 'px';
-          cell.style.height = cellSize + 'px';
+          cell.className = 'grid-cell' + (tile !== 'empty' ? ' ' + tile : '');
           cell.onclick = () => {
-            state.arcade.tiles[y][x] = selectedTileType;
-            renderArcadeGrid();
+            projectData.arcade.tiles[y][x] = selectedTile;
+            renderGrid();
           };
-          cell.oncontextmenu = (e) => { e.preventDefault(); state.arcade.tiles[y][x] = 'empty'; renderArcadeGrid(); };
+          cell.oncontextmenu = (e) => {
+            e.preventDefault();
+            projectData.arcade.tiles[y][x] = 'empty';
+            renderGrid();
+          };
           grid.appendChild(cell);
         });
-      });
-    }
-
-    function renderTilePalette(paletteId, mode) {
-      const palette = document.getElementById(paletteId);
-      palette.innerHTML = '';
-      const types = ['empty','wall','collectible','trigger','door','key','enemy','npc','grass','water','lava','spikes','finish'];
-      if (mode === 'platformer') types.push('platform');
-      types.forEach(type => {
-        const item = document.createElement('div');
-        item.className = 'palette-item ' + type + (type === selectedTileType ? ' selected' : '');
-        item.textContent = type === 'empty' ? '∅' : type[0].toUpperCase();
-        item.onclick = () => { selectedTileType = type; renderTilePalette(paletteId, mode); };
-        palette.appendChild(item);
       });
     }
 
     function addEnemy() {
-      state.arcade.enemies.push({ x: 0, y: 0, ai: 'patrol' });
-      renderEnemiesList('enemiesList', 'arcade');
+      projectData.arcade.enemies.push({ x: 0, y: 0, ai: 'patrol' });
+      renderEnemyList();
+      saveProject();
     }
+    function renderEnemyList() {
+      const list = document.getElementById('enemies-list');
+      list.innerHTML = '<h4 style="font-size:13px;margin:8px 0 4px;">Вороги</h4>';
+      projectData.arcade.enemies.forEach((e, i) => {
+        const div = document.createElement('div');
+        div.className = 'obj-row';
+        div.innerHTML = 'X<input type="number" value="' + e.x + '" min="0" onchange="updEnemy(' + i + ',\'x\',this.value)">' +
+          'Y<input type="number" value="' + e.y + '" min="0" onchange="updEnemy(' + i + ',\'y\',this.value)">' +
+          '<button onclick="remEnemy(' + i + ')" style="min-height:32px;padding:2px 8px;">✕</button>';
+        list.appendChild(div);
+      });
+    }
+    function updEnemy(idx, field, val) { projectData.arcade.enemies[idx][field] = parseInt(val)||0; }
+    function remEnemy(idx) { projectData.arcade.enemies.splice(idx, 1); renderEnemyList(); saveProject(); }
 
     function addNpc() {
-      state.arcade.npcs.push({ x: 0, y: 0, dialog: '' });
-      renderNpcsList('npcsList', 'arcade');
+      projectData.arcade.npcs.push({ x: 0, y: 0, dialog: '' });
+      renderNpcList();
+      saveProject();
     }
-
-    function renderEnemiesList(listId, mode) {
-      const list = document.getElementById(listId);
-      list.innerHTML = '';
-      const data = mode === 'arcade' ? state.arcade.enemies : state.platformer.enemies;
-      data.forEach((enemy, idx) => {
-        const item = document.createElement('div');
-        item.className = 'object-item';
-        item.innerHTML = '<input type="number" value="' + enemy.x + '" onchange="updateEnemy(' + idx + ',\'x\',this.value,\'' + mode + '\')" min="0" />' +
-          '<input type="number" value="' + enemy.y + '" onchange="updateEnemy(' + idx + ',\'y\',this.value,\'' + mode + '\')" min="0" />' +
-          '<button onclick="removeEnemy(' + idx + ',\'' + mode + '\')">✕</button>';
-        list.appendChild(item);
+    function renderNpcList() {
+      const list = document.getElementById('npcs-list');
+      list.innerHTML = '<h4 style="font-size:13px;margin:8px 0 4px;">NPC</h4>';
+      projectData.arcade.npcs.forEach((n, i) => {
+        const div = document.createElement('div');
+        div.className = 'obj-row';
+        div.innerHTML = 'X<input type="number" value="' + n.x + '" min="0" onchange="updNpc(' + i + ',\'x\',this.value)">' +
+          'Y<input type="number" value="' + n.y + '" min="0" onchange="updNpc(' + i + ',\'y\',this.value)">' +
+          '<button onclick="remNpc(' + i + ')" style="min-height:32px;padding:2px 8px;">✕</button>';
+        list.appendChild(div);
       });
     }
+    function updNpc(idx, field, val) { projectData.arcade.npcs[idx][field] = parseInt(val)||0; }
+    function remNpc(idx) { projectData.arcade.npcs.splice(idx, 1); renderNpcList(); saveProject(); }
 
-    function renderNpcsList(listId, mode) {
-      const list = document.getElementById(listId);
-      list.innerHTML = '';
-      const data = mode === 'arcade' ? state.arcade.npcs : state.platformer.npcs;
-      data.forEach((npc, idx) => {
-        const item = document.createElement('div');
-        item.className = 'object-item';
-        item.innerHTML = '<input type="number" value="' + npc.x + '" onchange="updateNpc(' + idx + ',\'x\',this.value,\'' + mode + '\')" min="0" />' +
-          '<input type="number" value="' + npc.y + '" onchange="updateNpc(' + idx + ',\'y\',this.value,\'' + mode + '\')" min="0" />' +
-          '<input class="dialog-input" type="text" value="' + (npc.dialog || '') + '" onchange="updateNpc(' + idx + ',\'dialog\',this.value,\'' + mode + '\')" placeholder="Діалог" />' +
-          '<button onclick="removeNpc(' + idx + ',\'' + mode + '\')">✕</button>';
-        list.appendChild(item);
+    function resizeMap() {
+      projectData.arcade.width = parseInt(document.getElementById('map-w').value) || 20;
+      projectData.arcade.height = parseInt(document.getElementById('map-h').value) || 15;
+      projectData.arcade.tiles = [];
+      renderGrid();
+      saveProject();
+    }
+
+    // ============================================================
+    // EXPORT / IMPORT
+    // ============================================================
+    document.getElementById('btn-save-all').addEventListener('click', saveProject);
+    document.getElementById('btn-export').addEventListener('click', () => {
+      const blob = new Blob([JSON.stringify(projectData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'evo-game.json'; a.click();
+      URL.revokeObjectURL(url);
+    });
+    document.getElementById('btn-import').addEventListener('click', () => {
+      document.getElementById('import-file').click();
+    });
+    document.getElementById('import-file').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const data = JSON.parse(ev.target.result);
+          projectData = { ...projectData, ...data };
+          if (!projectData.quest) projectData.quest = { scenes: [], variables: [], currentScene: null };
+          if (!projectData.arcade) projectData.arcade = { width: 20, height: 15, tiles: [], player: { x: 1, y: 1 }, enemies: [], npcs: [] };
+          saveProject();
+          // Switch to the imported mode
+          const mode = projectData.mode || '3d';
+          document.querySelector('.pill[data-mode="' + mode + '"]')?.click();
+        } catch(err) { alert('Помилка імпорту: ' + err.message); }
+      };
+      reader.readAsText(file);
+    });
+
+    // ============================================================
+    // INIT
+    // ============================================================
+    loadProject();
+    setupQuestPalette();
+
+    // Default scene if empty
+    if (projectData.quest.scenes.length === 0) {
+      projectData.quest.scenes.push({
+        name: 'Початок', text: 'Ласкаво просимо!',
+        bg: Array(64).fill(0), char: Array(64).fill(0),
+        buttons: []
       });
+      projectData.quest.currentScene = 0;
     }
 
-    function updateEnemy(idx, field, value, mode) {
-      const data = mode === 'arcade' ? state.arcade.enemies : state.platformer.enemies;
-      data[idx][field] = parseInt(value);
-    }
-    function removeEnemy(idx, mode) {
-      const data = mode === 'arcade' ? state.arcade.enemies : state.platformer.enemies;
-      data.splice(idx, 1);
-      renderEnemiesList(mode === 'arcade' ? 'enemiesList' : 'platEnemiesList', mode);
-    }
-    function updateNpc(idx, field, value, mode) {
-      const data = mode === 'arcade' ? state.arcade.npcs : state.platformer.npcs;
-      data[idx][field] = field === 'dialog' ? value : parseInt(value);
-    }
-    function removeNpc(idx, mode) {
-      const data = mode === 'arcade' ? state.arcade.npcs : state.platformer.npcs;
-      data.splice(idx, 1);
-      renderNpcsList(mode === 'arcade' ? 'npcsList' : 'platNpcsList', mode);
-    }
-    function resizeGrid() {
-      state.arcade.width = parseInt(document.getElementById('gridWidth').value);
-      state.arcade.height = parseInt(document.getElementById('gridHeight').value);
-      state.arcade.tiles = Array(state.arcade.height).fill().map(() => Array(state.arcade.width).fill('empty'));
-      renderArcadeGrid();
-    }
+    // Restore last mode
+    const lastMode = projectData.mode || '3d';
+    document.querySelector('.pill[data-mode="' + lastMode + '"]')?.click();
 
-    // === ПЛАТФОРМЕР ===
-    function setupPlatformerMode() {
-      renderPlatformerGrid();
-      renderTilePalette('platformerPalette', 'platformer');
-      document.getElementById('platPlayerX').value = state.platformer.player.x;
-      document.getElementById('platPlayerY').value = state.platformer.player.y;
-      document.getElementById('platWidth').value = state.platformer.width;
-      document.getElementById('platHeight').value = state.platformer.height;
-      document.getElementById('gravity').value = state.platformer.gravity;
-      document.getElementById('jumpForce').value = state.platformer.jumpForce;
-      document.getElementById('moveSpeed').value = state.platformer.moveSpeed;
-      document.getElementById('lives').value = state.platformer.lives;
-      renderEnemiesList('platEnemiesList', 'platformer');
-      renderNpcsList('platNpcsList', 'platformer');
-
-      // Auto-save physics
-      document.getElementById('platPlayerX').oninput = function() { state.platformer.player.x = parseInt(this.value) || 0; };
-      document.getElementById('platPlayerY').oninput = function() { state.platformer.player.y = parseInt(this.value) || 0; };
-      document.getElementById('gravity').oninput = function() { state.platformer.gravity = parseFloat(this.value) || 0; };
-      document.getElementById('jumpForce').oninput = function() { state.platformer.jumpForce = parseFloat(this.value) || 0; };
-      document.getElementById('moveSpeed').oninput = function() { state.platformer.moveSpeed = parseFloat(this.value) || 0; };
-      document.getElementById('lives').oninput = function() { state.platformer.lives = parseInt(this.value) || 1; };
-    }
-
-    function renderPlatformerGrid() {
-      const grid = document.getElementById('platformerMapGrid');
-      grid.innerHTML = '';
-      if (!state.platformer.tiles.length) {
-        state.platformer.tiles = Array(state.platformer.height).fill().map(() => Array(state.platformer.width).fill('empty'));
-      }
-      const cellSize = Math.floor(Math.min(343 / state.platformer.width, 257 / state.platformer.height));
-      state.platformer.tiles.forEach((row, y) => {
-        row.forEach((tile, x) => {
-          const cell = document.createElement('div');
-          cell.className = 'grid-cell ' + tile;
-          cell.style.width = cellSize + 'px';
-          cell.style.height = cellSize + 'px';
-          cell.onclick = () => {
-            state.platformer.tiles[y][x] = selectedTileType;
-            renderPlatformerGrid();
-          };
-          cell.oncontextmenu = (e) => { e.preventDefault(); state.platformer.tiles[y][x] = 'empty'; renderPlatformerGrid(); };
-          grid.appendChild(cell);
-        });
-      });
-    }
-
-    function addPlatEnemy() {
-      state.platformer.enemies.push({ x: 0, y: 0, ai: 'patrol' });
-      renderEnemiesList('platEnemiesList', 'platformer');
-    }
-    function addPlatNpc() {
-      state.platformer.npcs.push({ x: 0, y: 0, dialog: '' });
-      renderNpcsList('platNpcsList', 'platformer');
-    }
-    function resizePlatGrid() {
-      state.platformer.width = parseInt(document.getElementById('platWidth').value);
-      state.platformer.height = parseInt(document.getElementById('platHeight').value);
-      state.platformer.tiles = Array(state.platformer.height).fill().map(() => Array(state.platformer.width).fill('empty'));
-      renderPlatformerGrid();
-    }
-
-    // === 3D ВОКСЕЛІ ===
-    function setupVoxelMode() {
-      setupVoxelPalette();
-      renderVoxelGrid();
-    }
-
-    function setupVoxelPalette() {
-      const palette = document.getElementById('voxelColors');
-      palette.innerHTML = '';
-      colors.forEach((color, index) => {
-        const btn = document.createElement('div');
-        btn.className = 'color-option' + (index === selectedColorIndex ? ' selected' : '');
-        btn.style.backgroundColor = color;
-        btn.onclick = () => {
-          selectedColorIndex = index;
-          document.querySelectorAll('#voxelColors .color-option').forEach(b => b.classList.remove('selected'));
-          btn.classList.add('selected');
-        };
-        palette.appendChild(btn);
-      });
-    }
-
-    function renderVoxelGrid() {
-      const grid = document.getElementById('voxelGrid');
-      grid.innerHTML = '';
-      for (let y = 0; y < 8; y++) {
-        for (let x = 0; x < 8; x++) {
-          const cell = document.createElement('div');
-          cell.className = 'voxel-cell';
-          const val = state.voxel.voxels[currentZ][y][x];
-          if (val !== 0) {
-            cell.style.backgroundColor = colors[val] || '#333';
-          }
-          cell.onclick = () => {
-            if (currentTool === 'brush') {
-              state.voxel.voxels[currentZ][y][x] = selectedColorIndex;
-            } else {
-              state.voxel.voxels[currentZ][y][x] = 0;
-            }
-            renderVoxelGrid();
-          };
-          grid.appendChild(cell);
-        }
-      }
-      document.getElementById('zDisplay').textContent = 'Шар: ' + currentZ;
-    }
-
-    function changeZ(delta) {
-      currentZ = Math.max(0, Math.min(7, currentZ + delta));
-      renderVoxelGrid();
-    }
-
-    // === РЕНДЕР ВСЬОГО ===
-    function renderAll() {
-      if (state.mode === 0) renderQuestMode();
-      else if (state.mode === 1) setupArcadeMode();
-      else if (state.mode === 2) setupPlatformerMode();
-      else if (state.mode === 3) setupVoxelMode();
-    }
-
-    // Запуск
-    window.addEventListener('load', init);
+    // Auto-save every 30s
+    setInterval(saveProject, 30000);
   </script>
 </body>
 </html>
-
-   
