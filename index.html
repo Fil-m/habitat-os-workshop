@@ -1047,6 +1047,528 @@
       renderChat();
       drawMining();
     });
-  </script>
+  
+// === TILE EDITOR ===
+function initTileEditor() {
+    const tileGridSize = 16;
+    const tileTypes = ['Empty', 'Solid', 'Trigger', 'Collectible', 'Spawner', 'Door', 'Hazard'];
+    const tileSize = 32; // px
+
+    const state = window.state;
+    if (!state.editor) state.editor = {};
+    if (!state.editor.tiles) {
+        state.editor.tiles = Array(tileGridSize).fill().map(() => Array(tileGridSize).fill({ type: 'Empty', props: {} }));
+    }
+
+    const container = document.getElementById('scene-canvas');
+    const tileEditor = document.createElement('div');
+    tileEditor.id = 'tile-editor';
+    tileEditor.style.cssText = `
+        display: grid;
+        grid-template-columns: repeat(${tileGridSize}, ${tileSize}px);
+        gap: 1px;
+        background: #111;
+        border: 1px solid #333;
+        margin: 10px;
+    `;
+    container.innerHTML = '';
+    container.appendChild(tileEditor);
+
+    const propsPanel = document.getElementById('entity-props') || createPropsPanel();
+    function createPropsPanel() {
+        const panel = document.createElement('div');
+        panel.id = 'entity-props';
+        panel.style.cssText = 'position: absolute; top: 10px; right: 10px; width: 200px; background: #1e1e1e; color: white; padding: 10px; border: 1px solid #444;';
+        document.body.appendChild(panel);
+        return panel;
+    }
+
+    function renderTileEditor() {
+        tileEditor.innerHTML = '';
+        state.editor.tiles.forEach((row, y) => {
+            row.forEach((tile, x) => {
+                const tileEl = document.createElement('div');
+                tileEl.dataset.x = x;
+                tileEl.dataset.y = y;
+                tileEl.style.cssText = `
+                    width: ${tileSize}px;
+                    height: ${tileSize}px;
+                    background: ${getTileColor(tile.type)};
+                    border: 1px solid #333;
+                    box-sizing: border-box;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 10px;
+                    color: rgba(255,255,255,0.6);
+                `;
+                tileEl.textContent = tile.type.charAt(0);
+                tileEl.addEventListener('click', (e) => {
+                    const x = parseInt(tileEl.dataset.x);
+                    const y = parseInt(tileEl.dataset.y);
+                    if (e.shiftKey) {
+                        state.editor.tiles[y][x] = { type: 'Empty', props: {} };
+                    } else {
+                        state.editor.tiles[y][x] = { type: 'Solid', props: {} };
+                    }
+                    renderTileEditor();
+                    showTileProps(x, y);
+                });
+                tileEl.addEventListener('dblclick', () => {
+                    const x = parseInt(tileEl.dataset.x);
+                    const y = parseInt(tileEl.dataset.y);
+                    showTileProps(x, y);
+                });
+                tileEditor.appendChild(tileEl);
+            });
+        });
+    }
+
+    function getTileColor(type) {
+        const colors = {
+            Empty: '#1a1a1a',
+            Solid: '#8B4513',
+            Trigger: '#FFD700',
+            Collectible: '#32CD32',
+            Spawner: '#8A2BE2',
+            Door: '#4682B4',
+            Hazard: '#FF4500'
+        };
+        return colors[type] || '#1a1a1a';
+    }
+
+    function showTileProps(x, y) {
+        const tile = state.editor.tiles[y][x];
+        propsPanel.innerHTML = `
+            <h4>Tile Properties</h4>
+            <label>Type: 
+                <select id="tile-type-select">
+                    ${tileTypes.map(t => `<option value="${t}" ${t === tile.type ? 'selected' : ''}>${t}</option>`).join('')}
+                </select>
+            </label>
+            <div id="tile-specific-props"></div>
+            <button onclick="window.saveTileProps(${x}, ${y})">Save</button>
+        `;
+
+        const select = propsPanel.querySelector('#tile-type-select');
+        select.addEventListener('change', () => {
+            const extraProps = document.getElementById('tile-specific-props');
+            extraProps.innerHTML = '';
+            const type = select.value;
+            if (type === 'Collectible') {
+                extraProps.innerHTML = `<input type="text" id="collectible-id" placeholder="Item ID" value="${tile.props.itemId || ''}">`;
+            } else if (type === 'Trigger') {
+                extraProps.innerHTML = `<input type="text" id="trigger-event" placeholder="Event" value="${tile.props.event || ''}">`;
+            } else if (type === 'Door') {
+                extraProps.innerHTML = `<input type="text" id="door-id" placeholder="Door ID" value="${tile.props.doorId || ''}">`;
+            }
+        });
+        select.dispatchEvent(new Event('change'));
+    }
+
+    window.saveTileProps = function(x, y) {
+        const select = propsPanel.querySelector('#tile-type-select');
+        const type = select.value;
+        const tile = state.editor.tiles[y][x];
+        tile.type = type;
+        if (type === 'Collectible') {
+            tile.props.itemId = document.getElementById('collectible-id').value;
+        } else if (type === 'Trigger') {
+            tile.props.event = document.getElementById('trigger-event').value;
+        } else if (type === 'Door') {
+            tile.props.doorId = document.getElementById('door-id').value;
+        }
+        renderTileEditor();
+    };
+
+    window.saveTileMap = function() {
+        localStorage.setItem('evo-tilemap', JSON.stringify(state.editor.tiles));
+        alert('Map saved!');
+    };
+
+    window.loadTileMap = function() {
+        const saved = localStorage.getItem('evo-tilemap');
+        if (saved) {
+            state.editor.tiles = JSON.parse(saved);
+            renderTileEditor();
+        }
+    };
+
+    renderTileEditor();
+}
+
+// === VOXEL EDITOR ===
+function initVoxelEditor() {
+    const voxelGridSize = 8;
+    const voxelTypes = ['Solid', 'Transparent', 'Liquid', 'Light', 'Destructible'];
+    const state = window.state;
+    if (!state.editor.voxels) {
+        state.editor.voxels = Array(voxelGridSize).fill().map(() =>
+            Array(voxelGridSize).fill().map(() =>
+                Array(voxelGridSize).fill({ type: 'Empty', color: '#ffffff' })
+            )
+        );
+    }
+
+    const container = document.getElementById('scene-canvas');
+    container.innerHTML = `
+        <div id="voxel-container" style="position: relative; width: 500px; height: 500px; margin: 10px auto; perspective: 1000px;">
+            <div id="voxel-scene" style="position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.1s;">
+            </div>
+        </div>
+        <input type="range" id="z-layer-slider" min="0" max="${voxelGridSize-1}" value="0" style="width: 80%; margin: 10px;">
+        <div id="color-palette" style="display: flex; gap: 5px; margin: 10px; flex-wrap: wrap;">
+            ${['#ffffff','#ff0000','#00ff00','#0000ff','#ffff00','#ff00ff','#00ffff','#888888'].map(c =>
+                `<div class="color-swatch" data-color="${c}" style="width: 20px; height: 20px; background: ${c}; border: 1px solid #333; cursor: pointer;"></div>`
+            ).join('')}
+        </div>
+    `;
+
+    const scene = document.getElementById('voxel-scene');
+    const slider = document.getElementById('z-layer-slider');
+    const swatches = document.querySelectorAll('.color-swatch');
+    let selectedColor = '#ffffff';
+    let camera = { rotX: 30, rotY: 45, distance: 200 };
+
+    swatches.forEach(swatch => {
+        swatch.addEventListener('click', () => {
+            selectedColor = swatch.dataset.color;
+            document.querySelectorAll('.color-swatch').forEach(s => s.style.border = '1px solid #333');
+            swatch.style.border = '2px solid white';
+        });
+    });
+
+    function renderVoxelLayer(z) {
+        scene.innerHTML = '';
+        scene.style.transform = `rotateX(${-camera.rotX}deg) rotateY(${-camera.rotY}deg) translateZ(${-camera.distance}px)`;
+
+        for (let x = 0; x < voxelGridSize; x++) {
+            for (let y = 0; y < voxelGridSize; y++) {
+                const voxel = state.editor.voxels[z][y][x];
+                if (voxel.type === 'Empty') continue;
+
+                const voxelEl = document.createElement('div');
+                voxelEl.style.cssText = `
+                    position: absolute;
+                    width: 40px; height: 40px;
+                    transform-style: preserve-3d;
+                    transform: translate3d(${x * 42}px, ${y * 42}px, ${z * 42}px);
+                `;
+
+                // 6 faces
+                const faces = [
+                    { rot: `rotateY(0deg) translateZ(20px)`, vis: 'visible' },
+                    { rot: `rotateY(180deg) translateZ(20px)`, vis: voxelGridSize - 1 - x > 0 ? state.editor.voxels[z][y][x + 1]?.type === 'Empty' : true },
+                    { rot: `rotateY(90deg) translateZ(20px)`, vis: y > 0 ? state.editor.voxels[z][y - 1][x]?.type === 'Empty' : true },
+                    { rot: `rotateY(-90deg) translateZ(20px)`, vis: y < voxelGridSize - 1 ? state.editor.voxels[z][y + 1][x]?.type === 'Empty' : true },
+                    { rot: `rotateX(90deg) translateZ(20px)`, vis: z > 0 ? state.editor.voxels[z - 1][y][x]?.type === 'Empty' : true },
+                    { rot: `rotateX(-90deg) translateZ(20px)`, vis: z < voxelGridSize - 1 ? state.editor.voxels[z + 1][y][x]?.type === 'Empty' : true }
+                ];
+
+                faces.forEach((face, i) => {
+                    if (!face.vis) return;
+                    const faceEl = document.createElement('div');
+                    faceEl.style.cssText = `
+                        position: absolute;
+                        width: 40px; height: 40px;
+                        background: ${voxel.color};
+                        border: 1px solid rgba(0,0,0,0.2);
+                        box-sizing: border-box;
+                        transform: ${face.rot};
+                        opacity: ${voxel.type === 'Transparent' ? 0.5 : 1};
+                        ${voxel.type === 'Liquid' ? 'animation: move 2s infinite alternate;' : ''}
+                    `;
+                    voxelEl.appendChild(faceEl);
+                });
+
+                voxelEl.addEventListener('click', () => {
+                    state.editor.voxels[z][y][x] = {
+                        type: state.editor.voxels[z][y][x].type === 'Solid' ? 'Empty' : 'Solid',
+                        color: selectedColor
+                    };
+                    renderVoxelLayer(parseInt(slider.value));
+                });
+
+                scene.appendChild(voxelEl);
+            }
+        }
+    }
+
+    slider.addEventListener('input', () => renderVoxelLayer(parseInt(slider.value)));
+
+    // Camera controls
+    let isDragging = false;
+    let lastMouse = { x: 0, y: 0 };
+    container.addEventListener('mousedown', (e) => { isDragging = true; lastMouse = { x: e.clientX, y: e.clientY }; });
+    container.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+            camera.rotY += (e.clientX - lastMouse.x) * 0.5;
+            camera.rotX += (e.clientY - lastMouse.y) * 0.5;
+            camera.rotX = Math.max(-90, Math.min(90, camera.rotX));
+            lastMouse = { x: e.clientX, y: e.clientY };
+            renderVoxelLayer(parseInt(slider.value));
+        }
+    });
+    container.addEventListener('mouseup', () => isDragging = false);
+    container.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        camera.distance += e.deltaY * 0.5;
+        camera.distance = Math.max(100, Math.min(500, camera.distance));
+        renderVoxelLayer(parseInt(slider.value));
+    });
+
+    renderVoxelLayer(0);
+
+    window.saveVoxelMap = () => {
+        localStorage.setItem('evo-voxelmap', JSON.stringify(state.editor.voxels));
+        alert('Voxel map saved!');
+    };
+
+    window.loadVoxelMap = () => {
+        const saved = localStorage.getItem('evo-voxelmap');
+        if (saved) {
+            state.editor.voxels = JSON.parse(saved);
+            renderVoxelLayer(parseInt(slider.value));
+        }
+    };
+}
+
+// === QUEST VALIDATOR ===
+function initQuestValidator() {
+    const state = window.state;
+    if (!state.scenes) state.scenes = [];
+
+    const container = document.getElementById('scene-canvas');
+    container.innerHTML = '<canvas id="quest-graph" width="800" height="600"></canvas>';
+    const canvas = document.getElementById('quest-graph');
+    const ctx = canvas.getContext('2d');
+
+    function drawGraph() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const nodes = state.scenes.map((scene, i) => ({
+            id: scene.id,
+            x: 100 + (i % 5) * 150,
+            y: 100 + Math.floor(i / 5) * 150
+        }));
+
+        // Draw edges
+        ctx.strokeStyle = '#666';
+        ctx.lineWidth = 2;
+        state.scenes.forEach(scene => {
+            if (scene.links) {
+                scene.links.forEach(link => {
+                    const from = nodes.find(n => n.id === scene.id);
+                    const to = nodes.find(n => n.id === link.target);
+                    if (from && to) {
+                        ctx.beginPath();
+                        ctx.moveTo(from.x, from.y);
+                        ctx.lineTo(to.x, to.y);
+                        ctx.stroke();
+                    }
+                });
+            }
+        });
+
+        // Validate reachability
+        const reachable = new Set();
+        const queue = ['start'];
+        while (queue.length) {
+            const id = queue.shift();
+            if (reachable.has(id)) continue;
+            reachable.add(id);
+            const scene = state.scenes.find(s => s.id === id);
+            if (scene?.links) {
+                scene.links.forEach(link => queue.push(link.target));
+            }
+        }
+
+        // Draw nodes
+        nodes.forEach(node => {
+            const scene = state.scenes.find(s => s.id === node.id);
+            const isReachable = reachable.has(node.id);
+            const hasLinks = scene?.links?.length > 0;
+
+            ctx.fillStyle = !isReachable ? '#ff4444' : !hasLinks ? '#ffcc00' : '#44cc44';
+            ctx.beginPath();
+            ctx.arc(node.x, node.y, 30, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = 'white';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(node.id, node.x, node.y);
+        });
+    }
+
+    drawGraph();
+    window.validateQuest = drawGraph; // For manual revalidate
+}
+
+// === GAME RUNNER ===
+function initGameRunner() {
+    const state = window.state;
+    const container = document.getElementById('scene-canvas');
+    container.innerHTML = '<div id="game-runner"></div>';
+    const runner = document.getElementById('game-runner');
+
+    let currentPlayerPos = { x: 0, y: 0 };
+    let currentZ = 0; // for 3D layer
+    let currentSceneId = 'start';
+
+    function runGame() {
+        const mode = state.currentMode || 'text';
+        runner.innerHTML = '';
+
+        if (mode === 'text') {
+            const scene = state.scenes?.find(s => s.id === currentSceneId);
+            if (scene) {
+                runner.innerHTML = `<div class="text-mode">
+                    <h3>${scene.title || 'Scene'}</h3>
+                    <p>${scene.text || 'No text.'}</p>
+                </div>`;
+                if (scene.links && scene.links.length > 0) {
+                    scene.links.forEach(link => {
+                        const btn = document.createElement('button');
+                        btn.textContent = link.label || 'Continue';
+                        btn.onclick = () => {
+                            currentSceneId = link.target;
+                            runGame();
+                        };
+                        runner.appendChild(btn);
+                    });
+                } else {
+                    runner.innerHTML += '<p><i>This is an ending.</i></p>';
+                }
+            } else {
+                runner.innerHTML = '<p>Scene not found!</p>';
+            }
+        }
+
+        else if (mode === '2d') {
+            const tileGridSize = 16;
+            const tileSize = 32;
+            const mapEl = document.createElement('div');
+            mapEl.style.cssText = `display: grid; grid-template-columns: repeat(${tileGridSize}, ${tileSize}px); gap: 1px; background: #111; margin: 10px;`;
+
+            state.editor.tiles?.forEach((row, y) => {
+                row.forEach((tile, x) => {
+                    const tileEl = document.createElement('div');
+                    tileEl.style.cssText = `
+                        width: ${tileSize}px; height: ${tileSize}px;
+                        background: ${getTileColor(tile.type)};
+                        border: 1px solid #333;
+                        box-sizing: border-box;
+                        position: relative;
+                    `;
+                    if (x === currentPlayerPos.x && y === currentPlayerPos.y) {
+                        tileEl.innerHTML = '<div style="width:20px;height:20px;background:cyan; border-radius:50%; margin:6px;"></div>';
+                    }
+                    mapEl.appendChild(tileEl);
+                });
+            });
+
+            runner.appendChild(mapEl);
+
+            // Controls
+            const controls = document.createElement('div');
+            controls.innerHTML = `
+                <button onclick="window.movePlayer('up')">↑</button><br>
+                <button onclick="window.movePlayer('left')">←</button>
+                <button onclick="window.movePlayer('down')">↓</button>
+                <button onclick="window.movePlayer('right')">→</button>
+            `;
+            runner.appendChild(controls);
+        }
+
+        else if (mode === '3d') {
+            const voxelGridSize = 8;
+            const sceneEl = document.createElement('div');
+            sceneEl.style.cssText = `position: relative; width: 400px; height: 400px; margin: 10px auto; perspective: 800px;`;
+            const inner = document.createElement('div');
+            inner.style.cssText = 'position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transform: rotateX(30deg) rotateY(45deg);';
+
+            for (let z = 0; z < voxelGridSize; z++) {
+                for (let y = 0; y < voxelGridSize; y++) {
+                    for (let x = 0; x < voxelGridSize; x++) {
+                        const voxel = state.editor.voxels?.[z]?.[y]?.[x];
+                        if (voxel?.type !== 'Empty') {
+                            const voxelEl = document.createElement('div');
+                            voxelEl.style.cssText = `
+                                position: absolute;
+                                width: 40px; height: 40px;
+                                transform-style: preserve-3d;
+                                transform: translate3d(${x * 42}px, ${y * 42}px, ${z * 42}px);
+                            `;
+                            // Render faces with culling
+                            const faces = [
+                                { rot: `rotateY(0deg) translateZ(20px)` },
+                                { rot: `rotateY(180deg) translateZ(20px)` },
+                                { rot: `rotateY(90deg) translateZ(20px)` },
+                                { rot: `rotateY(-90deg) translateZ(20px)` },
+                                { rot: `rotateX(90deg) translateZ(20px)` },
+                                { rot: `rotateX(-90deg) translateZ(20px)` }
+                            ];
+                            faces.forEach(face => {
+                                const faceEl = document.createElement('div');
+                                faceEl.style.cssText = `
+                                    position: absolute;
+                                    width: 40px; height: 40px;
+                                    background: ${voxel.color};
+                                    border: 1px solid #000;
+                                    transform: ${face.rot};
+                                    opacity: ${voxel.type === 'Transparent' ? 0.5 : 1};
+                                `;
+                                voxelEl.appendChild(faceEl);
+                            });
+                            inner.appendChild(voxelEl);
+                        }
+                    }
+                }
+            }
+
+            // Player indicator
+            const playerEl = document.createElement('div');
+            playerEl.style.cssText = `
+                position: absolute;
+                width: 40px; height: 40px;
+                transform: translate3d(${currentPlayerPos.x * 42}px, ${currentPlayerPos.y * 42}px, ${currentZ * 42 + 60}px);
+            `;
+            playerEl.innerHTML = '<div style="width:100%;height:100%;background:orange; border-radius:50%;"></div>';
+            inner.appendChild(playerEl);
+
+            sceneEl.appendChild(inner);
+            runner.appendChild(sceneEl);
+        }
+    }
+
+    window.movePlayer = function(dir) {
+        const max = 15;
+        switch (dir) {
+            case 'up': if (currentPlayerPos.y > 0) currentPlayerPos.y--; break;
+            case 'down': if (currentPlayerPos.y < max) currentPlayerPos.y++; break;
+            case 'left': if (currentPlayerPos.x > 0) currentPlayerPos.x--; break;
+            case 'right': if (currentPlayerPos.x < max) currentPlayerPos.x++; break;
+        }
+        runGame();
+    };
+
+    runGame();
+    window.runGame = runGame; // For external refresh
+}
+
+function getTileColor(type) {
+    const colors = {
+        Empty: '#1a1a1a',
+        Solid: '#8B4513',
+        Trigger: '#FFD700',
+        Collectible: '#32CD32',
+        Spawner: '#8A2BE2',
+        Door: '#4682B4',
+        Hazard: '#FF4500'
+    };
+    return colors[type] || '#1a1a1a';
+}
+
+</script>
 </body>
 </html>
