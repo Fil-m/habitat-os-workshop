@@ -454,6 +454,8 @@
 
     // DOM елементи
     const $ = id => document.getElementById(id);
+    const qs = sel => document.querySelector(sel);
+    const qsa = sel => document.querySelectorAll(sel);
     const el = (tag, cls, text) => {
       const e = document.createElement(tag);
       if (cls) e.className = cls;
@@ -492,8 +494,8 @@
 
     function renderMode() {
       const { mode } = state;
-      $('.mode-btn.active').classList.remove('active');
-      document.querySelector(`.mode-btn[data-mode="${mode}"]`).classList.add('active');
+      qs('.mode-btn.active')?.classList.remove('active');
+      qs(`.mode-btn[data-mode="${mode}"]`)?.classList.add('active');
 
       $('quest-content').style.display = mode === 'quest' ? 'block' : 'none';
       $('arcade-content').style.display = ['arcade', 'platformer'].includes(mode) ? 'block' : 'none';
@@ -668,7 +670,7 @@
       const x = parseInt(e.target.dataset.x);
       const y = parseInt(e.target.dataset.y);
       const tool = document.querySelector('.tool-btn[data-tool].active')?.dataset.tool || 'pen';
-      const color = $('.color-btn.active')?.dataset.color || '#00f0ff';
+      const color = qs('.color-btn.active')?.dataset.color || '#00f0ff';
       const z = state.voxelLayer;
 
       if (tool === 'erase') {
@@ -761,8 +763,8 @@
       }
 
       // Палітра
-      $('.color-btn').addEventListener('click', e => {
-        $('.color-btn.active').classList.remove('active');
+      qs('.color-btn').addEventListener('click', e => {
+        qsa('.color-btn').forEach(b => b.classList.remove('active'));
         e.target.classList.add('active');
       });
 
@@ -893,7 +895,7 @@
           const rect = e.target.getBoundingClientRect();
           const x = Math.floor((e.clientX - rect.left) / 8);
           const y = Math.floor((e.clientY - rect.top) / 8);
-          const color = $('.color-btn.active').dataset.color;
+          const color = qs('.color-btn.active').dataset.color;
           ctx.fillStyle = color;
           ctx.fillRect(x * 8, y * 8, 8, 8);
           // Зберегти в сцену
