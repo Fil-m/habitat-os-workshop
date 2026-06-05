@@ -1,0 +1,235 @@
+:root {
+  --bg: #0b0d19;
+  --bg2: #121526;
+  --surface: #1e2240;
+  --surface2: #262b50;
+  --neon: #00f0ff;
+  --neon-dim: rgba(0, 240, 255, 0.3);
+  --text: #e0e4f0;
+  --text2: #8890b0;
+  --font: 'Outfit', sans-serif;
+  --radius: 8px;
+  --voxel-size: 40px; 
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  overflow: hidden;
+  touch-action: none; 
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+header {
+  background: var(--bg2);
+  padding: 10px;
+  border-bottom: 1px solid var(--surface);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
+}
+
+.title { font-weight: 700; color: var(--neon); font-size: 16px; }
+
+.toolbar {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 8px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--surface);
+  z-index: 10;
+}
+
+/* Hide scrollbar for toolbar */
+.toolbar::-webkit-scrollbar { display: none; }
+
+.tool-btn {
+  background: var(--surface);
+  border: 1px solid var(--surface2);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  white-space: nowrap;
+  font-size: 14px;
+}
+
+.tool-btn:hover { background: var(--surface2); }
+.tool-btn.active {
+  border-color: var(--neon);
+  color: var(--neon);
+  box-shadow: 0 0 10px var(--neon-dim);
+}
+
+.viewport {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 800px; 
+  background: radial-gradient(circle at center, var(--bg2) 0%, var(--bg) 100%);
+}
+
+.scene {
+  width: 0;
+  height: 0;
+  position: absolute;
+  transform-style: preserve-3d;
+  transform: rotateX(-30deg) rotateY(45deg);
+  transition: transform 0.1s linear;
+}
+
+.grid-floor {
+  position: absolute;
+  top: 0; left: 0;
+  background-image: 
+    linear-gradient(var(--surface2) 1px, transparent 1px),
+    linear-gradient(90deg, var(--surface2) 1px, transparent 1px);
+  background-size: var(--voxel-size) var(--voxel-size);
+  transform-style: preserve-3d;
+  pointer-events: none;
+  opacity: 0.3;
+}
+
+.voxel {
+  position: absolute;
+  width: var(--voxel-size);
+  height: var(--voxel-size);
+  transform-style: preserve-3d;
+  margin-top: calc(var(--voxel-size) / -2);
+  margin-left: calc(var(--voxel-size) / -2);
+}
+
+.face {
+  position: absolute;
+  width: var(--voxel-size);
+  height: var(--voxel-size);
+  box-sizing: border-box;
+  border: 1px solid rgba(0,0,0,0.2); 
+  backface-visibility: hidden;
+  cursor: pointer;
+}
+
+.face:hover { filter: brightness(1.3); }
+
+.front  { transform: translateZ(calc(var(--voxel-size)/2)); filter: brightness(1.0); }
+.back   { transform: rotateY(180deg) translateZ(calc(var(--voxel-size)/2)); filter: brightness(0.85); }
+.right  { transform: rotateY(90deg) translateZ(calc(var(--voxel-size)/2)); filter: brightness(0.85); }
+.left   { transform: rotateY(-90deg) translateZ(calc(var(--voxel-size)/2)); filter: brightness(0.7); }
+.top    { transform: rotateX(90deg) translateZ(calc(var(--voxel-size)/2)); filter: brightness(1.15); }
+.bottom { transform: rotateX(-90deg) translateZ(calc(var(--voxel-size)/2)); filter: brightness(0.5); }
+
+/* Entities */
+.entity-sprite {
+  position: absolute;
+  width: var(--voxel-size);
+  height: var(--voxel-size);
+  margin-top: calc(var(--voxel-size) / -2);
+  margin-left: calc(var(--voxel-size) / -2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  transform-style: preserve-3d;
+  pointer-events: none;
+  background: rgba(255,255,255,0.1);
+  border: 1px dashed rgba(255,255,255,0.5);
+  border-radius: 50%;
+}
+
+.player-model {
+  position: absolute;
+  background: var(--neon);
+  box-shadow: 0 0 15px var(--neon);
+  margin-top: calc(var(--voxel-size) / -2);
+  margin-left: calc(var(--voxel-size) / -2);
+  transform-style: preserve-3d;
+  transition: transform 0.05s linear;
+}
+
+.selection-box {
+  position: absolute;
+  border: 2px dashed var(--neon);
+  background: rgba(0, 240, 255, 0.1);
+  pointer-events: none;
+  margin-top: calc(var(--voxel-size) / -2);
+  margin-left: calc(var(--voxel-size) / -2);
+}
+
+.bottom-panel {
+  background: var(--bg2);
+  border-top: 1px solid var(--surface);
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+}
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--surface);
+}
+
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 12px;
+  color: var(--text2);
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.tab.active {
+  color: var(--neon);
+  border-bottom: 2px solid var(--neon);
+}
+
+.tab-content {
+  display: none;
+  padding: 16px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.tab-content.active { display: block; }
+
+.palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.color-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  border: 2px solid var(--surface2);
+  cursor: pointer;
+}
+
+.color-btn.active {
+  border-color: var(--neon);
+  box-shadow: 0 0 10px var(--neon-dim);
+}
+
+.debug-info {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(0,0,0,0.5);
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #fff;
+  pointer-events: none;
+  font-family: monospace;
+}
