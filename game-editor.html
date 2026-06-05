@@ -3,563 +3,447 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Evo-Engine — Game Creator</title>
+  <title>Habitat OS — Creator</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/evo-editor.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
   <style>
-    /* ===== LAYOUT ===== */
-    .app-layout { display: flex; flex: 1; overflow: hidden; }
-    #sidebar { width: 280px; background: var(--bg2); border-right: 1px solid var(--surface2); display: flex; flex-direction: column; overflow-y: auto; flex-shrink: 0; }
-    #viewport-wrap { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-    @media (max-width: 600px) { #sidebar { width: 100%; max-height: 35vh; border-right: none; border-bottom: 1px solid var(--surface2); } .app-layout { flex-direction: column; } }
-
-    /* ===== MODE PILLS ===== */
-    .mode-pills { display: flex; gap: 6px; padding: 8px 12px; background: var(--bg); border-bottom: 1px solid var(--surface2); flex-shrink: 0; overflow-x: auto; }
-    .pill { padding: 8px 14px; background: var(--surface); border: 1px solid var(--surface2); border-radius: 50px; color: var(--text2); cursor: pointer; font-size: 13px; white-space: nowrap; min-height: 40px; display: flex; align-items: center; gap: 4px; transition: all .2s; }
-    .pill.active { background: var(--neon); color: #000; border-color: var(--neon); font-weight: 600; }
-
-    /* ===== SIDEBAR ===== */
-    .side-sec { padding: 12px; border-bottom: 1px solid var(--surface2); }
-    .side-sec h3 { font-size: 14px; color: var(--neon); margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
-    .sc-item, .tr-item { padding: 8px; background: var(--surface); border-radius: var(--radius); margin-bottom: 4px; cursor: pointer; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
-    .sc-item.active, .tr-item.active { border: 1px solid var(--neon); }
-    .sc-item .del, .tr-item .del { color: #f44; cursor: pointer; font-size: 16px; }
-    .tr-item .desc { font-size: 11px; color: var(--text2); }
-
-    /* ===== ACTION EDITOR ===== */
-    .f-row { display: flex; gap: 6px; margin: 6px 0; flex-wrap: wrap; }
-    .f-row label { font-size: 12px; color: var(--text2); min-width: 60px; align-self: center; }
-    .f-row input, .f-row select, .f-row textarea { flex: 1; min-width: 60px; padding: 8px; background: var(--surface2); border: 1px solid #333; border-radius: 6px; color: var(--text); font-size: 13px; }
-    .f-row button { min-height: 36px; padding: 6px 14px; background: var(--surface2); border: 1px solid #333; border-radius: 6px; color: var(--text); cursor: pointer; font-size: 13px; }
-    .f-row button.primary { background: var(--neon); color: #000; font-weight: 600; border-color: var(--neon); }
-
-    /* ===== VARIABLES ===== */
-    .var-display { font-size: 12px; padding: 4px 0; color: var(--text2); display: flex; justify-content: space-between; }
-
-    /* ===== PALETTE ===== */
-    .pal-bar { display: flex; gap: 4px; flex-wrap: wrap; }
-    .pal-item { width: 32px; height: 32px; border-radius: 6px; cursor: pointer; border: 2px solid transparent; transition: border-color .2s; }
-    .pal-item.active { border-color: var(--neon); }
-    .pal-item.empty { border: 2px dashed #555; background: transparent; }
-
-    /* ===== TOOLBAR ===== */
-    .tbar { display: flex; gap: 4px; padding: 8px 12px; background: var(--bg2); border-top: 1px solid var(--surface2); flex-shrink: 0; flex-wrap: wrap; }
-    .tbtn { min-height: 36px; padding: 6px 12px; background: var(--surface2); border: 1px solid var(--surface2); border-radius: 6px; color: var(--text); cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 4px; }
-    .tbtn.active { background: var(--neon); color: #000; border-color: var(--neon); }
-    .tbtn.play { border-color: #00ff88; color: #00ff88; }
-
-    /* ===== DEBUG ===== */
-    .debug { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.7); padding: 4px 10px; border-radius: 4px; font-size: 12px; z-index: 5; }
-
-    /* ===== DIALOG ===== */
-    .dialog-overlay { display: none; position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.7); z-index: 100; justify-content: center; align-items: center; }
-    .dialog-overlay.show { display: flex; }
-    .dialog-box { background: var(--surface); border: 1px solid var(--surface2); border-radius: 12px; padding: 24px; max-width: 400px; width: 90%; }
-    .dialog-box h3 { color: var(--neon); margin-bottom: 12px; }
-    .dialog-box p { margin-bottom: 16px; line-height: 1.6; }
-    .dialog-box button { min-height: 44px; padding: 10px 24px; background: var(--neon); color: #000; border: none; border-radius: var(--radius); cursor: pointer; font-weight: 600; margin: 4px; }
-
-    /* ===== PLAY CONTROLS ===== */
-    #play-ctrl { display:none; position:absolute; bottom:16px; left:16px; right:16px; justify-content:space-between; pointer-events:none; }
-    #play-ctrl .info { color:yellow; font-weight:bold; background:rgba(0,0,0,0.5); padding:8px 14px; border-radius:6px; font-size:12px; }
-    #play-ctrl #btn-stop { pointer-events:auto; background:red; color:white; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; }
-
-    /* ===== HEADER ===== */
-    header .hdr-btns { display: flex; gap: 6px; }
-    header .hdr-btns button { min-height: 36px; padding: 6px 12px; background: var(--surface2); border: 1px solid var(--surface2); border-radius: var(--radius); color: var(--text); cursor: pointer; font-size: 12px; }
-    header .hdr-btns button.neon { border-color: var(--neon); color: var(--neon); }
+    :root { --bg:#0b0d19; --bg2:#121526; --surface:#1e2240; --surface2:#262b50; --neon:#00f0ff; --text:#e0e4f0; --text2:#8890b0; --radius:8px; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'Outfit',sans-serif; background:var(--bg); color:var(--text); height:100vh; display:flex; flex-direction:column; overflow:hidden; }
+    header { display:flex; justify-content:space-between; align-items:center; padding:8px 14px; background:var(--bg2); border-bottom:1px solid var(--surface2); flex-shrink:0; }
+    .logo { font-size:16px; font-weight:600; color:var(--neon); display:flex; align-items:center; gap:6px; }
+    .hdr-btns { display:flex; gap:6px; }
+    .hdr-btns button { min-height:36px; padding:6px 12px; background:var(--surface2); border:1px solid var(--surface2); border-radius:var(--radius); color:var(--text); cursor:pointer; font-size:12px; }
+    .hdr-btns button.neon { border-color:var(--neon); color:var(--neon); }
+    .pills { display:flex; gap:4px; padding:6px 12px; background:var(--bg); border-bottom:1px solid var(--surface2); flex-shrink:0; overflow-x:auto; }
+    .pill { padding:6px 12px; background:var(--surface); border:1px solid var(--surface2); border-radius:50px; color:var(--text2); cursor:pointer; font-size:12px; white-space:nowrap; min-height:34px; display:flex; align-items:center; gap:4px; }
+    .pill.active { background:var(--neon); color:#000; border-color:var(--neon); font-weight:600; }
+    .app { display:flex; flex:1; overflow:hidden; }
+    #sidebar { width:280px; background:var(--bg2); border-right:1px solid var(--surface2); display:flex; flex-direction:column; overflow-y:auto; flex-shrink:0; }
+    #viewport { flex:1; position:relative; overflow:hidden; }
+    .sec { padding:10px; border-bottom:1px solid var(--surface2); }
+    .sec h3 { font-size:13px; color:var(--neon); margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; }
+    .obj-item { padding:6px; background:var(--surface); border-radius:4px; margin-bottom:4px; cursor:pointer; font-size:12px; display:flex; justify-content:space-between; align-items:center; }
+    .obj-item.active { border:1px solid var(--neon); }
+    .obj-item .del { color:#f44; cursor:pointer; font-size:14px; }
+    .f-row { display:flex; gap:4px; margin:4px 0; flex-wrap:wrap; }
+    .f-row label { font-size:11px; color:var(--text2); min-width:50px; align-self:center; }
+    .f-row input,.f-row select,.f-row textarea { flex:1; min-width:50px; padding:6px; background:var(--surface2); border:1px solid #333; border-radius:4px; color:var(--text); font-size:12px; }
+    .f-row button { min-height:30px; padding:4px 10px; background:var(--surface2); border:1px solid #333; border-radius:4px; color:var(--text); cursor:pointer; font-size:11px; }
+    .f-row button.primary { background:var(--neon); color:#000; font-weight:600; border-color:var(--neon); }
+    .obj-types { display:flex; gap:4px; flex-wrap:wrap; }
+    .type-btn { padding:6px 10px; border-radius:4px; cursor:pointer; font-size:11px; background:var(--surface2); border:1px solid #333; color:var(--text2); }
+    .type-btn.active { border-color:var(--neon); color:var(--neon); }
+    .tbar { display:flex; gap:4px; padding:6px 10px; background:var(--bg2); border-top:1px solid var(--surface2); flex-shrink:0; }
+    .tbtn { min-height:32px; padding:4px 10px; background:var(--surface2); border:1px solid var(--surface2); border-radius:4px; color:var(--text); cursor:pointer; font-size:12px; }
+    .tbtn.active { background:var(--neon); color:#000; }
+    .debug { position:absolute; top:6px; left:6px; background:rgba(0,0,0,0.7); padding:4px 8px; border-radius:4px; font-size:11px; z-index:5; }
+    .ev-block { background:var(--surface); border-radius:6px; padding:8px; margin:4px 0; border-left:3px solid var(--neon); }
+    .ev-block .ev-header { font-size:11px; color:var(--neon); margin-bottom:4px; display:flex; justify-content:space-between; }
+    .ev-block select,.ev-block input { width:100%; padding:4px; margin:2px 0; background:var(--surface2); border:1px solid #333; border-radius:3px; color:var(--text); font-size:11px; }
+    .dialog-overlay { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); z-index:100; justify-content:center; align-items:center; }
+    .dialog-overlay.show { display:flex; }
+    .dialog-box { background:var(--surface); border:1px solid var(--surface2); border-radius:12px; padding:24px; max-width:400px; width:90%; }
+    .dialog-box h3 { color:var(--neon); margin-bottom:12px; }
+    .dialog-box p { margin-bottom:16px; line-height:1.6; }
+    .dialog-box button { min-height:44px; padding:10px 24px; background:var(--neon); color:#000; border:none; border-radius:var(--radius); cursor:pointer; font-weight:600; margin:4px; }
+    @media (max-width:600px) { #sidebar { width:100%; max-height:35vh; border-right:none; border-bottom:1px solid var(--surface2); } .app { flex-direction:column; } }
   </style>
 </head>
 <body>
-  <!-- HEADER -->
   <header>
-    <div class="title" style="font-size:18px;font-weight:600;color:var(--neon);display:flex;align-items:center;gap:8px;">⬡ Evo-Engine</div>
+    <div class="logo">⬡ Habitat OS</div>
     <div class="hdr-btns">
       <button onclick="saveAll()">💾</button>
-      <button class="neon" onclick="exportAll()">📤</button>
-      <button onclick="document.getElementById('import-file').click()">📥</button>
-      <input type="file" id="import-file" style="display:none" accept=".json">
+      <button class="neon" onclick="exportWorld()">📤</button>
+      <button onclick="document.getElementById('imp').click()">📥</button>
+      <input type="file" id="imp" style="display:none" accept=".json">
     </div>
   </header>
-
-  <!-- MODE PILLS -->
-  <div class="mode-pills">
-    <div class="pill active" data-view="3d">🧊 3D</div>
-    <div class="pill" data-view="top">🗺️ Карта</div>
-    <div class="pill" data-view="quest">📜 Квест</div>
-    <div class="pill" data-view="play">▶ Грати</div>
+  <div class="pills">
+    <div class="pill active" data-mode="build">🔧 Build</div>
+    <div class="pill" data-mode="logic">⚡ Logic</div>
+    <div class="pill" data-mode="play">▶ Play</div>
   </div>
-
-  <!-- MAIN LAYOUT -->
-  <div class="app-layout">
-    <!-- SIDEBAR -->
+  <div class="app">
     <div id="sidebar">
-      <div class="side-sec">
-        <h3>🎬 Сцени <button style="font-size:11px;padding:2px 8px;background:var(--surface2);border:1px solid #333;border-radius:4px;color:var(--text);cursor:pointer" onclick="addScene()">+</button></h3>
-        <div id="scene-list"></div>
+      <div class="sec"><h3>📦 Об'єкти <button style="font-size:10px;padding:2px 6px;background:var(--surface2);border:1px solid #333;border-radius:3px;color:var(--text);cursor:pointer" onclick="addObj()">+</button></h3>
+        <div class="obj-types" id="obj-types"></div>
+        <div id="obj-list"></div>
       </div>
-      <div class="side-sec">
-        <h3>⚡ Тригери <button style="font-size:11px;padding:2px 8px;background:var(--surface2);border:1px solid #333;border-radius:4px;color:var(--text);cursor:pointer" onclick="addTrigger()">+</button></h3>
-        <div id="tr-list"></div>
+      <div class="sec" id="obj-editor" style="display:none;">
+        <h3 id="obj-title">✏️ Об'єкт</h3>
+        <div class="f-row"><label>Тип</label><select id="obj-type" onchange="updateObjType()"></select></div>
+        <div class="f-row"><label>X</label><input type="number" id="obj-x" min="0" max="15" value="8">
+          <label>Y</label><input type="number" id="obj-y" min="0" max="15" value="8">
+          <label>Z</label><input type="number" id="obj-z" min="0" max="15" value="0"></div>
+        <div id="obj-components"></div>
+        <div class="f-row"><button class="primary" onclick="saveObj()">💾</button><button onclick="clearObj()">✕</button></div>
       </div>
-      <div class="side-sec" id="act-editor" style="display:none;">
-        <h3 id="act-title">✏️ Дія</h3>
-        <div class="f-row"><label>Тип</label><select id="act-type" onchange="updateActUI()"><option value="dialog">📝 Діалог</option><option value="setVar">🔢 Змінна</option><option value="teleport">🌀 Телепорт</option></select></div>
-        <div id="act-params"></div>
-        <div class="f-row"><button class="primary" onclick="saveTrigger()">💾 Зберегти</button><button onclick="clearTrigger()">✕ Закрити</button></div>
-      </div>
-      <div class="side-sec">
-        <h3>📊 Змінні</h3>
-        <div id="vars-disp"></div>
-        <div class="f-row"><input id="vk" placeholder="Ключ"><input id="vv" placeholder="Значення"><button onclick="addVar()">+</button></div>
-      </div>
-      <div class="side-sec">
-        <h3>🎨 Типи</h3>
-        <div class="pal-bar" id="pal-bar"></div>
-      </div>
+      <div class="sec"><h3>🎨 Типи об'єктів</h3><div class="obj-types" id="palette"></div></div>
     </div>
-
-    <!-- VIEWPORT -->
-    <div id="viewport-wrap">
-      <div class="viewport" id="viewport" style="position:relative;flex:1;overflow:hidden;">
-        <div class="debug" id="debug">⬡ Evo-Engine</div>
-        <div class="scene" id="scene"></div>
-        <div id="play-ctrl">
-          <div class="info">▶ WASD + Space</div>
-          <button id="btn-stop">⏹ Стоп</button>
-        </div>
-      </div>
-      <div class="tbar" id="tbar">
-        <button class="tbtn active" data-tool="add">✏️</button>
-        <button class="tbtn" data-tool="erase">🧹</button>
-        <button class="tbtn" id="btn-undo">↩️</button>
-        <button class="tbtn" id="btn-redo">↪️</button>
-        <button class="tbtn play" id="btn-play">▶</button>
-      </div>
+    <div id="viewport">
+      <div class="debug" id="debug">Habitat OS</div>
+      <div class="scene" id="scene"></div>
     </div>
   </div>
-
-  <!-- DIALOG -->
-  <div class="dialog-overlay" id="dlg-overlay"><div class="dialog-box" id="dlg-box"></div></div>
-
-  <!-- EVO ENGINE -->
+  <div class="tbar" id="tbar">
+    <button class="tbtn active" data-tool="add">✏️</button>
+    <button class="tbtn" data-tool="erase">🧹</button>
+    <button class="tbtn" id="btn-play">▶</button>
+  </div>
+  <div class="dialog-overlay" id="dlg"><div class="dialog-box" id="dlg-box"></div></div>
   <script src="js/evo-engine.js"></script>
-
-  <!-- CUSTOM JS -->
   <script>
-  // ================================================================
-  // WAIT FOR EVO-ENGINE
-  // ================================================================
-  const waitE = setInterval(() => {
-    if (window.world && window.renderer) { clearInterval(waitE); initApp(); }
-  }, 100);
+  const waitE = setInterval(()=>{ if(window.world&&window.renderer) { clearInterval(waitE); initOS(); } }, 100);
 
   // ================================================================
-  // PROJECT DATA — one structure for all modes
+  // DATA MODEL — Object-based world
   // ================================================================
-  const PROJECT_KEY = 'evo_game';
-  const TILES = ['empty','wall','player_start','goal','collectible','enemy','npc','door','key','hazard','trigger','platform'];
-  const TCOLORS = {
-    empty:'transparent', wall:'#555', player_start:'#44f', goal:'#4caf50',
-    collectible:'#ffcc00', enemy:'#f44336', npc:'#2196f3', door:'#8b4513',
-    key:'#ffd700', hazard:'#ff5722', trigger:'#9c27b0', platform:'#8d6e63'
-  };
-  let selTile = 'wall';
-  let selTrigger = null;
-  let scIdx = 0;
+  const OBJ_TYPES = ['voxel','image','text','button','portal','npc','enemy','item'];
+  const OBJ_COLORS = { voxel:'#888', image:'#44f', text:'#0ff', button:'#f44', portal:'#9c27b0', npc:'#4caf50', enemy:'#f44336', item:'#ffcc00' };
 
-  let project = {
-    scenes: [], currentScene: 0, globalVars: {}, view: '3d'
-  };
+  // World = { objects: [], name, version }
+  let world = { objects: [], name: 'Мій світ', version: 1 };
+  let selObj = null;
+  let selType = 'voxel';
+  let selTool = 'add';
+  let mode = 'build';
 
-  function mkScene(n) {
-    return {
-      id: Date.now(), name: n || 'Рівень 1', mode: '3d',
-      text: '', bg: null, ch: null,
-      tiles: [], triggers: [], buttons: [],
-      worldJSON: null,
-      physics: { gravity: false, jump: 10, speed: 3, lives: 3 }
-    };
+  function newObj(type) {
+    const t = type || selType;
+    let comps = { transform: { x: 8, y: 8, z: 0 } };
+    if (t === 'voxel') comps.render = { color: OBJ_COLORS.voxel };
+    else if (t === 'image') comps.render = { src: '' };
+    else if (t === 'text') comps.render = { content: '', fontSize: 16 };
+    else if (t === 'button') comps.logic = { events: [{ trigger: 'onClick', actions: [{ type: 'dialog', text: '...' }] }] };
+    else if (t === 'portal') comps.render = { targetWorld: '' };
+    else if (t === 'npc') comps.render = { dialog: '...' };
+    else if (t === 'enemy') comps.health = { hp: 100, damage: 10 };
+    else if (t === 'item') comps.render = { icon: '' };
+    return { id: 'obj_' + Date.now(), type: t, components: comps };
   }
 
   // ================================================================
-  // SCENE MANAGEMENT
+  // RENDER — sync objects to VoxelWorldModel
   // ================================================================
-  function addScene() {
-    const s = mkScene('Рівень ' + (project.scenes.length + 1));
-    project.scenes.push(s);
-    goScene(project.scenes.length - 1);
-    renderScenes(); saveAll();
+  function syncWorld() {
+    if (!window.world) return;
+    // Clear existing voxels
+    const keys = Array.from(window.world.voxels.keys());
+    keys.forEach(k => window.world.voxels.delete(k));
+    window.world.triggers = [];
+    window.world.entities = [];
+
+    // Render voxel objects
+    world.objects.forEach(o => {
+      const t = o.components.transform;
+      if (!t) return;
+      if (o.type === 'voxel' && o.components.render) {
+        window.world.setVoxel(t.x, t.y, t.z, { type: 'solid', color: o.components.render.color || '#888' });
+      }
+      if (o.type === 'button' && o.components.logic) {
+        window.world.setVoxel(t.x, t.y, t.z, { type: 'solid', color: '#f44' });
+        // Convert logic events to triggers
+        (o.components.logic.events || []).forEach(ev => {
+          if (ev.trigger === 'onEnter' || ev.trigger === 'onClick') {
+            window.world.triggers.push({
+              id: o.id + '_trg', tile: { x: t.x, y: t.y, z: t.z },
+              event: 'onEnter', conditions: [],
+              actions: ev.actions || [{ type: 'dialog', text: '...' }]
+            });
+          }
+        });
+      }
+      if (o.type === 'portal') {
+        window.world.setVoxel(t.x, t.y, t.z, { type: 'solid', color: '#9c27b0' });
+        window.world.triggers.push({
+          id: o.id + '_portal', tile: { x: t.x, y: t.y, z: t.z },
+          event: 'onEnter', conditions: [],
+          actions: [{ type: 'dialog', text: 'Портал: ' + (o.components.render?.targetWorld || '?') }]
+        });
+      }
+      if (o.type === 'enemy') {
+        window.world.entities.push({ id: o.id, type: 'enemy', position: { x: t.x, y: t.y, z: t.z }, variables: {} });
+      }
+      if (o.type === 'npc') {
+        window.world.entities.push({ id: o.id, type: 'npc', position: { x: t.x, y: t.y, z: t.z }, variables: {} });
+        window.world.triggers.push({
+          id: o.id + '_npc', tile: { x: t.x, y: t.y, z: t.z },
+          event: 'onEnter', conditions: [],
+          actions: [{ type: 'dialog', text: o.components.render?.dialog || '...' }]
+        });
+      }
+    });
+    if (window.renderer) window.renderer.render();
   }
-  function goScene(i) {
-    if (i < 0 || i >= project.scenes.length) return;
-    // Save current
-    if (window.world && project.scenes[scIdx]) {
-      project.scenes[scIdx].triggers = JSON.parse(JSON.stringify(window.world.triggers || []));
-      try { project.scenes[scIdx].worldJSON = window.world.toJSON(); } catch(e) {}
-    }
-    scIdx = i;
-    project.currentScene = i;  // ← FIX
-    const s = project.scenes[i];
-    // Set view mode — map scene mode to pill
-    const modeToView = { '3d':'3d', '2d':'top', 'text':'quest', 'top':'top' };
-    const targetView = modeToView[s.mode] || '3d';
-    const vb = document.querySelector('.pill[data-view="' + targetView + '"]');
-    if (vb && s.mode !== 'play') vb.click();
-    // Load world
-    if (window.world && s.worldJSON) {
-      try { window.world.fromJSON(s.worldJSON); } catch(e) {}
-      window.world.triggers = s.triggers || [];
-      if (window.renderer) window.renderer.render();
-    }
-    renderScenes(); renderTriggers();
+
+  // ================================================================
+  // OBJECT EDITOR
+  // ================================================================
+  function renderObjTypes() {
+    ['voxel','image','text','button','portal','npc','enemy','item'].forEach(t => {
+      document.getElementById('palette').innerHTML += '';
+    });
   }
-  function delScene(i) {
-    if (project.scenes.length <= 1) return;
-    project.scenes.splice(i, 1);
-    if (scIdx >= project.scenes.length) scIdx = project.scenes.length - 1;
-    goScene(scIdx); saveAll();
-  }
-  function renderScenes() {
-    const list = document.getElementById('scene-list');
+
+  function renderObjList() {
+    const list = document.getElementById('obj-list');
     list.innerHTML = '';
-    project.scenes.forEach((s, i) => {
+    world.objects.forEach((o, i) => {
       const d = document.createElement('div');
-      d.className = 'sc-item' + (i === scIdx ? ' active' : '');
-      const ic = s.mode === 'text' ? '📜' : s.mode === '2d' ? '🎮' : '🧊';
-      d.innerHTML = '<span>' + ic + ' ' + s.name + '</span><span class="del" onclick="event.stopPropagation();delScene(' + i + ')">✕</span>';
-      d.onclick = () => goScene(i);
+      d.className = 'obj-item' + (selObj === i ? ' active' : '');
+      const t = o.components.transform || {};
+      d.innerHTML = '<span>' + typeIcon(o.type) + ' ' + o.type + ' @' + t.x + ',' + t.y + '</span><span class="del" onclick="event.stopPropagation();delObj(' + i + ')">✕</span>';
+      d.onclick = () => selectObj(i);
       list.appendChild(d);
     });
   }
 
+  function typeIcon(t) { return { voxel:'🧱', image:'🖼️', text:'📝', button:'🔘', portal:'🌀', npc:'🧑', enemy:'👹', item:'💎' }[t] || '❓'; }
+
+  function addObj() {
+    const o = newObj(selType);
+    world.objects.push(o);
+    selObj = world.objects.length - 1;
+    selectObj(selObj);
+    renderObjList();
+    syncWorld(); saveAll();
+  }
+
+  function selectObj(i) {
+    selObj = i;
+    renderObjList();
+    const o = world.objects[i];
+    if (!o) return;
+    document.getElementById('obj-editor').style.display = 'block';
+    document.getElementById('obj-title').textContent = '✏️ ' + typeIcon(o.type) + ' ' + o.type + ' #' + i;
+    const t = o.components.transform || {};
+    document.getElementById('obj-type').value = o.type;
+    document.getElementById('obj-x').value = t.x || 0;
+    document.getElementById('obj-y').value = t.y || 0;
+    document.getElementById('obj-z').value = t.z || 0;
+    updateObjType();
+    // Fill component values
+    setTimeout(() => {
+      if (o.type === 'voxel') {
+        const c = document.getElementById('comp-color');
+        if (c) c.value = o.components.render?.color || '#888';
+      }
+      if (o.type === 'text') {
+        const c = document.getElementById('comp-text');
+        if (c) c.value = o.components.render?.content || '';
+      }
+      if (o.type === 'image') {
+        const c = document.getElementById('comp-src');
+        if (c) c.value = o.components.render?.src || '';
+      }
+      if (o.type === 'portal') {
+        const c = document.getElementById('comp-target');
+        if (c) c.value = o.components.render?.targetWorld || '';
+      }
+      if (o.type === 'npc') {
+        const c = document.getElementById('comp-dialog');
+        if (c) c.value = o.components.render?.dialog || '';
+      }
+      if (o.type === 'enemy') {
+        const h = document.getElementById('comp-hp');
+        if (h) h.value = o.components.health?.hp || 100;
+      }
+      // Logic events
+      renderLogicEvents(i);
+    }, 50);
+  }
+
+  function clearObj() { selObj = null; document.getElementById('obj-editor').style.display = 'none'; renderObjList(); }
+
+  function updateObjType() {
+    const type = document.getElementById('obj-type').value;
+    const o = world.objects[selObj];
+    if (o) o.type = type;
+    const div = document.getElementById('obj-components');
+    let html = '';
+    if (type === 'voxel') html += '<div class="f-row"><label>Колір</label><input id="comp-color" type="color" value="#888888"></div>';
+    else if (type === 'text') html += '<div class="f-row"><label>Текст</label><input id="comp-text" placeholder="Текст"></div>';
+    else if (type === 'image') html += '<div class="f-row"><label>URL</label><input id="comp-src" placeholder="https://..."></div>';
+    else if (type === 'button') html += '<div class="f-row"><label>Текст</label><input id="comp-btn" placeholder="Натисни"></div>';
+    else if (type === 'portal') html += '<div class="f-row"><label>Світ</label><input id="comp-target" placeholder="world_name"></div>';
+    else if (type === 'npc') html += '<div class="f-row"><label>Діалог</label><textarea id="comp-dialog" rows="2" placeholder="..."></textarea></div>';
+    else if (type === 'enemy') html += '<div class="f-row"><label>HP</label><input id="comp-hp" type="number" value="100"><label>DMG</label><input id="comp-dmg" type="number" value="10"></div>';
+    else if (type === 'item') html += '<div class="f-row"><label>Іконка</label><input id="comp-icon" placeholder="🔑"></div>';
+    html += '<label style="font-size:11px;color:var(--text2);margin-top:6px;display:block;">⚡ Події</label><div id="logic-events"></div>';
+    div.innerHTML = html;
+    renderLogicEvents(selObj);
+  }
+
   // ================================================================
-  // VIEW SWITCHING
+  // SCRATCH-LIKE LOGIC EDITOR
+  // ================================================================
+  function renderLogicEvents(objIdx) {
+    const div = document.getElementById('logic-events');
+    if (!div) return;
+    const o = world.objects[objIdx];
+    if (!o) return;
+    if (!o.components.logic) o.components.logic = { events: [] };
+    div.innerHTML = '';
+    o.components.logic.events.forEach((ev, ei) => {
+      const block = document.createElement('div');
+      block.className = 'ev-block';
+      block.innerHTML = '<div class="ev-header">Коли <select onchange="updateEvent(' + objIdx + ',' + ei + ',\'trigger\',this.value)">' +
+        '<option value="onEnter"' + (ev.trigger === 'onEnter' ? ' selected' : '') + '>увійшов</option>' +
+        '<option value="onClick"' + (ev.trigger === 'onClick' ? ' selected' : '') + '>натиснув</option>' +
+        '<option value="onCollect"' + (ev.trigger === 'onCollect' ? ' selected' : '') + '>зібрав</option>' +
+        '<option value="onKill"' + (ev.trigger === 'onKill' ? ' selected' : '') + '>вбив</option>' +
+        '</select><span style="color:#f44;cursor:pointer" onclick="delEvent(' + objIdx + ',' + ei + ')">✕</span></div>';
+      ev.actions.forEach((a, ai) => {
+        block.innerHTML += '<div class="f-row" style="margin:2px 0">→ <select onchange="updateAction(' + objIdx + ',' + ei + ',' + ai + ',\'type\',this.value)">' +
+          '<option value="dialog"' + (a.type === 'dialog' ? ' selected' : '') + '>Діалог</option>' +
+          '<option value="setVar"' + (a.type === 'setVar' ? ' selected' : '') + '>Змінна</option>' +
+          '<option value="teleport"' + (a.type === 'teleport' ? ' selected' : '') + '>Телепорт</option>' +
+          '<option value="giveItem"' + (a.type === 'giveItem' ? ' selected' : '') + '>Дати предмет</option>' +
+          '</select><input value="' + (a.text || a.key || '') + '" onchange="updateAction(' + objIdx + ',' + ei + ',' + ai + ',\'text\',this.value)" placeholder="..."></div>';
+      });
+      block.innerHTML += '<button style="font-size:10px;padding:2px 6px;" onclick="addAction(' + objIdx + ',' + ei + ')">+ Дія</button>';
+      div.appendChild(block);
+    });
+    div.innerHTML += '<button style="font-size:10px;padding:4px 10px;background:var(--surface2);border:1px solid #333;border-radius:4px;color:var(--text);cursor:pointer;margin-top:4px;" onclick="addEvent(' + objIdx + ')">+ Подія</button>';
+  }
+
+  function addEvent(idx) {
+    const o = world.objects[idx];
+    if (!o) return;
+    if (!o.components.logic) o.components.logic = { events: [] };
+    o.components.logic.events.push({ trigger: 'onEnter', actions: [{ type: 'dialog', text: '...' }] });
+    renderLogicEvents(idx);
+  }
+  function delEvent(idx, ei) {
+    const o = world.objects[idx];
+    if (!o || !o.components.logic) return;
+    o.components.logic.events.splice(ei, 1);
+    renderLogicEvents(idx);
+  }
+  function addAction(idx, ei) {
+    const o = world.objects[idx];
+    if (!o || !o.components.logic) return;
+    o.components.logic.events[ei].actions.push({ type: 'dialog', text: '...' });
+    renderLogicEvents(idx);
+  }
+  function updateEvent(idx, ei, field, val) {
+    const o = world.objects[idx];
+    if (!o || !o.components.logic) return;
+    o.components.logic.events[ei][field] = val;
+  }
+  function updateAction(idx, ei, ai, field, val) {
+    const o = world.objects[idx];
+    if (!o || !o.components.logic) return;
+    o.components.logic.events[ei].actions[ai][field] = val;
+  }
+
+  function saveObj() {
+    if (selObj === null) return;
+    const o = world.objects[selObj];
+    if (!o) return;
+    o.type = document.getElementById('obj-type').value;
+    if (!o.components.transform) o.components.transform = {};
+    o.components.transform.x = parseInt(document.getElementById('obj-x').value) || 0;
+    o.components.transform.y = parseInt(document.getElementById('obj-y').value) || 0;
+    o.components.transform.z = parseInt(document.getElementById('obj-z').value) || 0;
+    // Save component values
+    const c = document.getElementById('comp-color');
+    if (c) { if (!o.components.render) o.components.render = {}; o.components.render.color = c.value; }
+    const ct = document.getElementById('comp-text');
+    if (ct) { if (!o.components.render) o.components.render = {}; o.components.render.content = ct.value; }
+    const cs = document.getElementById('comp-src');
+    if (cs) { if (!o.components.render) o.components.render = {}; o.components.render.src = cs.value; }
+    const cb = document.getElementById('comp-btn');
+    if (cb) { if (!o.components.render) o.components.render = {}; o.components.render.label = cb.value; }
+    const cw = document.getElementById('comp-target');
+    if (cw) { if (!o.components.render) o.components.render = {}; o.components.render.targetWorld = cw.value; }
+    const cd = document.getElementById('comp-dialog');
+    if (cd) { if (!o.components.render) o.components.render = {}; o.components.render.dialog = cd.value; }
+    const ch = document.getElementById('comp-hp');
+    if (ch) { if (!o.components.health) o.components.health = {}; o.components.health.hp = parseInt(ch.value) || 100; }
+    renderObjList();
+    syncWorld(); saveAll();
+  }
+
+  function delObj(i) {
+    world.objects.splice(i, 1);
+    if (selObj === i) clearObj(); else renderObjList();
+    syncWorld(); saveAll();
+  }
+
+  // ================================================================
+  // MODE SWITCHING
   // ================================================================
   document.querySelectorAll('.pill').forEach(p => {
     p.addEventListener('click', () => {
-      const v = p.dataset.view;
+      mode = p.dataset.mode;
       document.querySelectorAll('.pill').forEach(x => x.classList.remove('active'));
       p.classList.add('active');
-      project.view = v;  // ← FIX: update project.view
-      // Update scene mode
-      if (project.scenes[scIdx] && ['3d','top','quest'].includes(v)) {
-        project.scenes[scIdx].mode = v === 'quest' ? 'text' : v;
+      if (mode === 'build') {
+        if (window.renderer) renderer.setViewMode('3d');
+        document.getElementById('obj-editor').style.display = selObj !== null ? 'block' : 'none';
       }
-      project.currentScene = scIdx;  // ← FIX: save current scene index
-      if (v === '3d') { if (window.renderer) renderer.setViewMode('3d'); showTools(1); }
-      else if (v === 'top') { if (window.renderer) renderer.setViewMode('top'); showTools(1); }
-      else if (v === 'quest') { if (window.renderer) renderer.setViewMode('top'); showTools(0); renderTriggers(); }
-      else if (v === 'play') { playGame(); }
+      if (mode === 'logic') {
+        if (window.renderer) renderer.setViewMode('top');
+        if (selObj !== null) selectObj(selObj);
+      }
+      if (mode === 'play') {
+        if (window.renderer) renderer.setViewMode('3d');
+        if (window.physics) window.physics.start();
+      }
     });
   });
-  function showTools(s) {
-    document.querySelectorAll('.tbtn').forEach(b => b.style.display = s ? '' : 'none');
-    document.getElementById('btn-play').style.display = '';
-  }
-
-  // ================================================================
-  // TRIGGERS
-  // ================================================================
-  function trigs() { return window.world ? window.world.triggers : []; }
-  function addTrigger() {
-    if (!window.world) return;
-    const p = window.world.entities.find(e => e.type === 'player_start');
-    const pos = p ? p.position : { x: 8, y: 8, z: 0 };
-    window.world.triggers.push({
-      id: 't' + Date.now(), tile: { x: Math.round(pos.x), y: Math.round(pos.y), z: 0 },
-      event: 'onEnter', conditions: [],
-      actions: [{ type: 'dialog', text: '...' }]
-    });
-    renderTriggers(); saveWorld();
-  }
-  function renderTriggers() {
-    const list = document.getElementById('tr-list');
-    list.innerHTML = '';
-    trigs().forEach((t, i) => {
-      const d = document.createElement('div');
-      d.className = 'tr-item' + (selTrigger === i ? ' active' : '');
-      const a = t.actions && t.actions[0] ? t.actions[0] : {};
-      const desc = a.text || a.type || '?';
-      d.innerHTML = '<span><b>#' + i + '</b> @' + t.tile.x + ',' + t.tile.y +
-        '<br><span class="desc">' + desc + '</span></span>' +
-        '<span class="del" onclick="event.stopPropagation();delTrigger(' + i + ')">✕</span>';
-      d.onclick = () => selectTrigger(i);
-      list.appendChild(d);
-    });
-  }
-  function selectTrigger(i) {
-    selTrigger = i; renderTriggers();
-    const t = trigs()[i]; if (!t) return;
-    document.getElementById('act-editor').style.display = 'block';
-    document.getElementById('act-title').textContent = '✏️ Тригер #' + i + ' @' + t.tile.x + ',' + t.tile.y;
-    const a = t.actions && t.actions[0] ? t.actions[0] : { type: 'dialog', text: '' };
-    document.getElementById('act-type').value = a.type || 'dialog';
-    updateActUI();
-    setTimeout(() => {
-      if (a.type === 'dialog') { const ta = document.getElementById('ad'); if (ta) ta.value = a.text || ''; }
-      else if (a.type === 'setVar') {
-        const k = document.getElementById('avk'); const vv = document.getElementById('avv');
-        if (k) k.value = a.key || ''; if (vv) vv.value = a.value !== undefined ? a.value : '';
-      }
-      else if (a.type === 'teleport') {
-        const sx = document.getElementById('asc'), tx = document.getElementById('atx'),
-              ty = document.getElementById('aty'), tz = document.getElementById('atz');
-        if (sx) sx.value = a.sceneId !== undefined ? a.sceneId : scIdx;
-        if (tx) tx.value = a.to ? a.to.x : 8;
-        if (ty) ty.value = a.to ? a.to.y : 8;
-        if (tz) tz.value = a.to ? a.to.z : 0;
-      }
-    }, 50);
-  }
-  function clearTrigger() { selTrigger = null; document.getElementById('act-editor').style.display = 'none'; renderTriggers(); }
-  function updateActUI() {
-    const type = document.getElementById('act-type').value;
-    const div = document.getElementById('act-params');
-    if (type === 'dialog') div.innerHTML = '<textarea id="ad" rows="3" placeholder="Текст діалогу..." style="width:100%;padding:8px;background:var(--surface2);border:1px solid #333;border-radius:6px;color:var(--text);font-size:13px;"></textarea>';
-    else if (type === 'setVar') div.innerHTML = '<div class="f-row"><input id="avk" placeholder="Ключ (напр. hasKey)"><input id="avv" placeholder="Значення (напр. true)"></div>';
-    else if (type === 'teleport') {
-      const opts = project.scenes.map((s, i) => '<option value="' + i + '" ' + (i === scIdx ? 'selected' : '') + '>' + s.name + '</option>').join('');
-      div.innerHTML = '<div class="f-row"><label>Сцена</label><select id="asc">' + opts + '</select></div>' +
-        '<div class="f-row"><label>Позиція</label><input id="atx" type="number" placeholder="X" value="8" min="0" max="15" style="width:60px;">' +
-        '<input id="aty" type="number" placeholder="Y" value="8" min="0" max="15" style="width:60px;">' +
-        '<input id="atz" type="number" placeholder="Z" value="0" min="0" max="15" style="width:60px;"></div>';
-    }
-  }
-  function saveTrigger() {
-    if (selTrigger === null) return;
-    const t = trigs()[selTrigger]; if (!t) return;
-    const type = document.getElementById('act-type').value;
-    const a = { type };
-    if (type === 'dialog') a.text = document.getElementById('ad').value;
-    else if (type === 'setVar') { a.key = document.getElementById('avk').value; a.value = document.getElementById('avv').value; }
-    else if (type === 'teleport') {
-      a.sceneId = parseInt(document.getElementById('asc').value) || 0;
-      a.to = { x: parseInt(document.getElementById('atx').value) || 8, y: parseInt(document.getElementById('aty').value) || 8, z: parseInt(document.getElementById('atz').value) || 0 };
-    }
-    t.actions = [a];
-    saveWorld(); renderTriggers();
-  }
-  function delTrigger(i) {
-    trigs().splice(i, 1);
-    if (selTrigger === i) clearTrigger(); else renderTriggers();
-    saveWorld();
-  }
-  function chkConds(t) {
-    if (!t.conditions || !t.conditions.length) return true;
-    return t.conditions.every(c => {
-      const v = project.globalVars[c.key];
-      if (c.op === '==') return v == c.value;
-      if (c.op === '!=') return v != c.value;
-      if (c.op === '>') return parseFloat(v) > parseFloat(c.value);
-      if (c.op === '<') return parseFloat(v) < parseFloat(c.value);
-      return true;
-    });
-  }
-
-  // ================================================================
-  // VARIABLES
-  // ================================================================
-  function renderVars() {
-    const d = document.getElementById('vars-disp');
-    d.innerHTML = '';
-    const ks = Object.keys(project.globalVars);
-    if (!ks.length) { d.innerHTML = '<div class="var-display">(порожньо)</div>'; return; }
-    ks.forEach(k => {
-      const dv = document.createElement('div');
-      dv.className = 'var-display';
-      dv.innerHTML = '<span><b>' + k + '</b> = ' + JSON.stringify(project.globalVars[k]) + '</span>' +
-        '<span style="color:#f44;cursor:pointer" onclick="delVar(\'' + k + '\')">✕</span>';
-      d.appendChild(dv);
-    });
-  }
-  function addVar() {
-    const k = document.getElementById('vk').value.trim();
-    const v = document.getElementById('vv').value.trim();
-    if (!k) return;
-    project.globalVars[k] = v === '' ? '' : (isNaN(v) ? v : parseFloat(v));
-    document.getElementById('vk').value = ''; document.getElementById('vv').value = '';
-    renderVars(); saveAll();
-  }
-  function delVar(k) { delete project.globalVars[k]; renderVars(); saveAll(); }
-
-  // ================================================================
-  // PALETTE
-  // ================================================================
-  function renderPal() {
-    const bar = document.getElementById('pal-bar');
-    bar.innerHTML = '';
-    TILES.forEach(t => {
-      const b = document.createElement('div');
-      b.className = 'pal-item' + (t === selTile ? ' active' : '');
-      if (t === 'empty') b.classList.add('empty');
-      else b.style.background = TCOLORS[t];
-      b.title = t;
-      b.onclick = () => { selTile = t; renderPal(); };
-      bar.appendChild(b);
-    });
-  }
-
-  // ================================================================
-  // TOP VIEW EDITING
-  // ================================================================
-  function setupTopEdit() {
-    const sc = document.getElementById('scene');
-    if (!sc) return;
-    sc.addEventListener('mousedown', e => {
-      if (project.view === '3d' || project.view === 'play') return;
-      if (window.physics && window.physics.isRunning) return;
-      topClick(e);
-    });
-    sc.addEventListener('touchstart', e => {
-      if (project.view === '3d' || project.view === 'play') return;
-      if (window.physics && window.physics.isRunning) return;
-      if (e.touches.length > 1) return;
-      const t = e.touches[0], tg = document.elementFromPoint(t.clientX, t.clientY);
-      if (tg) topClick({ target: tg, clientX: t.clientX, clientY: t.clientY });
-    }, { passive: true });
-  }
-  function topClick(e) {
-    if (!window.world) return;
-    const tg = e.target; if (!tg) return;
-    let x, y, z;
-    if (tg.classList.contains('face')) {
-      const p = tg.parentElement;
-      x = parseInt(p.dataset.x); y = parseInt(p.dataset.y); z = parseInt(p.dataset.z);
-      const d = tg.dataset.dir;
-      if (d === 'top') z++; else if (d === 'bottom') z--;
-      else if (d === 'front') y++; else if (d === 'back') y--;
-      else if (d === 'right') x++; else if (d === 'left') x--;
-    } else if (tg.classList.contains('voxel')) {
-      x = parseInt(tg.dataset.x); y = parseInt(tg.dataset.y); z = parseInt(tg.dataset.z);
-      window.world.deleteVoxel(x, y, z);
-      if (window.renderer) renderer.render();
-      return;
-    } else if (tg.classList.contains('grid-floor')) {
-      if (e.clientX === undefined) return;
-      const r = tg.getBoundingClientRect();
-      const ox = e.clientX - r.left, oy = e.clientY - r.top;
-      const s = window.innerWidth < 600 ? 0.4 : 0.6;
-      x = Math.floor(ox / (40 * s)); y = Math.floor(oy / (40 * s)); z = 0;
-    } else return;
-    if (x < 0 || x >= 16 || y < 0 || y >= 16 || z < 0 || z >= 16) return;
-    if (selTile === 'empty') {
-      if (window.world.hasVoxel(x, y, z)) {
-        const ti = window.world.triggers.findIndex(t => t.tile.x === x && t.tile.y === y && t.tile.z === z);
-        if (ti >= 0) window.world.triggers.splice(ti, 1);
-        window.world.deleteVoxel(x, y, z);
-        if (window.renderer) renderer.render();
-        renderTriggers();
-      }
-    } else {
-      window.world.setVoxel(x, y, z, { type: 'solid', color: TCOLORS[selTile] || '#555' });
-      if (selTile === 'trigger') {
-        window.world.triggers.push({ id: 't' + Date.now(), tile: { x, y, z }, event: 'onEnter', conditions: [], actions: [{ type: 'dialog', text: '...' }] });
-        renderTriggers();
-      }
-      if (window.renderer) renderer.render();
-    }
-    saveWorld();
-  }
-
-  // ================================================================
-  // PLAY MODE
-  // ================================================================
-  function playGame() {
-    if (!window.physics) return;
-    if (window.renderer) renderer.setViewMode('3d');
-    document.getElementById('play-ctrl').style.display = 'flex';
-    window.physics.start();
-  }
-  document.getElementById('btn-stop').addEventListener('click', () => {
-    if (window.physics) window.physics.stop();
-    document.getElementById('play-ctrl').style.display = 'none';
+  document.getElementById('btn-play').addEventListener('click', () => {
+    document.querySelector('.pill[data-mode="play"]')?.click();
   });
-  document.getElementById('btn-play').addEventListener('click', playGame);
-
-  // ================================================================
-  // DIALOG
-  // ================================================================
-  function showDlg(text, btns) {
-    const ov = document.getElementById('dlg-overlay');
-    const bx = document.getElementById('dlg-box');
-    bx.innerHTML = '<h3>💬</h3><p>' + text + '</p>';
-    if (btns) btns.forEach(b => { bx.innerHTML += '<button onclick="closeDlg();' + (b.action || '') + '">' + b.label + '</button>'; });
-    else bx.innerHTML += '<button onclick="closeDlg()">OK</button>';
-    ov.classList.add('show');
-  }
-  function closeDlg() { document.getElementById('dlg-overlay').classList.remove('show'); }
 
   // ================================================================
   // SAVE / LOAD
   // ================================================================
-  function saveWorld() {
-    if (!window.world || !project.scenes[scIdx]) return;
-    project.scenes[scIdx].triggers = JSON.parse(JSON.stringify(window.world.triggers || []));
-    try { project.scenes[scIdx].worldJSON = window.world.toJSON(); } catch (e) {}
-  }
   function saveAll() {
-    saveWorld();
-    localStorage.setItem(PROJECT_KEY, JSON.stringify(project));
+    localStorage.setItem('habitat_world', JSON.stringify(world));
   }
-  function exportAll() {
-    saveWorld();
-    const b = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(b); a.download = 'evo-game.json'; a.click();
+  function exportWorld() {
+    syncWorld();
+    const b = new Blob([JSON.stringify(world, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = world.name + '.json'; a.click();
   }
-  document.getElementById('import-file').addEventListener('change', function(e) {
+  document.getElementById('imp').addEventListener('change', function(e) {
     const f = e.target.files[0]; if (!f) return;
-    const r = new FileReader();
-    r.onload = function(ev) {
-      try {
-        project = JSON.parse(ev.target.result);
-        if (!project.scenes || !project.scenes.length) project.scenes = [mkScene('Рівень 1')];
-        renderScenes(); renderVars(); goScene(0); saveAll();
-      } catch (err) { alert('Помилка: ' + err.message); }
+    new FileReader().onload = function(ev) {
+      try { world = JSON.parse(ev.target.result); renderObjList(); syncWorld(); saveAll(); } catch(err) { alert(err.message); }
     };
-    r.readAsText(f);
+    (new FileReader()).readAsText(f);
   });
+
+  // ================================================================
+  // PALETTE
+  // ================================================================
+  function renderPalette() {
+    const p = document.getElementById('palette');
+    p.innerHTML = '';
+    OBJ_TYPES.forEach(t => {
+      const b = document.createElement('div');
+      b.className = 'type-btn' + (t === selType ? ' active' : '');
+      b.style.borderLeft = '3px solid ' + (OBJ_COLORS[t] || '#888');
+      b.textContent = typeIcon(t) + ' ' + t;
+      b.onclick = () => { selType = t; renderPalette(); };
+      p.appendChild(b);
+    });
+  }
 
   // ================================================================
   // INIT
   // ================================================================
-  function initApp() {
-    renderPal(); renderVars();
-    const saved = localStorage.getItem(PROJECT_KEY);
-    if (saved) { try { project = JSON.parse(saved); } catch (e) {} }
-    if (!project.scenes || !project.scenes.length) project.scenes = [mkScene('Рівень 1')];
-    renderScenes(); goScene(project.currentScene || 0); renderVars();
-    setupTopEdit();
-
-    // Physics trigger hook
-    const wp = setInterval(() => {
-      if (window.physics && !window.physics._hooked) {
-        window.physics._hooked = true;
-        window.physics._checkTriggers = function() {
-          if (!this.isRunning || !this.player) return;
-          const px = Math.round(this.player.x), py = Math.round(this.player.y), pz = Math.round(this.player.z);
-          (window.world.triggers || []).forEach(t => {
-            if (t.tile.x === px && t.tile.y === py && t.tile.z === pz && t.event === 'onEnter') {
-              if (!chkConds(t)) return;
-              if (t.actions && t.actions[0]) {
-                const a = t.actions[0];
-                if (a.type === 'dialog') showDlg(a.text);
-                else if (a.type === 'setVar') { project.globalVars[a.key] = a.value; renderVars(); }
-                else if (a.type === 'teleport') {
-                  if (a.sceneId !== undefined && a.sceneId !== scIdx) { saveWorld(); goScene(a.sceneId); }
-                  if (a.to) { this.player.x = a.to.x; this.player.y = a.to.y; this.player.z = a.to.z; }
-                }
-              }
-              t.event = 'used';
-            }
-          });
-        };
-        setInterval(() => { if (window.physics) window.physics._checkTriggers(); }, 200);
-      }
-    }, 200);
-
+  function initOS() {
+    renderPalette();
+    const saved = localStorage.getItem('habitat_world');
+    if (saved) { try { world = JSON.parse(saved); } catch(e) {} }
+    if (!world.objects) world.objects = [];
+    renderObjList();
+    syncWorld();
     setInterval(saveAll, 30000);
   }
   </script>
